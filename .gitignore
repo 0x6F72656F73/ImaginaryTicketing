@@ -1,0 +1,11 @@
+test/
+transcripts/
+
+.vscode
+.env
+
+*.pid
+*.db
+*.log
+
+__pycache__/

@@ -1,0 +1,6 @@
+chat_exporter
+discord
+humanize
+python-dotenv
+discord-pretty-help
+discord-ext-forms

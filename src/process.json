@@ -1,0 +1,12 @@
+{
+  "apps": [
+    {
+      "name": "Ticket-Bot",
+      "script": "./bot.py",
+      "wait_ready": true,
+      "autorestart" : false,
+      "instances": "1",
+      "interpreter": "/usr/local/bin/python3.9"
+    }
+  ]
+}
