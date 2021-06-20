@@ -1,5 +1,7 @@
 test/
-transcripts/
+
+transcripts/*
+!transcripts/.gitkeep
 
 .vscode
 .env

@@ -72,7 +72,7 @@ class Others(commands.Cog):
                               timestamp=datetime.utcnow(), color=0xff0000)
         embed.set_author(name=f"{user}", icon_url=f"{avatar_url}")
         embed.add_field(name="Channel",
-                        value=f"{channel_name}", inline=True)
+                        value=f"{channel_name}")
         return embed
 
     @staticmethod

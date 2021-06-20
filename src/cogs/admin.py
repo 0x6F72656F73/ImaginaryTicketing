@@ -87,13 +87,46 @@ class Admin(commands.Cog):
     @commands.command(name="check", aliases=['c'])
     @commands.has_role(config.ADMIN_ROLE)
     async def check_variables(self, ctx):
-        available_mods = get(
-            ctx.guild.roles, name="Available Mods")
-        channel_log_category = get(
-            ctx.guild.categories, name="logs")
-        if any(available_mods, channel_log_category) is None:
-            await ctx.channel.send("")
+        ticket_ping_role = {"ticket ping role": get(
+            ctx.guild.roles, name=config.TICKET_PING_ROLE)}
+
+        channel_log_category = {"channel log category": get(
+            ctx.guild.categories, name="logs")}
+
+        channel_log = {"channel log category": get(
+            ctx.guild.categories, name="logs")}
+
+        bot_guild = ctx.guild.get_member(self.bot.user.id)
+        is_bot_admin = {"is admin": bot_guild.guild_permissions.administrator}
+
+        checks = [ticket_ping_role, channel_log_category, is_bot_admin]
+
+        def check_all(return_print=False):
+
+            failures = []
+            for x in checks:
+                for k, v in x.items():
+                    if v == None:
+                        failures.append(k)
+
+            if not failures:
+                return None
+            else:
+                if return_print:
+                    return failures
+                else:
+                    return True
+
+        failure = check_all()
+        print(failure)
+        if failure:
+            embed = discord.Embed(title="Failed Checks")
+            print(checks)
+            for y in checks:
+                print(y)
+            await ctx.channel.send(embed=embed)
             return
+
         await ctx.channel.send("All checks were successful 😎")
 
     async def cog_command_error(self, ctx, error):

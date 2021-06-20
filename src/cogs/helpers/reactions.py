@@ -7,7 +7,7 @@ import discord
 from discord import Embed
 from discord.utils import get
 from discord.ext import commands
-from discord.ext.forms import NaiveForm, ReactionForm
+# from discord.ext.forms import NaiveForm, ReactionForm
 
 import config
 from utils.others import Others
@@ -123,7 +123,7 @@ class Reactions(commands.Cog):
             ticket_channel_id, str(ticket_channel_name), self.guild.id, self.user_id, str(self.user), emoji_type, status, checked))
 
         avail_mods = get(
-            self.guild.roles, name="Available Mods")
+            self.guild.roles, name=config.TICKET_PING_ROLE)
         # send messages
         if not emoji_type == "submit":
             welcome_message = f'Welcome <@{self.user_id}>,\nA new ticket has been opened {avail_mods.mention}\n\n'

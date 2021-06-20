@@ -15,7 +15,7 @@ from utils.database.db import DatabaseManager as db
 
 log = logging.getLogger(__name__)
 
-class PogCommands(commands.Cog):
+class MiscCommands(commands.Cog):
     """other useful commands"""
 
     def __init__(self, bot: commands.Bot):
@@ -222,4 +222,4 @@ For all other help, react with {emoji_list[2]}
         return True
 
 def setup(bot: commands.Bot):
-    bot.add_cog(PogCommands(bot))
+    bot.add_cog(MiscCommands(bot))

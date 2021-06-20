@@ -48,7 +48,7 @@ class Event(commands.Cog):
                                            channel_id, channel, message_id, False, payload, emoji, emoji_raw=emoji_raw)
         except Exception as e:
             channel_log = discord.utils.get(
-                guild.text_channels, name="ticket-log")
+                guild.text_channels, name=config.LOG_CHANNEL)
             await channel_log.send("Ticket information error.")
             log.exception(str(e))
             return

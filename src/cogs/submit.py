@@ -6,7 +6,7 @@ from discord.ext import commands
 
 import config
 from utils.others import Others
-from utils.database.db import DatabaseManager as db
+# from utils.database.db import DatabaseManager as db
 
 log = logging.getLogger(__name__)
 
