@@ -144,7 +144,7 @@ async def on_command_error(ctx, error):
         await ctx.channel.send("You do not have enough permissions to run this command")
         return
     if isinstance(error, commands.CheckFailure):
-        await ctx.send('Bot does not have administrator role.')
+        await ctx.send('Bot does not have administrator permissions.')
         return
 
     # log.exception(error)
