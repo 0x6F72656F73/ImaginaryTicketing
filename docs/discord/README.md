@@ -10,4 +10,4 @@
 
 
 [1]: https://discord.com/developers/applications
-[2]: /../src/config.py
+[2]: ../../src/config.py
