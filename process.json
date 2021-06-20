@@ -1,7 +1,8 @@
 {
   "apps": [
     {
-      "name": "Ticket-Bot",
+      "name": "ImaginaryTicketing",
+      "cwd": "src/",
       "script": "./bot.py",
       "wait_ready": true,
       "autorestart" : false,
