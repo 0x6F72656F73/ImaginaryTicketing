@@ -25,7 +25,7 @@ def find_level():
         level = "DEBUG"
     elif sys.argv[1] == "i" or sys.argv[1] == "2" or sys.argv[1] == "info" or sys.argv[1] == "INFO":
         level = "INFO"
-    elif sys.argv[1] == "w" or sys.argv[1] == "3" or sys.argv[1] == "warn" or sys.argv[1] == "WARN" or sys.argv[1] == "warning" or sys.argv[1] == "WARNING":
+    elif sys.argv[1] == "w" or sys.argv[1] == "3" or sys.argv[1] == "warn" or sys.argv[1] == "WARN":
         level = "WARNING"
     elif sys.argv[1] == "e" or sys.argv[1] == "4" or sys.argv[1] == "error" or sys.argv[1] == "ERROR":
         level = "ERROR"
