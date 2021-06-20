@@ -6,10 +6,8 @@ STARTUP_COGS = [
 LOG_CHANNEL_CATEGORY = "logs"
 LOG_CHANNEL_NAME = "ticket-log"
 
-# EMOJIS_MESSAGE = ['<:rooSupport:811702778622771232>',
-#                   '📩', '<a:ictf:833862746927923219>']
-# EMOJIS = ['rooSupport',
-#           '📩', 'ictf']
+# EMOJIS_MESSAGE = ['<:rooSupport:811702778622771232>','📩', '<a:ictf:833862746927923219>']
+# EMOJIS = ['rooSupport','📩', 'ictf']
 
 EMOJIS_MESSAGE = ['🚩', '📩', '🧐']
 EMOJIS = ['🚩', '📩', '🧐']
