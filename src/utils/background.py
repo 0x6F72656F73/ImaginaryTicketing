@@ -71,7 +71,7 @@ class Background(commands.Cog):
         """
 
         check = db.get_check(channel.id)
-        print(f"check: {check}")
+        log.info(f"check: {check}")
 
         if check == 1:
             epicreactions = reactionsClass(commands.Cog, bot, guild.id, guild, bot.user.id, bot,

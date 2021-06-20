@@ -3,7 +3,8 @@ ADMIN_ROLE = "Board"
 TICKET_PING_ROLE = "Available Mods"
 STARTUP_COGS = [
     "cogs.event", "cogs.admin", "cogs.smolcmds", "cogs.submit"]
-LOG_CHANNEL = "ticket-log"
+LOG_CHANNEL_CATEGORY = "logs"
+LOG_CHANNEL_NAME = "ticket-log"
 
 # EMOJIS_MESSAGE = ['<:rooSupport:811702778622771232>',
 #                   '📩', '<a:ictf:833862746927923219>']

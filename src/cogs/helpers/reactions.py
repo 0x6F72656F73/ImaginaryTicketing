@@ -316,7 +316,7 @@ class Reactions(commands.Cog):
         try:
             transcript_message = await Others.transcript(self.channel, user)
             channel_log_category = get(
-                self.guild.categories, name="logs")
+                self.guild.categories, name=config.LOG_CHANNEL_CATEGORY)
             if channel_log_category is None:
                 await self.channel.send("logs category does not exist")
                 return
@@ -343,9 +343,8 @@ class Reactions(commands.Cog):
             log.info(member)
             discord_users.append(member_true)
 
-        allmentions = [member.mention for member in discord_users]
-        poggersall = '\n'.join(allmentions)
-        coolembed.add_field(name="users", value=f"{poggersall}")
+        allmentions = '\n'.join([member.mention for member in discord_users])
+        coolembed.add_field(name="users", value=f"{allmentions}")
         coolembed.add_field(name="number of messages", value=f"     {count}")
         await user.send(embed=coolembed)
         #update/set closed messages
@@ -359,7 +358,7 @@ class Reactions(commands.Cog):
             """, color=0xff0000)
         ticket_admin_message = await self.channel.send(embed=admin_message)
         await ticket_admin_message.add_reaction("🔓")
-        # thats an unlocked lock lol
+        # thats an unlocked lock
         await ticket_admin_message.add_reaction("⛔")
 
         # await self.survey()

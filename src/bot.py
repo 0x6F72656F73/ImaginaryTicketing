@@ -103,6 +103,8 @@ async def on_message(message):
 
 @bot.check
 def check_bot_perms(ctx):
+    if str(ctx.command) == "check":
+        return True
     bot_guild = ctx.guild.get_member(bot.user.id)
     return bot_guild.guild_permissions.administrator
 

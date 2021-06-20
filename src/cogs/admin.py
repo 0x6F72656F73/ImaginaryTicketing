@@ -84,47 +84,34 @@ class Admin(commands.Cog):
 
         await Others.delmsg(ctx)
 
-    @commands.command(name="check", aliases=['c'])
+    @commands.command(name="check")
     @commands.has_role(config.ADMIN_ROLE)
-    async def check_variables(self, ctx):
-        ticket_ping_role = {"ticket ping role": get(
-            ctx.guild.roles, name=config.TICKET_PING_ROLE)}
-
-        channel_log_category = {"channel log category": get(
-            ctx.guild.categories, name="logs")}
-
-        channel_log = {"channel log category": get(
-            ctx.guild.categories, name="logs")}
-
+    async def check_discord(self, ctx):
         bot_guild = ctx.guild.get_member(self.bot.user.id)
-        is_bot_admin = {"is admin": bot_guild.guild_permissions.administrator}
-
-        checks = [ticket_ping_role, channel_log_category, is_bot_admin]
+        checks = {"ticket ping role": bool(get(ctx.guild.roles, name=config.TICKET_PING_ROLE)),
+                  "channel log category": bool(get(ctx.guild.categories, name=config.LOG_CHANNEL_CATEGORY)),
+                  "channel log name": bool(get(ctx.guild.text_channels, name=config.LOG_CHANNEL_NAME)),
+                  "is admin": bool(bot_guild.guild_permissions.administrator)}
+        print(checks)
 
         def check_all(return_print=False):
+            if all(checks.values()):
+                return True
 
             failures = []
-            for x in checks:
-                for k, v in x.items():
-                    if v == None:
-                        failures.append(k)
+            for k, v in checks.items():
+                if v is False:
+                    failures.append(k)
 
-            if not failures:
-                return None
-            else:
-                if return_print:
-                    return failures
-                else:
-                    return True
+            if return_print:
+                return failures
+            return False
 
         failure = check_all()
-        print(failure)
-        if failure:
-            embed = discord.Embed(title="Failed Checks")
-            print(checks)
-            for y in checks:
-                print(y)
-            await ctx.channel.send(embed=embed)
+        if not failure:
+            fails = "\n".join(check_all(return_print=True))
+            emby = discord.Embed(title="Failed Checks", description=fails)
+            await ctx.channel.send(embed=emby)
             return
 
         await ctx.channel.send("All checks were successful 😎")
