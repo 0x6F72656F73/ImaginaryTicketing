@@ -4,5 +4,5 @@ You can find backend setup instructions at [docs/backend][1]
 
 You can find discord setup instructions at [docs/discord][2]
 
-[1]: /backend/README.md
-[2]: /discord/README.md
+[1]: backend
+[2]: discord
