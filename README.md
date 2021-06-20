@@ -1,6 +1,6 @@
 # ImaginaryTicketing
 
-[![Github Action][1]][2]
+[![Deploy][1]][2]
 [![PRs Welcome][3]][4]
 [![Discord chat][5]][6]
 
@@ -22,9 +22,9 @@ Pull requests are welcome.
 
 [GPL 3.0](https://choosealicense.com/licenses/gpl-3.0/)
 
-[1]: https://github.com/0x6F72656F73/Ticket-Bot/actions/workflows/deploy.yml/badge.svg?style=flat-square
-[2]: https://github.com/0x6F72656F73/Ticket-Bot/actions/workflows/deploy.yml
-[3]: https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square
+[1]: https://github.com/0x6F72656F73/ImaginaryTicketing/actions/workflows/deploy.yml/badge.svg
+[2]: https://github.com/0x6F72656F73/ImaginaryTicketing/actions/workflows/deploy.yml
+[3]: https://img.shields.io/badge/PRs-welcome-brightgreen.svg
 [4]: http://makeapullrequest.com
 [5]: https://img.shields.io/discord/732308165265326080.svg?logo=discord
 [6]: https://discord.gg/vqymjBWStn
