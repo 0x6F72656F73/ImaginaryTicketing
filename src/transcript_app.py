@@ -32,7 +32,6 @@ class Files:
     @classmethod
     def find_file(cls, file: str) -> bool:
         all_files = cls.get_all_files()
-        print(bool(file in all_files))
         return bool(file in all_files)
 
 @app.route("/")
@@ -56,7 +55,6 @@ def home():
         file_name = link_parts[-1]
         print(f"input file: {file_name}")
         if Files.find_file(file_name):
-            print('b')
             return render_template(file_name)
         return "invalid url"
     except Exception as e:
