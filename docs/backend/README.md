@@ -1,7 +1,6 @@
-## Backend
+## Instructions
 
-Steps for starting the bot can be found here: https://colab.research.google.com/drive/1zmbP6VbTRPut6gN7yCST3GKjUeSdjxgs
+Steps for starting the bot can be found [on this jupyter notebook][1] which can also be viewed at [ImaginaryTicketing_Example.ipynb][2].
 
-The notebook can also be viewed at [ImaginaryTicketing_Example.ipynb][1]
-
-[1]: ImaginaryTicketing_Example.ipynb
+[1]: https://colab.research.google.com/drive/1zmbP6VbTRPut6gN7yCST3GKjUeSdjxgs
+[2]: ImaginaryTicketing_Example.ipynb
