@@ -21,7 +21,7 @@ class Files:
     @classmethod
     def get_all_files(cls) -> List:
         files = os.listdir(
-            os.getcwd() + "/src/transcripts")
+            os.getcwd() + "/transcripts")
         all_files = []
         for html in files:
             if html.endswith(".html"):

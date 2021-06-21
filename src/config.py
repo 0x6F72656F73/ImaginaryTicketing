@@ -14,3 +14,6 @@ EMOJIS = ['🚩', '📩', '🧐']
 
 WHITELIST_BACKGROUND = [838850387301630003,
                         838211809474773043, 838205483822874724]
+
+TRANSCRIPT_DOMAIN = "https://oreos.imaginaryctf.org"
+TRANSCRIPT_PORT = "1337"

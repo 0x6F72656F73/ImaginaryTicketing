@@ -330,7 +330,7 @@ class Reactions(commands.Cog):
             await Others.transcript(self.channel, channel_log)
             await self.channel.send("Transcript sent to DMs")
             coolembed.add_field(name="transcript url",
-                                value=f"[transcript url](https://oreos.imaginaryctf.org:1337/direct?link={transcript_message.attachments[0].url} \"oreos taste good dont they\") ")
+                                value=f"[transcript url]({config.TRANSCRIPT_DOMAIN}:{config.TRANSCRIPT_PORT}/direct?link={transcript_message.attachments[0].url} \"oreos taste good dont they\") ")
         except Exception as e:
             log.exception(str(e))
             await self.channel.send("Transcript could not be sent to DMs")
