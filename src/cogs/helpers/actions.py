@@ -16,7 +16,7 @@ from utils.database.db import DatabaseManager as db
 
 log = logging.getLogger(__name__)
 
-class Reactions(commands.Cog):
+class Actions(commands.Cog):
     """handles all reactions"""
 
     def __init__(self, bot: commands.Bot, client, guild_id: int, guild: str, user_id: int, user: str,
@@ -261,16 +261,11 @@ class Reactions(commands.Cog):
             #if reaction
             message = await self.channel.fetch_message(self.message_id)
             await message.remove_reaction(self.emoji, self.user)
-
         #if closed do nothing
-        try:
-            current_status = db.get_status(self.channel_id)
-        except:
-            return
+        current_status = db.get_status(self.channel_id)
         if current_status == "closed":
             await self.channel.send("Channel is already closed")
             return
-
         #send closed message
         if self.background:
             description = f"Ticket was closed by {self.user.user.mention}"
@@ -282,7 +277,6 @@ class Reactions(commands.Cog):
             color=0xFF0000)
 
         await self.channel.send(embed=embed)
-
         #get information
         db_channel_name = db.get_channel_name(self.channel_id)
         discord_db_channel = get(
@@ -388,6 +382,17 @@ class Reactions(commands.Cog):
         except:
             return
 
+        #get information
+        number = db.get_number_previous(self.channel_id)
+        current_type = db.get_ticket_type(self.channel_id)
+
+        user_id = db.get_user_id(self.channel_id)
+        current_name = self.client.get_user(user_id)
+
+        if None in (number, current_type, user_id, current_name):
+            await self.channel.send("Channel is not a ticket")
+            return
+
         #send reopened message
         status = "open"
         db.update_status(status, self.channel_id)
@@ -397,13 +402,6 @@ class Reactions(commands.Cog):
             color=0xFF0000)
         msg = await self.channel.send(embed=embed)
         await msg.add_reaction("🔒")
-
-        #get information
-        number = db.get_number_previous(self.channel_id)
-        current_type = db.get_ticket_type(self.channel_id)
-
-        user_id = db.get_user_id(self.channel_id)
-        current_name = self.client.get_user(user_id)
 
         reopened = Options.name_open(
             current_type, count=number, user=current_name)

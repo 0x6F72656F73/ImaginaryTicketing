@@ -11,7 +11,7 @@ from utils.others import Others
 log = logging.getLogger(__name__)
 
 class Submit(commands.Cog):
-    """other useful commands"""
+    """**Unimplemented** user say and say member commands"""
 
     def __init__(self, bot: commands.Bot):
         self.bot = bot

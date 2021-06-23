@@ -9,7 +9,7 @@ from discord.utils import get
 # import humanize
 
 import config
-from cogs.helpers.reactions import Reactions as reactionsClass
+from cogs.helpers.actions import Actions
 from utils.others import Others
 from utils.database.db import DatabaseManager as db
 
@@ -51,13 +51,13 @@ For all other help, react with {emoji_list[2]}
         admin = get(ctx.guild.roles, name=config.ADMIN_ROLE)
         if admin not in ctx.author.roles:
             member = ctx.author
-            epicreactions = reactionsClass(commands.Cog, self.bot, ctx.guild.id, ctx.guild, member.id, member,
-                                           ctx.channel.id, ctx.channel, ctx.message.id, True, ctx, emoji)
+            epicreactions = Actions(commands.Cog, self.bot, ctx.guild.id, ctx.guild, member.id, member,
+                                    ctx.channel.id, ctx.channel, ctx.message.id, True, ctx, emoji)
             await epicreactions.create()
         else:
             member = member or ctx.author
-            epicreactions = reactionsClass(commands.Cog, self.bot, ctx.guild.id, ctx.guild, member.id, member,
-                                           ctx.channel.id, ctx.channel, ctx.message.id, True, ctx, emoji)
+            epicreactions = Actions(commands.Cog, self.bot, ctx.guild.id, ctx.guild, member.id, member,
+                                    ctx.channel.id, ctx.channel, ctx.message.id, True, ctx, emoji)
             await epicreactions.create()
         # await Others.delmsg(ctx)
 
@@ -67,16 +67,13 @@ For all other help, react with {emoji_list[2]}
             user = error.argument
             await ctx.channel.send(f"member {user} does not exist")
 
-    # if isinstance(error, commands.BadArgument):
-    #     print("member does not exist")
-
     @commands.command(name="add", aliases=["a"], help="add a user to a ticket", usage="add <user>")
     @commands.has_role(config.ADMIN_ROLE)
     async def add(self, ctx, member: discord.Member):
         """adds a user from a ticket"""
 
-        epicreactions = reactionsClass(commands.Cog, self.bot, ctx.guild.id, ctx.guild, member.id, member,
-                                       ctx.channel.id, ctx.channel, ctx.message.id, True, ctx)
+        epicreactions = Actions(commands.Cog, self.bot, ctx.guild.id, ctx.guild, member.id, member,
+                                ctx.channel.id, ctx.channel, ctx.message.id, True, ctx)
 
         memids = [member.id for member in ctx.channel.members]
         if member.id in memids:
@@ -110,8 +107,8 @@ For all other help, react with {emoji_list[2]}
             await ctx.channel.send(embed=emby)
             return
 
-        epicreactions = reactionsClass(commands.Cog, self.bot, ctx.guild.id, ctx.guild, member.id, member,
-                                       ctx.channel.id, ctx.channel, ctx.message.id, True, ctx)
+        epicreactions = Actions(commands.Cog, self.bot, ctx.guild.id, ctx.guild, member.id, member,
+                                ctx.channel.id, ctx.channel, ctx.message.id, True, ctx)
         await epicreactions.remove(member)
         await Others.delmsg(ctx)
 
@@ -125,8 +122,8 @@ For all other help, react with {emoji_list[2]}
         admin = get(guild.roles, name=config.ADMIN_ROLE)
         if admin in ctx.author.roles or user_id == ctx.author.id:
 
-            epicreactions = reactionsClass(commands.Cog, self.bot, ctx.guild.id, ctx.guild, ctx.author.id, ctx.author,
-                                           ctx.channel.id, ctx.channel, ctx.message.id, True, ctx)
+            epicreactions = Actions(commands.Cog, self.bot, ctx.guild.id, ctx.guild, ctx.author.id, ctx.author,
+                                    ctx.channel.id, ctx.channel, ctx.message.id, True, ctx)
 
             await Others.delmsg(ctx)
 
@@ -154,7 +151,7 @@ For all other help, react with {emoji_list[2]}
     # @commands.command(name="close_stats_helper", aliases=["test"])
     # async def test(self, ctx):
 
-    #     epicreactions = reactionsClass(commands.Cog, self.bot, ctx.guild.id, ctx.guild, ctx.author.id, ctx.author,
+    #     epicreactions = Actions(commands.Cog, self.bot, ctx.guild.id, ctx.guild, ctx.author.id, ctx.author,
     #                                    ctx.channel.id, ctx.channel, ctx.message.id, True, ctx)
 
     #     await epicreactions.close_stats_helper()
@@ -164,8 +161,8 @@ For all other help, react with {emoji_list[2]}
     async def delete(self, ctx):
         """deletes a ticket"""
 
-        epicreactions = reactionsClass(commands.Cog, self.bot, ctx.guild.id, ctx.guild, ctx.author.id, ctx.author,
-                                       ctx.channel.id, ctx.channel, ctx.message.id, True, ctx)
+        epicreactions = Actions(commands.Cog, self.bot, ctx.guild.id, ctx.guild, ctx.author.id, ctx.author,
+                                ctx.channel.id, ctx.channel, ctx.message.id, True, ctx)
         await Others.delmsg(ctx, time=0.0)
         try:
             await epicreactions.delete()
@@ -177,8 +174,8 @@ For all other help, react with {emoji_list[2]}
     async def reopen(self, ctx):
         """reopens a ticket"""
 
-        epicreactions = reactionsClass(commands.Cog, self.bot, ctx.guild.id, ctx.guild, ctx.author.id, ctx.author,
-                                       ctx.channel.id, ctx.channel, ctx.message.id, True, ctx)
+        epicreactions = Actions(commands.Cog, self.bot, ctx.guild.id, ctx.guild, ctx.author.id, ctx.author,
+                                ctx.channel.id, ctx.channel, ctx.message.id, True, ctx)
         await epicreactions.reopen_ticket()
 
         await Others.delmsg(ctx)

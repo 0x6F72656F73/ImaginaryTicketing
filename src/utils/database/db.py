@@ -98,6 +98,9 @@ class DatabaseManager():
             return int(user_id[0])
         except TypeError:
             return None
+        except Exception as exception:
+            log.exception(exception)
+            return None
 
     @classmethod
     def get_all_ticket_channel_messages(cls, guild_id: int) -> [List]:
@@ -156,9 +159,13 @@ class DatabaseManager():
                 """
         values = (channel_id,)
         status = cls._raw_select(query, values, fetch_one=True)
-        if not status:
+        try:
+            return status[0]
+        except TypeError:
             return None
-        return status[0]
+        except Exception as exception:
+            log.exception(exception)
+            return None
 
     @classmethod
     def get_number_new(cls, ticket_type: int) -> str:
@@ -179,7 +186,13 @@ class DatabaseManager():
                 """
         values = (ticket_type,)
         ret = cls._raw_select(query, values, fetch_one=True)
-        return ret[0]
+        try:
+            return ret[0]
+        except TypeError:
+            return None
+        except Exception as exception:
+            log.exception(exception)
+            return None
 
     @classmethod
     def get_number_previous(cls, channel_id: int) -> str:
@@ -197,8 +210,14 @@ class DatabaseManager():
         query = "SELECT channel_name FROM requests WHERE channel_id = $1"
         values = (channel_id,)
         db_channel_name_str = cls._raw_select(query, values, fetch_one=True)
-        # lower cuz discord channel names are lowercase
-        db_channel_name = db_channel_name_str[0].lower()
+        try:
+            # lower cuz discord channel names are lowercase
+            db_channel_name = db_channel_name_str[0].lower()
+        except TypeError:
+            return None
+        except Exception as exception:
+            log.exception(exception)
+            return None
         number = db_channel_name.split("-")[-1]
         return number
 
@@ -217,7 +236,13 @@ class DatabaseManager():
         query = "SELECT ticket_type FROM requests WHERE channel_id = $1"
         values = (channel_id,)
         ticket_type = cls._raw_select(query, values, fetch_one=True)
-        return ticket_type[0]
+        try:
+            return ticket_type[0]
+        except TypeError:
+            return None
+        except Exception as exception:
+            log.exception(exception)
+            return None
 
     @classmethod
     def get_channel_name(cls, channel_id: int) -> str:
@@ -234,10 +259,13 @@ class DatabaseManager():
         query = "SELECT channel_name FROM requests WHERE channel_id = $1"
         values = (channel_id,)
         db_channel_name_str = cls._raw_select(query, values, fetch_one=True)
-        # lower cuz discord channel names are lowercase
         try:
+            # lower cuz discord channel names are lowercase
             return db_channel_name_str[0].lower()
-        except:
+        except TypeError:
+            return None
+        except Exception as exception:
+            log.exception(exception)
             return None
 
     @classmethod
@@ -271,7 +299,13 @@ class DatabaseManager():
         query = "SELECT checked FROM requests WHERE channel_id=$1"
         values = (channel_id,)
         check = cls._raw_select(query, values, fetch_one=True)
-        return int(check[0])
+        try:
+            return int(check[0])
+        except TypeError:
+            return None
+        except Exception as exception:
+            log.exception(exception)
+            return None
 
     @classmethod
     def get_guild_check(cls, guild_id: int) -> str:

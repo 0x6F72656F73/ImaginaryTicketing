@@ -4,13 +4,13 @@ import discord
 from discord.ext import commands
 
 import config
-from cogs.helpers.reactions import Reactions as reactionsClass
+from cogs.helpers.actions import Actions
 from utils.database.db import DatabaseManager as db
 
 log = logging.getLogger(__name__)
 
 class Event(commands.Cog):
-    """handles all events
+    """handles reactions
 
     Parameters
     ----------
@@ -44,11 +44,11 @@ class Event(commands.Cog):
             emoji_raw = payload.emoji
             emoji = payload.emoji.name
             ticket_channel_ids = db.get_all_ticket_channels(guild_id)
-            epicreactions = reactionsClass(commands.Cog, self.bot, guild_id, guild, user_id, user,
-                                           channel_id, channel, message_id, False, payload, emoji, emoji_raw=emoji_raw)
+            epicreactions = Actions(commands.Cog, self.bot, guild_id, guild, user_id, user,
+                                    channel_id, channel, message_id, False, payload, emoji, emoji_raw=emoji_raw)
         except Exception as e:
             channel_log = discord.utils.get(
-                guild.text_channels, name=config.LOG_CHANNEL)
+                guild.text_channels, name=config.LOG_CHANNEL_NAME)
             await channel_log.send("Ticket information error.")
             log.exception(str(e))
             return

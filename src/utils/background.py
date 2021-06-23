@@ -12,7 +12,7 @@ import discord
 from discord.ext import commands
 
 import config
-from cogs.helpers.reactions import Reactions as reactionsClass
+from cogs.helpers.actions import Actions
 from utils.options import Options
 from utils.others import Others
 from utils.database.db import DatabaseManager as db
@@ -74,8 +74,8 @@ class Background(commands.Cog):
         log.info(f"check: {check}")
 
         if check == 1:
-            epicreactions = reactionsClass(commands.Cog, bot, guild.id, guild, bot.user.id, bot,
-                                           channel.id, channel, message.id, True, bot, emoji=None, background=True)
+            epicreactions = Actions(commands.Cog, bot, guild.id, guild, bot.user.id, bot,
+                                    channel.id, channel, message.id, True, bot, emoji=None, background=True)
             await epicreactions.close()
             db.update_check("0", channel.id)
 
@@ -110,7 +110,7 @@ class Background(commands.Cog):
             for channel in channels:
                 log.info(channel.name)
                 status = db.get_status(channel.id)
-                if channel.id in config.WHITELIST_BACKGROUND or channel.id in safe_tickets_list or status == "closed" or status is None:
+                if channel.id in safe_tickets_list or status == "closed" or status is None:
                     continue
                 try:
                     status = db.get_status(channel.id)

@@ -2,7 +2,7 @@ OWNERS = [650187980606275589, 720055120137552042, 572630612469481492]
 ADMIN_ROLE = "Board"
 TICKET_PING_ROLE = "Available Mods"
 STARTUP_COGS = [
-    "cogs.event", "cogs.admin", "cogs.smolcmds", "cogs.submit"]
+    "cogs.event", "cogs.admin", "cogs.reaction_commands", "cogs.submit"]
 LOG_CHANNEL_CATEGORY = "logs"
 LOG_CHANNEL_NAME = "ticket-log"
 
@@ -11,9 +11,6 @@ LOG_CHANNEL_NAME = "ticket-log"
 
 EMOJIS_MESSAGE = ['🚩', '📩', '🧐']
 EMOJIS = ['🚩', '📩', '🧐']
-
-WHITELIST_BACKGROUND = [838850387301630003,
-                        838211809474773043, 838205483822874724]
 
 TRANSCRIPT_DOMAIN = "https://oreos.imaginaryctf.org"
 TRANSCRIPT_PORT = "1337"

@@ -87,21 +87,21 @@ class Admin(commands.Cog):
     @commands.command(name="check")
     @commands.has_role(config.ADMIN_ROLE)
     async def check_discord(self, ctx):
+        """Checks if all configurations are valid"""
         bot_guild = ctx.guild.get_member(self.bot.user.id)
         checks = {"ticket ping role": bool(get(ctx.guild.roles, name=config.TICKET_PING_ROLE)),
                   "channel log category": bool(get(ctx.guild.categories, name=config.LOG_CHANNEL_CATEGORY)),
                   "channel log name": bool(get(ctx.guild.text_channels, name=config.LOG_CHANNEL_NAME)),
                   "is admin": bool(bot_guild.guild_permissions.administrator)}
-        print(checks)
 
         def check_all(return_print=False):
             if all(checks.values()):
                 return True
 
             failures = []
-            for k, v in checks.items():
-                if v is False:
-                    failures.append(k)
+            for check, status in checks.items():
+                if status is False:
+                    failures.append(check)
 
             if return_print:
                 return failures
@@ -118,7 +118,7 @@ class Admin(commands.Cog):
 
     async def cog_command_error(self, ctx, error):
         if isinstance(error, commands.MissingPermissions):
-            await ctx.send("You can't do that!")
+            await ctx.send("You can't do that")
         if isinstance(error, commands.MissingRole):
             await ctx.send("You can't do that!")
 
