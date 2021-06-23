@@ -1,0 +1,13 @@
+test/
+
+transcripts/*
+!transcripts/.gitkeep
+
+.vscode
+.env
+
+*.pid
+*.db
+*.log
+
+__pycache__/
