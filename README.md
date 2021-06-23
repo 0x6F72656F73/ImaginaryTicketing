@@ -6,7 +6,7 @@
 
 ImaginaryTicketing is a simple ticketing system for running CTF Competitions on discord. Be sure to checkout [ImaginaryCTF][7].
 
-See [usage](USAGE.md) for a usage guide.
+See [docs](docs/) for a usage guide.
 
 ## Contributing
 
