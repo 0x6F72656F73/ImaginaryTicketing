@@ -1,9 +1,9 @@
 # Configuration
 
-**note:** First complete [backend setup][1]
+**note:** Complete [backend setup][1] first
 
 ### Requirements:
-- [A registered discord bot][2]
+- [A discord bot][2]
 - Administrator permission
 
 ### Backend Setup
