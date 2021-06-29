@@ -127,14 +127,8 @@ class Others(commands.Cog):
         await ctx.message.delete()
 
     @staticmethod
-    async def say_in_webhook(member, channel, avatar_url, allow_mention, args):
+    async def say_in_webhook(member, channel, avatar_url, allow_mention, args, return_message=False):
         avatar = await member.avatar_url.read()
-        # try:
-        #     webhooks = await channel.webhooks()
-        # except:
-        #     await channel.send("This bot does not have enough permissions")
-        #     return
-
         webhooks = await channel.webhooks()
 
         if len(webhooks) == 0:
@@ -148,13 +142,17 @@ class Others(commands.Cog):
                 if webhook.created_at == shortest:
                     send_web_hook = webhook
                     break
+
         async with aiohttp.ClientSession() as session:
             webhook = Webhook.from_url(
                 send_web_hook.url, adapter=AsyncWebhookAdapter(session))
             if allow_mention is True:
-                await webhook.send(f'{args}', username=f'{member.display_name}', avatar_url=avatar_url)
+                message = await webhook.send(f'{args}', username=f'{member.display_name}', avatar_url=avatar_url, wait=True)
+
             else:
-                await webhook.send(f'{args}', username=f'{member.display_name}', avatar_url=avatar_url, allowed_mentions=discord.AllowedMentions.none())
+                message = await webhook.send(f'{args}', username=f'{member.display_name}', avatar_url=avatar_url, allowed_mentions=discord.AllowedMentions.none())
+        if return_message:
+            return channel.get_partial_message(message.id)
 
     @staticmethod
     async def random_member_webhook(guild):
