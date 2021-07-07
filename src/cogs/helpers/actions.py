@@ -19,17 +19,20 @@ log = logging.getLogger(__name__)
 class Actions(commands.Cog):
     """handles all reactions"""
 
-    def __init__(self, bot: commands.Bot, client, guild_id: int, guild: str, user_id: int, user: str,
-                 channel_id: int, channel: str, message_id: int,
-                 cmd: bool, payload: discord.RawReactionActionEvent, emoji: str = None, emoji_raw: discord.partial_emoji.PartialEmoji = None, background: bool = False):
+    def __init__(self, bot: commands.Bot, client, guild: discord.Guild, user: discord.User,
+                 channel: discord.TextChannel, message_id: int, cmd: bool, payload: discord.RawReactionActionEvent,
+                 emoji: str = None, emoji_raw: discord.partial_emoji.PartialEmoji = None, background: bool = False):
         self.bot = bot
         self.client = client
-        self.guild_id = guild_id
         self.guild = guild
-        self.user_id = user_id
+        self.guild_id = guild.id
         self.user = user
-        self.channel_id = channel_id
+        if background:
+            self.user_id = user.user.id
+        else:
+            self.user_id = user.id
         self.channel = channel
+        self.channel_id = channel.id
         self.message_id = message_id
         self.emoji = emoji
         self.payload = payload
@@ -64,19 +67,15 @@ class Actions(commands.Cog):
         ticket_id_list = db.get_all_ticket_channel_messages(self.guild_id)
         if not self.message_id in ticket_id_list and self.cmd is not True:
             return
-        if self.emoji is not None and self.cmd is not True:
+        if self.emoji is not None and self.cmd is False:
             # if reaction
-            message = await self.channel.fetch_message(self.message_id)
-            if self.emoji_raw is None:
-                await message.remove_reaction(self.emoji, self.user)
-            else:
-                await message.remove_reaction(self.emoji_raw, self.user)
             emoji_type = Others.emoji_to_string(self.emoji)
         else:
             # if command
             try:
                 dict_values = {'help': 'help',
-                               'submit': 'submit', 'misc': 'misc'}
+                               'submit': 'submit',
+                               'misc': 'misc'}
                 emoji_type = dict_values[self.emoji]
             except KeyError:
                 await self.channel.send("possible ticket types are help, submit, and misc")

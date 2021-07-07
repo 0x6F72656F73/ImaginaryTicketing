@@ -51,13 +51,13 @@ For all other help, react with {emoji_list[2]}
         admin = get(ctx.guild.roles, name=config.ADMIN_ROLE)
         if admin not in ctx.author.roles:
             member = ctx.author
-            epicreactions = Actions(commands.Cog, self.bot, ctx.guild.id, ctx.guild, member.id, member,
-                                    ctx.channel.id, ctx.channel, ctx.message.id, True, ctx, emoji)
+            epicreactions = Actions(commands.Cog, self.bot, ctx.guild, member,
+                                    ctx.channel, ctx.message.id, True, ctx, emoji)
             await epicreactions.create()
         else:
             member = member or ctx.author
-            epicreactions = Actions(commands.Cog, self.bot, ctx.guild.id, ctx.guild, member.id, member,
-                                    ctx.channel.id, ctx.channel, ctx.message.id, True, ctx, emoji)
+            epicreactions = Actions(commands.Cog, self.bot, ctx.guild, member,
+                                    ctx.channel, ctx.message.id, True, ctx, emoji)
             await epicreactions.create()
         # await Others.delmsg(ctx)
 
@@ -72,8 +72,8 @@ For all other help, react with {emoji_list[2]}
     async def add(self, ctx, member: discord.Member):
         """adds a user from a ticket"""
 
-        epicreactions = Actions(commands.Cog, self.bot, ctx.guild.id, ctx.guild, member.id, member,
-                                ctx.channel.id, ctx.channel, ctx.message.id, True, ctx)
+        epicreactions = Actions(commands.Cog, self.bot, ctx.guild, member,
+                                ctx.channel, ctx.message.id, True, ctx)
 
         memids = [member.id for member in ctx.channel.members]
         if member.id in memids:
@@ -107,8 +107,8 @@ For all other help, react with {emoji_list[2]}
             await ctx.channel.send(embed=emby)
             return
 
-        epicreactions = Actions(commands.Cog, self.bot, ctx.guild.id, ctx.guild, member.id, member,
-                                ctx.channel.id, ctx.channel, ctx.message.id, True, ctx)
+        epicreactions = Actions(commands.Cog, self.bot, ctx.guild, member,
+                                ctx.channel, ctx.message.id, True, ctx)
         await epicreactions.remove(member)
         await Others.delmsg(ctx)
 
@@ -122,8 +122,8 @@ For all other help, react with {emoji_list[2]}
         admin = get(guild.roles, name=config.ADMIN_ROLE)
         if admin in ctx.author.roles or user_id == ctx.author.id:
 
-            epicreactions = Actions(commands.Cog, self.bot, ctx.guild.id, ctx.guild, ctx.author.id, ctx.author,
-                                    ctx.channel.id, ctx.channel, ctx.message.id, True, ctx)
+            epicreactions = Actions(commands.Cog, self.bot, ctx.guild, ctx.author,
+                                    ctx.channel, ctx.message.id, True, ctx)
 
             await Others.delmsg(ctx)
 
@@ -161,8 +161,8 @@ For all other help, react with {emoji_list[2]}
     async def delete(self, ctx):
         """deletes a ticket"""
 
-        epicreactions = Actions(commands.Cog, self.bot, ctx.guild.id, ctx.guild, ctx.author.id, ctx.author,
-                                ctx.channel.id, ctx.channel, ctx.message.id, True, ctx)
+        epicreactions = Actions(commands.Cog, self.bot, ctx.guild, ctx.author,
+                                ctx.channel, ctx.message.id, True, ctx)
         await Others.delmsg(ctx, time=0.0)
         try:
             await epicreactions.delete()
@@ -174,8 +174,8 @@ For all other help, react with {emoji_list[2]}
     async def reopen(self, ctx):
         """reopens a ticket"""
 
-        epicreactions = Actions(commands.Cog, self.bot, ctx.guild.id, ctx.guild, ctx.author.id, ctx.author,
-                                ctx.channel.id, ctx.channel, ctx.message.id, True, ctx)
+        epicreactions = Actions(commands.Cog, self.bot, ctx.guild, ctx.author,
+                                 ctx.channel, ctx.message.id, True, ctx)
         await epicreactions.reopen_ticket()
 
         await Others.delmsg(ctx)

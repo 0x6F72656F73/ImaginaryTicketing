@@ -13,7 +13,7 @@ from pretty_help import PrettyHelp, DefaultMenu
 from dotenv import load_dotenv
 import chat_exporter
 
-from utils.background import Background
+from utils.background import AutoClose
 from utils.runcmds import startlogging
 
 startlogging('tickets.log')
@@ -163,8 +163,8 @@ async def on_command_error(ctx, error):
 async def inactivity_task():
     await bot.wait_until_ready()
     try:
-        await Background.inactivity(bot, hours=24)
-        # await Background.inactivity(bot, seconds=6)
+        await AutoClose.inactivity(bot, hours=24)
+        # await AutoClose.inactivity(bot, seconds=6)
     except Exception as e:
         log.exception(e)
 

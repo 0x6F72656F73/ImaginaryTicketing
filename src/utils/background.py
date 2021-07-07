@@ -19,8 +19,8 @@ from utils.database.db import DatabaseManager as db
 
 log = logging.getLogger(__name__)
 
-class Background(commands.Cog):
-    """Background Task Manager"""
+class AutoClose(commands.Cog):
+    """Autoclose ticket Manager"""
 
     @staticmethod
     async def get_message_time(channel: discord.channel.TextChannel):
@@ -74,8 +74,8 @@ class Background(commands.Cog):
         log.info(f"check: {check}")
 
         if check == 1:
-            epicreactions = Actions(commands.Cog, bot, guild.id, guild, bot.user.id, bot,
-                                    channel.id, channel, message.id, True, bot, emoji=None, background=True)
+            epicreactions = Actions(commands.Cog, bot, guild, bot,
+                                    channel, message.id, True, bot, emoji=None, background=True)
             await epicreactions.close()
             db.update_check("0", channel.id)
 
@@ -122,7 +122,7 @@ class Background(commands.Cog):
                     return
 
                 try:
-                    message, duration = await Background.get_message_time(channel)
+                    message, duration = await AutoClose.get_message_time(channel)
                 except:
                     return
 
@@ -139,4 +139,4 @@ class Background(commands.Cog):
 
                 elif duration > timedelta(**kwargs):
                     # print("no activity detected")
-                    await Background.old_ticket_actions(bot, guild, channel, message)
+                    await AutoClose.old_ticket_actions(bot, guild, channel, message)

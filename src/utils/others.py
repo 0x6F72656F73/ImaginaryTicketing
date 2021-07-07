@@ -90,7 +90,8 @@ class Others(commands.Cog):
         """
         emoji_list = config.EMOJIS
         dict_values = {emoji_list[0]: 'help',
-                       emoji_list[1]: 'submit', emoji_list[2]: 'misc'}
+                       emoji_list[1]: 'submit',
+                       emoji_list[2]: 'misc'}
         return dict_values[emoji]
 
     @staticmethod

@@ -10,13 +10,7 @@ from utils.database.db import DatabaseManager as db
 log = logging.getLogger(__name__)
 
 class Event(commands.Cog):
-    """handles reactions
-
-    Parameters
-    ----------
-    commands : `discord.commands.Cog`
-        all commands from Cog\n
-    """
+    """handles reactions"""
 
     def __init__(self, bot):
         self.bot = bot
@@ -44,15 +38,15 @@ class Event(commands.Cog):
             emoji_raw = payload.emoji
             emoji = payload.emoji.name
             ticket_channel_ids = db.get_all_ticket_channels(guild_id)
-            epicreactions = Actions(commands.Cog, self.bot, guild_id, guild, user_id, user,
-                                    channel_id, channel, message_id, False, payload, emoji, emoji_raw=emoji_raw)
+            epicreactions = Actions(commands.Cog, self.bot, guild, user, channel,
+                                    message_id, False, payload, emoji, emoji_raw=emoji_raw)
         except Exception as e:
             channel_log = discord.utils.get(
                 guild.text_channels, name=config.LOG_CHANNEL_NAME)
             await channel_log.send("Ticket information error.")
             log.exception(str(e))
             return
-        # make classes out of these (eventually 3 tables so another class maybe) with 23-33 as __init__
+        # make classes out of these (eventually 3 tables so another class maybe)
         if emoji in config.EMOJIS:
             # create a new ticket
             await epicreactions.create()
