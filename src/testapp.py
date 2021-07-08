@@ -21,4 +21,4 @@ async def reload_cog(ctx):
 async def on_message(message):
     await bot.process_commands(message)
 
-bot.run("ODM5NjM0MTAxNDgwMzI1MjEw.YJMgMQ.qYv1EnzdiMA19BcX0Wo5xszjZcM")
+bot.run("ODM5NjM0MTAxNDgwMzI1MjEw.YJMgMQ.L5u5eXIGhMy_ddzJrcx3WIbD-w4")

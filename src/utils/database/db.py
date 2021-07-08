@@ -3,6 +3,8 @@ from itertools import chain
 from typing import Union, List
 import logging
 
+from utils.others import Others
+
 log = logging.getLogger(__name__)
 
 class DatabaseManager():
@@ -103,7 +105,7 @@ class DatabaseManager():
             return None
 
     @classmethod
-    def get_all_ticket_channel_messages(cls, guild_id: int) -> [List]:
+    def get_all_ticket_channel_messages(cls, guild_id: int) -> List[int]:
         """gets a list of all ticket message's ids for a guild
 
         Parameters
@@ -113,7 +115,7 @@ class DatabaseManager():
 
         Returns
         -------
-        `list`: all ticket messages\n
+        `list[int]`: all ticket messages\n
         """
         query = "SELECT ticket_id FROM tickets WHERE guild_id = $1"
         values = (guild_id,)
@@ -122,7 +124,7 @@ class DatabaseManager():
         return ticket_id_list
 
     @classmethod
-    def get_all_ticket_channels(cls, guild_id: int) -> [List]:
+    def get_all_ticket_channels(cls, guild_id: int) -> List[int]:
         """gets a list of all ticket channels for a guild
 
         Parameters
@@ -132,7 +134,7 @@ class DatabaseManager():
 
         Returns
         -------
-        `list`: all ticket channels
+        `list[int]`: all ticket channels
         """
         query = "SELECT channel_id FROM requests WHERE guild_id = $1"
         values = (guild_id,)
@@ -353,7 +355,7 @@ class DatabaseManager():
         -------
         `Union[str, None]`: the channel id if a ticket exists, None if no ticket exists
         """
-        query = "SELECT channel_id from requests where user_id=$1 and ticket_type='submit' and status='open'"
+        query = "SELECT channel_id FROM requests WHERE user_id=$1 AND ticket_type='submit' AND status='open'"
         values = (user_id,)
         check = cls._raw_select(query, values, fetch_one=True)
         try:
@@ -363,6 +365,27 @@ class DatabaseManager():
         except Exception as exception:
             log.exception(exception)
             return None
+
+    @classmethod
+    def add_challenge(cls, id_: int, author: str, title: str, ignore: bool = False):
+        query = "INSERT INTO challenges(id, author, title, ignore) VALUES($1,$2,$3,$4)"
+        values = (id_, author, title, ignore)
+        cls._raw_insert(query, values)
+
+    @classmethod
+    def get_all_challenges(cls):
+        query = "SELECT * FROM challenges"
+        all_challenges = cls._raw_select(query)
+        return all_challenges
+
+    @classmethod
+    def refresh_database(cls, challenges: List[Others.Challenge]):
+        delete_query = "DELETE FROM challenges"
+        cls._raw_delete(delete_query)
+        insert_query = "INSERT INTO challenges(id, author, title, ignore) VALUES($1,$2,$3,$4)"
+        for id_, author, title, ignore in challenges:
+            values = (id_, author, title, ignore)
+            cls._raw_insert(insert_query, values)
 
     # def put_challenge(self, all_params):
     #     query = "INSERT into submit VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)"
@@ -375,9 +398,10 @@ class DatabaseManager():
     #     allvals = self._raw_select(query, values)
     #     return list(chain(*allvals))
 
-    # def get_challenge(self):
+    # @classmethod
+    # def get_challenges(cls):
     #     query = "SELECT title FROM submit"
-    #     allvals = self._raw_select(query)
+    #     allvals = cls._raw_select(query)
     #     return list(chain(*allvals))
 
     # def insert_survey(self, values: list):

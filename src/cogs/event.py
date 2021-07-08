@@ -30,7 +30,7 @@ class Event(commands.Cog):
         try:
             # get information
             user_id = payload.user_id
-            user = self.bot.get_user(user_id)
+            user = guild.get_member(user_id)  # test changeing to get member
             channel_id = payload.channel_id
             channel = self.bot.get_channel(channel_id)
 
@@ -39,7 +39,7 @@ class Event(commands.Cog):
             emoji = payload.emoji.name
             ticket_channel_ids = db.get_all_ticket_channels(guild_id)
             epicreactions = Actions(commands.Cog, self.bot, guild, user, channel,
-                                    message_id, False, payload, emoji, emoji_raw=emoji_raw)
+                                    message_id, False, emoji, emoji_raw=emoji_raw)
         except Exception as e:
             channel_log = discord.utils.get(
                 guild.text_channels, name=config.LOG_CHANNEL_NAME)
@@ -58,7 +58,10 @@ class Event(commands.Cog):
             await epicreactions.reopen_ticket()
 
         if channel_id in ticket_channel_ids and emoji == "⛔" and user.bot is False:  # delete ticket logic
-            await epicreactions.delete()
+            admin_role = discord.utils.get(
+                guild.roles, name=config.ADMIN_ROLE)
+            if admin_role in user.roles:
+                await epicreactions.delete()
 
 
 def setup(bot):

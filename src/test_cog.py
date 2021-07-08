@@ -1,3 +1,5 @@
+import textwrap
+
 from discord import Embed
 from discord_slash import SlashContext, ComponentContext
 from discord_slash.cog_ext import cog_slash, cog_component
@@ -8,6 +10,8 @@ from discord_slash.model import ButtonStyle
 from discord_slash.utils.manage_components import create_select, create_select_option, create_actionrow
 
 from cogs.helpers.actions import Actions
+from utils.database.db import DatabaseManager as db
+from utils.others import Others
 
 guild_ids = [788162899515801637, 861845094415728681]
 
@@ -21,8 +25,11 @@ class Slash(commands.Cog):
 
     @cog_slash(name="aaa", description="a pog command", guild_ids=guild_ids)
     async def _ping(self, ctx: SlashContext):
+        challenges = [Others.Challenge(*list(challenge))
+                      for challenge in db.get_all_challenges()]
         options = [create_select_option(
-            f"challenge {i}", value=f"challenge {i}") for i in range(1, 26)]
+            label=textwrap.shorten(challenge.title, 25, placeholder='...'), value=f"{challenge.id_}") for challenge in challenges]
+
         select = create_select(
             options=options,
             placeholder="Please choose a challenge",
@@ -35,10 +42,10 @@ class Slash(commands.Cog):
 
     @cog_component()
     async def testing(self, ctx: ComponentContext):
-        print(ctx.selected_options)
+        print(ctx.selected_options[0])
         epicreactions = Actions(commands.Cog, self.bot,
-                                ctx.guild, ctx.author, ctx.channel, 1234, False, 'a')
-        print(epicreactions)
+                                ctx.guild, ctx.author, ctx.channel, 1234, False, challenge=ctx.selected_options[0])
+        await epicreactions.create()
         await ctx.send('a')
         # await ctx.edit_origin(content=f"You selected {ctx.selected_options}")
 

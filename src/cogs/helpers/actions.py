@@ -20,8 +20,8 @@ class Actions(commands.Cog):
     """handles all reactions"""
 
     def __init__(self, bot: commands.Bot, client, guild: discord.Guild, user: discord.User,
-                 channel: discord.TextChannel, message_id: int, cmd: bool, payload: discord.RawReactionActionEvent,
-                 emoji: str = None, emoji_raw: discord.partial_emoji.PartialEmoji = None, background: bool = False):
+                 channel: discord.TextChannel, message_id: int, cmd: bool,
+                 emoji: str = None, emoji_raw: discord.partial_emoji.PartialEmoji = None, background: bool = False, challenge: str = None):
         self.bot = bot
         self.client = client
         self.guild = guild
@@ -35,10 +35,10 @@ class Actions(commands.Cog):
         self.channel_id = channel.id
         self.message_id = message_id
         self.emoji = emoji
-        self.payload = payload
         self.cmd = cmd
         self.background = background
         self.emoji_raw = emoji_raw
+        self.challenge = challenge
 
     async def log_to_channel(self, msg: str, is_bot=False):
         """Logs a message to channel ticket-log
@@ -64,22 +64,25 @@ class Actions(commands.Cog):
 
     async def create(self):
         """Creates a ticket"""
-        ticket_id_list = db.get_all_ticket_channel_messages(self.guild_id)
-        if not self.message_id in ticket_id_list and self.cmd is not True:
-            return
+        # ticket_id_list = db.get_all_ticket_channel_messages(self.guild_id)
+        # if not self.message_id in ticket_id_list and self.cmd is not True: #prolly gonna del
+        #     return
         if self.emoji is not None and self.cmd is False:
             # if reaction
             emoji_type = Others.emoji_to_string(self.emoji)
         else:
-            # if command
-            try:
-                dict_values = {'help': 'help',
-                               'submit': 'submit',
-                               'misc': 'misc'}
-                emoji_type = dict_values[self.emoji]
-            except KeyError:
-                await self.channel.send("possible ticket types are help, submit, and misc")
-                return
+            if self.challenge:
+                emoji_type = "help"
+            else:
+                # if command
+                try:
+                    dict_values = {'help': 'help',
+                                   'submit': 'submit',
+                                   'misc': 'misc'}
+                    emoji_type = dict_values[self.emoji]
+                except KeyError:
+                    await self.channel.send("possible ticket types are help, submit, and misc")
+                    return
         # get information
         admin = get(self.guild.roles, name=config.ADMIN_ROLE)
         member = self.guild.get_member(self.user_id)
@@ -97,9 +100,9 @@ class Actions(commands.Cog):
 
         # get information
         number = db.get_number_new(emoji_type)
+        good_channel_name = Options.name_open(emoji_type, number, self.user)
         cat = Options.full_category_name(emoji_type)
         category = get(self.guild.categories, name=cat)
-        good_channel_name = Options.name_open(emoji_type, number, self.user)
         if category is None:
             new_category = await self.guild.create_category(name=cat)
             category = self.guild.get_channel(new_category.id)
@@ -118,8 +121,8 @@ class Actions(commands.Cog):
         # update status in db
         status = "open"
         checked = "0"
-        db._raw_insert("INSERT INTO requests (channel_id, channel_name, guild_id, user_id, user_name, ticket_type, status, checked) VALUES ($1,$2,$3,$4,$5,$6,$7,$8 )", (
-            ticket_channel_id, str(ticket_channel_name), self.guild.id, self.user_id, str(self.user), emoji_type, status, checked))
+        db._raw_insert("INSERT INTO requests (channel_id, channel_name, guild_id, user_id, ticket_type, status, checked) VALUES ($1,$2,$3,$4,$5,$6,$8 )", (
+            ticket_channel_id, str(ticket_channel_name), self.guild.id, self.user_id, emoji_type, status, checked))
 
         avail_mods = get(
             self.guild.roles, name=config.TICKET_PING_ROLE)
@@ -277,9 +280,6 @@ class Actions(commands.Cog):
 
         await self.channel.send(embed=embed)
         #get information
-        db_channel_name = db.get_channel_name(self.channel_id)
-        discord_db_channel = get(
-            self.guild.text_channels, name=db_channel_name)
         member = self.guild.get_member(self.user_id)
         admin = get(self.guild.roles, name=config.ADMIN_ROLE)
         overwrites = {
@@ -289,7 +289,7 @@ class Actions(commands.Cog):
                 read_messages=True, send_messages=True)
         }
         try:
-            await discord_db_channel.edit(overwrites=overwrites)
+            await self.channel.edit(overwrites=overwrites)
         except AttributeError:
             pass
 
@@ -356,6 +356,13 @@ class Actions(commands.Cog):
 
         # await self.survey()
 
+        category = get(self.guild.categories, name="Closed Tickets")
+        if category is None:
+            new_category = await self.guild.create_category(name="Closed Tickets")
+            category = self.guild.get_channel(new_category.id)
+
+        await self.channel.edit(category=category)
+
         await self.log_to_channel("Closed ticket")
         if self.background:
             log.info(
@@ -371,7 +378,6 @@ class Actions(commands.Cog):
             # if reaction
             message = await self.channel.fetch_message(self.message_id)
             await message.remove_reaction(self.emoji, self.user)
-
         #if open do nothing
         try:
             test_status = db.get_status(self.channel_id)
@@ -392,7 +398,22 @@ class Actions(commands.Cog):
             await self.channel.send("Channel is not a ticket")
             return
 
-        #send reopened message
+        cat = Options.full_category_name(current_type)
+        category = get(self.guild.categories, name=cat)
+        if category is None:
+            new_category = await self.guild.create_category(name=cat)
+            category = self.guild.get_channel(new_category.id)
+
+        member = self.guild.get_member(user_id)
+        admin = get(self.guild.roles, name=config.ADMIN_ROLE)
+        overwrites = {
+            self.guild.default_role: discord.PermissionOverwrite(read_messages=False),
+            member: discord.PermissionOverwrite(read_messages=True, send_messages=True),
+            admin: discord.PermissionOverwrite(
+                read_messages=True, send_messages=True)
+        }
+        await self.channel.edit(overwrites=overwrites, category=category)
+
         status = "open"
         db.update_status(status, self.channel_id)
         embed = Embed(
@@ -407,19 +428,6 @@ class Actions(commands.Cog):
         await self.channel.edit(name=reopened)
         db._raw_update(
             "UPDATE requests set channel_name = $1 WHERE channel_id = $2", (reopened, self.channel_id,))
-
-        db_channel_name = db.get_channel_name(self.channel_id)
-        discord_db_channel = get(
-            self.guild.text_channels, name=db_channel_name)
-        member = self.guild.get_member(user_id)
-        admin = get(self.guild.roles, name=config.ADMIN_ROLE)
-        overwrites = {
-            self.guild.default_role: discord.PermissionOverwrite(read_messages=False),
-            member: discord.PermissionOverwrite(read_messages=True, send_messages=True),
-            admin: discord.PermissionOverwrite(
-                read_messages=True, send_messages=True)
-        }
-        await discord_db_channel.edit(overwrites=overwrites)
 
         await self.log_to_channel("Re-Opened ticket")
         log.info(

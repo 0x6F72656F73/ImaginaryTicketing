@@ -1,7 +1,7 @@
 import io
 import asyncio
 import random
-from typing import Any
+from typing import Any, NamedTuple
 from datetime import datetime
 import logging
 
@@ -160,3 +160,13 @@ class Others(commands.Cog):
         role = discord.utils.get(guild.roles, name=config.ADMIN_ROLE)
         person = random.choice(role.members)
         return person
+
+    @staticmethod
+    class Challenge(NamedTuple):
+        id_: int
+        author: str
+        title: str
+        ignore: bool = False
+
+        def __repr__(self):
+            return self.title

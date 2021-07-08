@@ -75,7 +75,7 @@ class AutoClose(commands.Cog):
 
         if check == 1:
             epicreactions = Actions(commands.Cog, bot, guild, bot,
-                                    channel, message.id, True, bot, emoji=None, background=True)
+                                    channel, message.id, True, emoji=None, background=True)
             await epicreactions.close()
             db.update_check("0", channel.id)
 
