@@ -7,7 +7,10 @@
       "wait_ready": true,
       "autorestart" : false,
       "instances": "1",
-      "interpreter": "/usr/local/bin/python3.9"
+      "interpreter": "/usr/local/bin/python3.9",
+      "env_production": {
+        "args": "info"
+      }
     }
   ]
 }

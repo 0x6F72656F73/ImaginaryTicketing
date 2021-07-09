@@ -19,22 +19,19 @@ class RemoveNoise(logging.Filter):
 def find_level():
     """defines the verbosity of logging"""
 
-    if len(sys.argv) == 1:
-        level = "DEBUG"
-    elif sys.argv[1] == "d" or sys.argv[1] == "1" or sys.argv[1] == "debug" or sys.argv[1] == "DEBUG":
-        level = "DEBUG"
-    elif sys.argv[1] == "i" or sys.argv[1] == "2" or sys.argv[1] == "info" or sys.argv[1] == "INFO":
-        level = "INFO"
-    elif sys.argv[1] == "w" or sys.argv[1] == "3" or sys.argv[1] == "warn" or sys.argv[1] == "WARN":
-        level = "WARNING"
-    elif sys.argv[1] == "e" or sys.argv[1] == "4" or sys.argv[1] == "error" or sys.argv[1] == "ERROR":
-        level = "ERROR"
-    elif sys.argv[1] == "c" or sys.argv[1] == "5" or sys.argv[1] == "critical" or sys.argv[1] == "CRITICAL":
-        level = "CRITICAL"
+    if len(sys.argv) == 1 or sys.argv[1] == "1" or sys.argv[1] == "debug":
+        level = logging.DEBUG
+    elif sys.argv[1] == "2" or sys.argv[1] == "info":
+        level = logging.INFO
+    elif sys.argv[1] == "3" or sys.argv[1] == "warn":
+        level = logging.WARNING
+    elif sys.argv[1] == "4" or sys.argv[1] == "error":
+        level = logging.ERROR
+    elif sys.argv[1] == "5" or sys.argv[1] == "critical":
+        level = logging.CRITICAL
     else:
         log.CRITICAL("no log level found")
         sys.exit("please have a valid log level")
-
     return level
 
 def startlogging(filename: str):
@@ -60,13 +57,15 @@ def startlogging(filename: str):
         RemoveNoise('discord.state', 'referencing an unknown'))
 
     logging.getLogger('discord.http').setLevel(logging.WARNING)
+
+    logging.getLogger("discord_slash").setLevel(level)
     root_logger = logging.getLogger()
     root_logger.setLevel(level)
     handler = RotatingFileHandler(
         filename=filename, encoding='utf-8', mode='a', maxBytes=max_bytes, backupCount=10)
     handler.setFormatter(log_formatter)
     root_logger.addHandler(handler)
-    if level == "DEBUG":
+    if level == logging.DEBUG or level == logging.INFO:
         console_handler = logging.StreamHandler(sys.stdout)
         console_handler.setFormatter(log_formatter)
         root_logger.addHandler(console_handler)
