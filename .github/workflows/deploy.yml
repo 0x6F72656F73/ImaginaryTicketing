@@ -20,4 +20,4 @@ jobs:
         script: |
           cd $HOME/${{ github.event.repository.name }}
           git pull
-          pm2 startOrRestart process.json --silent
+          pm2 startOrRestart process.json --env production --silent
