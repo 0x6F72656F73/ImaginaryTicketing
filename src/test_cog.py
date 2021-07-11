@@ -44,7 +44,7 @@ class Slash(commands.Cog):
     async def testing(self, ctx: ComponentContext):
         print(ctx.selected_options[0])
         epicreactions = Actions(commands.Cog, self.bot,
-                                ctx.guild, ctx.author, ctx.channel, 1234, False, challenge=ctx.selected_options[0])
+                                ctx.guild, ctx.author, ctx.channel, 1234, challenge=ctx.selected_options[0])
         await epicreactions.create()
         await ctx.send('a')
         # await ctx.edit_origin(content=f"You selected {ctx.selected_options}")

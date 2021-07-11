@@ -20,10 +20,10 @@ from utils.database.db import DatabaseManager as db
 log = logging.getLogger(__name__)
 
 class AutoClose(commands.Cog):
-    """Autoclose ticket Manager"""
+    """Autoclose Ticket Manager"""
 
-    @staticmethod
-    async def get_message_time(channel: discord.channel.TextChannel):
+    @classmethod
+    async def get_message_time(cls, channel: discord.channel.TextChannel):
         """get the total time of the last message send
 
         ### Args:
@@ -44,13 +44,13 @@ class AutoClose(commands.Cog):
             log.warning(e)
             return
         else:
-            pass  # nothing to do
+            pass
         old = message.created_at
         now = datetime.utcnow()
         return message, now - old
 
-    @staticmethod
-    async def old_ticket_actions(bot: discord.ext.commands.bot.Bot, guild: discord.guild.Guild,
+    @classmethod
+    async def old_ticket_actions(cls, bot: discord.ext.commands.bot.Bot, guild: discord.guild.Guild,
                                  channel: discord.channel.TextChannel, message: discord.message.Message):
         """Check if a channel is old
 
@@ -75,7 +75,7 @@ class AutoClose(commands.Cog):
 
         if check == 1:
             epicreactions = Actions(commands.Cog, bot, guild, bot,
-                                    channel, message.id, True, emoji=None, background=True)
+                                    channel, message.id, emoji=None, background=True)
             await epicreactions.close()
             db.update_check("0", channel.id)
 
@@ -91,8 +91,8 @@ class AutoClose(commands.Cog):
         else:  # ticket ignored
             pass
 
-    @staticmethod
-    async def inactivity(bot, **kwargs):
+    @classmethod
+    async def inactivity(cls, bot, **kwargs):
         """check for inactivity in a channel
 
         Parameters
@@ -112,7 +112,7 @@ class AutoClose(commands.Cog):
                 return
             channels = category.channels
             for channel in channels:
-                log.info(channel.name)
+                log.debug(channel.name)
                 status = db.get_status(channel.id)
                 if channel.id in safe_tickets_list or status == "closed" or status is None:
                     continue
@@ -122,12 +122,11 @@ class AutoClose(commands.Cog):
                     return
 
                 try:
-                    message, duration = await AutoClose.get_message_time(channel)
+                    message, duration = await cls.get_message_time(channel)
                 except:
                     return
 
                 if duration < timedelta(**kwargs):
-                    # print("activity detected")
                     check = db.get_check(channel.id)
 
                     role = discord.utils.get(
@@ -138,5 +137,6 @@ class AutoClose(commands.Cog):
                         db.update_check("0", channel.id)
 
                 elif duration > timedelta(**kwargs):
-                    # print("no activity detected")
-                    await AutoClose.old_ticket_actions(bot, guild, channel, message)
+                    await cls.old_ticket_actions(bot, guild, channel, message)
+
+# class ScrapeChallenges()

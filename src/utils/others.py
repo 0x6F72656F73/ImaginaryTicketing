@@ -166,6 +166,7 @@ class Others(commands.Cog):
         id_: int
         author: str
         title: str
+        category: str
         ignore: bool = False
 
         def __repr__(self):

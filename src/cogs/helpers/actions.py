@@ -1,6 +1,7 @@
 from typing import List
 import datetime
 import asyncio
+import textwrap
 import logging
 
 import discord
@@ -8,6 +9,10 @@ from discord import Embed
 from discord.utils import get
 from discord.ext import commands
 # from discord.ext.forms import NaiveForm, ReactionForm
+
+from discord_slash import ComponentContext
+from discord_slash.utils.manage_components import create_button, create_select, create_select_option, create_actionrow, wait_for_component
+from discord_slash.model import ButtonStyle
 
 import config
 from utils.others import Others
@@ -20,61 +25,51 @@ class Actions(commands.Cog):
     """handles all reactions"""
 
     def __init__(self, bot: commands.Bot, client, guild: discord.Guild, user: discord.User,
-                 channel: discord.TextChannel, message_id: int, cmd: bool,
-                 emoji: str = None, emoji_raw: discord.partial_emoji.PartialEmoji = None, background: bool = False, challenge: str = None):
+                 channel: discord.TextChannel, message_id: int, emoji: str = None,
+                 background: bool = False):
         self.bot = bot
         self.client = client
         self.guild = guild
-        self.guild_id = guild.id
-        self.user = user
         if background:
-            self.user_id = user.user.id
+            self.user = user.user
+            self.user_id = self.user.id
         else:
-            self.user_id = user.id
+            self.user = user
+            self.user_id = self.user.id
         self.channel = channel
         self.channel_id = channel.id
         self.message_id = message_id
         self.emoji = emoji
-        self.cmd = cmd
         self.background = background
-        self.emoji_raw = emoji_raw
-        self.challenge = challenge
 
-    async def log_to_channel(self, msg: str, is_bot=False):
+    async def log_to_channel(self, msg: str):
         """Logs a message to channel ticket-log
 
         Parameters
         ----------
         msg : `str`
-            message to log\n
-        is_bot : `bool`, optional
-            if its a bot, use bot name/pfp, by default False
+            message to log
         """
-        if self.background:
-            is_bot = True
         channel_log = get(
             self.guild.text_channels, name="ticket-log")
-        if is_bot:
-            logembed = await Others.log_embed(
-                msg, self.user.user, self.user.user.avatar_url, self.channel)
-        else:
-            logembed = await Others.log_embed(
-                msg, self.user, self.user.avatar_url, self.channel)
+        logembed = await Others.log_embed(
+            msg, self.user, self.user.avatar_url, self.channel)
         await channel_log.send(embed=logembed)
 
-    async def create(self):
+    async def create(self, cmd: bool = False, ctx: ComponentContext = None, type_: str = None):
         """Creates a ticket"""
         # ticket_id_list = db.get_all_ticket_channel_messages(self.guild_id)
-        # if not self.message_id in ticket_id_list and self.cmd is not True: #prolly gonna del
+        # if not self.message_id in ticket_id_list and cmd is not True: #prolly gonna del
         #     return
-        if self.emoji is not None and self.cmd is False:
-            # if reaction
+        if self.emoji is not None and cmd is False:
             emoji_type = Others.emoji_to_string(self.emoji)
         else:
-            if self.challenge:
+            if ctx:
+                if not type_:
+                    return
+
                 emoji_type = "help"
             else:
-                # if command
                 try:
                     dict_values = {'help': 'help',
                                    'submit': 'submit',
@@ -83,11 +78,9 @@ class Actions(commands.Cog):
                 except KeyError:
                     await self.channel.send("possible ticket types are help, submit, and misc")
                     return
-        # get information
         admin = get(self.guild.roles, name=config.ADMIN_ROLE)
         member = self.guild.get_member(self.user_id)
         if admin not in member.roles:
-            # Limit tickets for non admin members
             n_tickets = db._raw_select(
                 "SELECT count(1) FROM (SELECT * FROM requests WHERE ticket_type=$1 and user_id=$2)", (emoji_type, self.user_id,), fetch_one=True)
             current = n_tickets[0]
@@ -98,9 +91,8 @@ class Actions(commands.Cog):
                 await self.user.send(embed=emby)
                 return
 
-        # get information
         number = db.get_number_new(emoji_type)
-        good_channel_name = Options.name_open(emoji_type, number, self.user)
+        channel_name = Options.name_open(emoji_type, number, self.user)
         cat = Options.full_category_name(emoji_type)
         category = get(self.guild.categories, name=cat)
         if category is None:
@@ -114,19 +106,52 @@ class Actions(commands.Cog):
                 read_messages=True, send_messages=True)
         }
 
-        # create new text channel
-        ticket_channel_name = await category.create_text_channel(good_channel_name, overwrites=overwrites)
-        ticket_channel_id = ticket_channel_name.id
-
-        # update status in db
+        ticket_channel: discord.TextChannel = await category.create_text_channel(channel_name, overwrites=overwrites)
+        ticket_channel_id = ticket_channel.id
         status = "open"
         checked = "0"
         db._raw_insert("INSERT INTO requests (channel_id, channel_name, guild_id, user_id, ticket_type, status, checked) VALUES ($1,$2,$3,$4,$5,$6,$8 )", (
-            ticket_channel_id, str(ticket_channel_name), self.guild.id, self.user_id, emoji_type, status, checked))
+            ticket_channel_id, str(ticket_channel), self.guild.id, self.user_id, emoji_type, status, checked))
+
+        ctx.channel_id = ticket_channel_id
+        challenges = [Others.Challenge(*list(challenge))
+                      for challenge in db.get_all_challenges()]
+        categories = {}
+        for idx, chall in enumerate(challenges):
+            if chall.category not in categories.values():
+                categories[idx] = chall.category
+
+        # print(categories)
+
+        # list_categories = list(categories)
+        # challenges = [Others.Challenge(
+        #     i, f"chall{i}", f"author{i}", list_categories[i % len(categories)], i % 3 == 0) for i in range(24)]
+        if len(challenges) < 25:
+            options = [create_select_option(
+                label=textwrap.shorten(challenge.title, 25, placeholder='...'), value=f"{challenge.id_}") for challenge in challenges]
+            select = create_select(
+                options=options,
+                placeholder="Please choose a challenge",
+                max_values=1,
+                custom_id='testing')
+
+            action_row = create_actionrow(select)
+            await ctx.channel.send(components=[action_row], content="challenge selection")
+        else:
+            category_options = [create_select_option(
+                label=category, value=f"{idx}") for idx, category in categories.items()]
+            print(category_options)
+
+        select_ctx: ComponentContext = await wait_for_component(self.client, components=action_row)
+        await select_ctx.defer(edit_origin=True)
+        print(select_ctx.selected_options)
+        selected_chall = [
+            chall for chall in challenges if chall.id_ == int(select_ctx.selected_options[0])][0]
+        await ticket_channel.edit(topic=f"this ticket is about {selected_chall}")
+        await select_ctx.origin_message.delete()
 
         avail_mods = get(
             self.guild.roles, name=config.TICKET_PING_ROLE)
-        # send messages
         if not emoji_type == "submit":
             welcome_message = f'Welcome <@{self.user_id}>,\nA new ticket has been opened {avail_mods.mention}\n\n'
         else:
@@ -134,7 +159,7 @@ class Actions(commands.Cog):
         message = Options.message(emoji_type, avail_mods)
 
         embed = await Others.make_embed(0x5dc169, message)
-        ticket_channel_message = await ticket_channel_name.send(welcome_message, embed=embed)
+        ticket_channel_message = await ticket_channel.send(welcome_message, embed=embed)
 
         await ticket_channel_message.pin()
 
@@ -145,7 +170,7 @@ class Actions(commands.Cog):
 
         await self.log_to_channel("Created ticket")
         log.info(
-            f"[CREATED] {ticket_channel_name} by {self.user} (ID: {self.channel_id})")
+            f"[CREATED] {ticket_channel} by {self.user} (ID: {self.channel_id})")
 
     async def add(self, member: discord.Member):
         """adds a member to a ticket(try adding roles(typehint optional))
@@ -260,26 +285,22 @@ class Actions(commands.Cog):
     async def close(self):
         """closes a ticket"""
         if self.emoji is not None:
-            #if reaction
             message = await self.channel.fetch_message(self.message_id)
             await message.remove_reaction(self.emoji, self.user)
-        #if closed do nothing
+
         current_status = db.get_status(self.channel_id)
         if current_status == "closed":
             await self.channel.send("Channel is already closed")
             return
-        #send closed message
-        if self.background:
-            description = f"Ticket was closed by {self.user.user.mention}"
-        else:
-            description = f"Ticket was closed by {self.user.mention}"
+
+        description = f"Ticket was closed by {self.user.mention}"
         embed = Embed(
             description=description,
             timestamp=datetime.datetime.utcnow(),
             color=0xFF0000)
 
         await self.channel.send(embed=embed)
-        #get information
+
         member = self.guild.get_member(self.user_id)
         admin = get(self.guild.roles, name=config.ADMIN_ROLE)
         overwrites = {
@@ -293,19 +314,18 @@ class Actions(commands.Cog):
         except AttributeError:
             pass
 
-        #get information
-        number = db.get_number_previous(self.channel.id)
+        number = db.get_number_previous(self.channel_id)
         current_type = db.get_ticket_type(self.channel_id)
         user_id = db.get_user_id(self.channel_id)
         user = self.guild.get_member(user_id)
-        #change channel name
+
         closedname = Options.name_close(current_type, count=number, user=user)
         await self.channel.edit(name=closedname)
 
         db._raw_update(
             "UPDATE requests SET channel_name = $1 WHERE channel_id = $2", (closedname, self.channel_id,))
         coolembed = discord.Embed(color=0xa0e9ec)
-        #send transcript
+
         try:
             transcript_message = await Others.transcript(self.channel, user)
             channel_log_category = get(
@@ -333,14 +353,14 @@ class Actions(commands.Cog):
             member_true = self.guild.get_member_named(member)
             if member_true is None:
                 continue
-            log.info(member)
+            log.debug(member)
             discord_users.append(member_true)
 
         allmentions = '\n'.join([member.mention for member in discord_users])
         coolembed.add_field(name="users", value=f"{allmentions}")
         coolembed.add_field(name="number of messages", value=f"     {count}")
         await user.send(embed=coolembed)
-        #update/set closed messages
+
         status = "closed"
         db.update_status(status, self.channel_id,)
 
@@ -351,7 +371,6 @@ class Actions(commands.Cog):
             """, color=0xff0000)
         ticket_admin_message = await self.channel.send(embed=admin_message)
         await ticket_admin_message.add_reaction("🔓")
-        # thats an unlocked lock
         await ticket_admin_message.add_reaction("⛔")
 
         # await self.survey()
@@ -364,21 +383,14 @@ class Actions(commands.Cog):
         await self.channel.edit(category=category)
 
         await self.log_to_channel("Closed ticket")
-        if self.background:
-            log.info(
-                f"[CLOSED] {self.channel} by {self.user.user} (ID: {self.channel_id})")
-
-        else:
-            log.info(
-                f"[CLOSED] {self.channel} by {self.user} (ID: {self.channel_id})")
+        log.info(
+            f"[CLOSED] {self.channel} by {self.user} (ID: {self.channel_id})")
 
     async def reopen_ticket(self):
         """reopens a ticket"""
         if self.emoji is not None:
-            # if reaction
             message = await self.channel.fetch_message(self.message_id)
             await message.remove_reaction(self.emoji, self.user)
-        #if open do nothing
         try:
             test_status = db.get_status(self.channel_id)
             if test_status == "open":
@@ -387,7 +399,6 @@ class Actions(commands.Cog):
         except:
             return
 
-        #get information
         number = db.get_number_previous(self.channel_id)
         current_type = db.get_ticket_type(self.channel_id)
 
@@ -437,7 +448,6 @@ class Actions(commands.Cog):
         """deletes a ticket"""
 
         if self.emoji is not None:
-            #if reaction
             message = await self.channel.fetch_message(self.message_id)
             await message.remove_reaction(self.emoji, self.user)
         try:
@@ -452,7 +462,6 @@ class Actions(commands.Cog):
                 await self.channel.send("Channel isn't a ticket")
             return
 
-        #send deleted message
         embed = Embed(
             title="Deleting ticket",
             description="5 seconds left",
@@ -461,7 +470,6 @@ class Actions(commands.Cog):
         await asyncio.sleep(5)
         await self.channel.delete()
 
-        #update information in db
         db._raw_insert(
             "INSERT INTO archive SELECT * FROM requests WHERE channel_id= $1", (self.channel_id,))
 

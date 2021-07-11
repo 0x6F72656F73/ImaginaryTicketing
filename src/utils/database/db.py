@@ -213,7 +213,6 @@ class DatabaseManager():
         values = (channel_id,)
         db_channel_name_str = cls._raw_select(query, values, fetch_one=True)
         try:
-            # lower cuz discord channel names are lowercase
             db_channel_name = db_channel_name_str[0].lower()
         except TypeError:
             return None
@@ -262,7 +261,6 @@ class DatabaseManager():
         values = (channel_id,)
         db_channel_name_str = cls._raw_select(query, values, fetch_one=True)
         try:
-            # lower cuz discord channel names are lowercase
             return db_channel_name_str[0].lower()
         except TypeError:
             return None
@@ -382,9 +380,9 @@ class DatabaseManager():
     def refresh_database(cls, challenges: List[Others.Challenge]):
         delete_query = "DELETE FROM challenges"
         cls._raw_delete(delete_query)
-        insert_query = "INSERT INTO challenges(id, author, title, ignore) VALUES($1,$2,$3,$4)"
-        for id_, author, title, ignore in challenges:
-            values = (id_, author, title, ignore)
+        insert_query = "INSERT INTO challenges(id, author, title, category, ignore) VALUES($1,$2,$3,$4,$5)"
+        for id_, author, title, category, ignore in challenges:
+            values = (id_, author, title, category, ignore)
             cls._raw_insert(insert_query, values)
 
     # def put_challenge(self, all_params):

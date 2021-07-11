@@ -8,12 +8,19 @@ from discord.utils import get
 # from discord.ext.forms import Form, ReactionForm
 # import humanize
 
+from discord_slash import SlashContext
+from discord_slash.utils.manage_commands import create_option
+from discord_slash.utils.manage_components import create_button, create_actionrow
+from discord_slash.model import ButtonStyle
+from discord_slash.cog_ext import cog_slash
+
 import config
 from cogs.helpers.actions import Actions
 from utils.others import Others
 from utils.database.db import DatabaseManager as db
 
 log = logging.getLogger(__name__)
+guild_ids = [788162899515801637, 861845094415728681]
 
 class MiscCommands(commands.Cog):
     """other useful commands"""
@@ -21,55 +28,61 @@ class MiscCommands(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    @commands.command(name="ticket")
+    # @cog_slash(name="testaa", description="This is just a test command, nothing more.", guild_ids=guild_ids,
+    #            options=[create_option(name="optone", description="This is the first option we have.", option_type=6, required=True)])
+    # async def test(self, ctx, optone: str):
+    #     await ctx.send(content=f"I got you, you said {optone}!")
+
+    @cog_slash(name="ticket", description="prints a ticket message", guild_ids=guild_ids)
     @commands.has_role(config.ADMIN_ROLE)
     async def ticket(self, ctx):
         """prints a ticket message"""
+        buttons = [
+            create_button(
+                style=ButtonStyle.primary,
+                label="help",
+                custom_id='help'
+            ),
+            create_button(
+                style=ButtonStyle.success,
+                label="submit",
+                custom_id='submit'
+            ),
+            create_button(
+                style=ButtonStyle.danger,
+                label="misc",
+                custom_id='misc'
+            ),
+        ]
+        action_row = create_actionrow(*buttons)
+        await ctx.send("_ _", components=[action_row])
 
-        emoji_list = config.EMOJIS_MESSAGE
-        embed = discord.Embed(
-            title="",
-            description=f"""
-To request help with a CTF challenge react with {emoji_list[0]}
-To submit a CTF Challenge, react with {emoji_list[1]}
-For all other help, react with {emoji_list[2]}
-            """,
-            color=0xf7fcfd)
-        embed.set_author(name="Support Tickets")
+    # @cog_slash(name="create", description="create a new ticket for the user if non-admin, or with the user specified if admin", guild_ids=guild_ids)
+    # @commands.cooldown(rate=5, per=10, type=commands.BucketType.default)
+    # async def create(self, ctx, member: Optional[discord.Member] = None, type_: str = "help",):
+    #     """create a new ticket for the user if non-admin, or with the user specified if admin"""
+    #     if member:
+    #         if member.bot:
+    #             await ctx.channel.send("tickets cannot be created for bots")
+    #             return
+    #     admin = get(ctx.guild.roles, name=config.ADMIN_ROLE)
+    #     if admin not in ctx.author.roles:
+    #         member = ctx.author
+    #         epicreactions = Actions(commands.Cog, self.bot, ctx.guild, member,
+    #                                 ctx.channel, ctx.message.id, type_)
+    #         await epicreactions.create(True)
+    #     else:
+    #         member = member or ctx.author
+    #         epicreactions = Actions(commands.Cog, self.bot, ctx.guild, member,
+    #                                 ctx.channel, ctx.message.id, type_)
+    #         await epicreactions.create(True)
+    #     # await Others.delmsg(ctx)
 
-        msg = await ctx.send(embed=embed)
-        await msg.add_reaction(f"{emoji_list[0]}")
-        await msg.add_reaction(f"{emoji_list[1]}")
-        await msg.add_reaction(f"{emoji_list[2]}")
-
-        await Others.delmsg(ctx)
-
-    @commands.command(name="test")
-    async def test(self, ctx, user: discord.User):
-        await ctx.send(user)
-
-    @commands.command(name="create", aliases=["new", "cr"])
-    @commands.cooldown(rate=5, per=10, type=commands.BucketType.default)
-    async def create(self, ctx, member: Optional[discord.Member], emoji: str = "help"):
-        """create a new ticket for the user if non-admin, or with the user specified if admin"""
-        admin = get(ctx.guild.roles, name=config.ADMIN_ROLE)
-        if admin not in ctx.author.roles:
-            member = ctx.author
-            epicreactions = Actions(commands.Cog, self.bot, ctx.guild, member,
-                                    ctx.channel, ctx.message.id, True, emoji)
-            await epicreactions.create()
-        else:
-            member = member or ctx.author
-            epicreactions = Actions(commands.Cog, self.bot, ctx.guild, member,
-                                    ctx.channel, ctx.message.id, True, emoji)
-            await epicreactions.create()
-        # await Others.delmsg(ctx)
-
-    @create.error
-    async def create_error(self, ctx, error):
-        if isinstance(error, commands.MemberNotFound):
-            user = error.argument
-            await ctx.channel.send(f"member {user} does not exist")
+    # @create.error
+    # async def create_error(self, ctx, error):
+    #     if isinstance(error, commands.MemberNotFound):
+    #         user = error.argument
+    #         await ctx.channel.send(f"member {user} does not exist")
 
     @commands.command(name="add", aliases=["a"], help="add a user to a ticket", usage="add <user>")
     @commands.has_role(config.ADMIN_ROLE)
@@ -77,7 +90,7 @@ For all other help, react with {emoji_list[2]}
         """adds a user from a ticket"""
 
         epicreactions = Actions(commands.Cog, self.bot, ctx.guild, member,
-                                ctx.channel, ctx.message.id, True)
+                                ctx.channel, ctx.message.id)
 
         memids = [member.id for member in ctx.channel.members]
         if member.id in memids:
@@ -112,7 +125,7 @@ For all other help, react with {emoji_list[2]}
             return
 
         epicreactions = Actions(commands.Cog, self.bot, ctx.guild, member,
-                                ctx.channel, ctx.message.id, True)
+                                ctx.channel, ctx.message.id)
         await epicreactions.remove(member)
         await Others.delmsg(ctx)
 
@@ -127,7 +140,7 @@ For all other help, react with {emoji_list[2]}
         if admin in ctx.author.roles or user_id == ctx.author.id:
 
             epicreactions = Actions(commands.Cog, self.bot, ctx.guild, ctx.author,
-                                    ctx.channel, ctx.message.id, True)
+                                    ctx.channel, ctx.message.id)
 
             await Others.delmsg(ctx)
 
@@ -156,7 +169,7 @@ For all other help, react with {emoji_list[2]}
     # async def test(self, ctx):
 
     #     epicreactions = Actions(commands.Cog, self.bot, ctx.guild.id, ctx.guild, ctx.author.id, ctx.author,
-    #                                    ctx.channel.id, ctx.channel, ctx.message.id, True)
+    #                                    ctx.channel.id, ctx.channel, ctx.message.id,)
 
     #     await epicreactions.close_stats_helper()
 
@@ -166,7 +179,7 @@ For all other help, react with {emoji_list[2]}
         """deletes a ticket"""
 
         epicreactions = Actions(commands.Cog, self.bot, ctx.guild, ctx.author,
-                                ctx.channel, ctx.message.id, True)
+                                ctx.channel, ctx.message.id)
         await Others.delmsg(ctx, time=0.0)
         try:
             await epicreactions.delete()
@@ -179,7 +192,7 @@ For all other help, react with {emoji_list[2]}
         """reopens a ticket"""
 
         epicreactions = Actions(commands.Cog, self.bot, ctx.guild, ctx.author,
-                                ctx.channel, ctx.message.id, True)
+                                ctx.channel, ctx.message.id)
         await epicreactions.reopen_ticket()
 
         await Others.delmsg(ctx)

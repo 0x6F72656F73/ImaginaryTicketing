@@ -6,6 +6,7 @@ import traceback
 import logging
 
 import discord
+from discord_slash import SlashCommand, SlashContext
 from discord.ext.commands import Bot
 from discord.ext import commands
 from discord.ext import tasks
@@ -50,6 +51,7 @@ except TypeError:
 
 bot = Bot(command_prefix=BOT_PREFIX,
           intents=intents, case_insensitive=True)
+slash = SlashCommand(bot, sync_commands=True)
 
 bot.loop = loop
 
@@ -116,6 +118,14 @@ async def on_command_completion(ctx):
     log.info(
         f"Executed {executed_command} command in {ctx.message.channel} by {ctx.message.author} (ID: {ctx.message.author.id})")
 
+@bot.event
+async def on_slash_command(ctx: SlashContext):
+    full_command_name = ctx.command
+    split = full_command_name.split(" ")
+    executed_command = str(split[0])
+    log.info(
+        f"Executed {executed_command} command in {ctx.channel} by {ctx.author} (ID: {ctx.author_id})")
+
 
 @bot.event
 async def on_command_error(ctx, error):
@@ -179,5 +189,11 @@ def run_bot():
     inactivity_task.start()
     bot.run(token)
 
+
+@bot.command(name="rel")
+async def reload_cog(ctx):
+    bot.reload_extension("cogs.reaction_commands")
+    bot.reload_extension("cogs.slash_test_cog")
+    await ctx.channel.send("cog reloaded successfully")
 
 run_bot()
