@@ -334,7 +334,7 @@ class Actions(commands.Cog):
             member_true = self.guild.get_member_named(member)
             if member_true is None:
                 continue
-            log.info(member)
+            log.debug(member)
             discord_users.append(member_true)
 
         allmentions = '\n'.join([member.mention for member in discord_users])
@@ -357,6 +357,13 @@ class Actions(commands.Cog):
 
         # await self.survey()
 
+        category = get(self.guild.categories, name="Closed Tickets")
+        if category is None:
+            new_category = await self.guild.create_category(name="Closed Tickets")
+            category = self.guild.get_channel(new_category.id)
+
+        await self.channel.edit(category=category)
+
         await self.log_to_channel("Closed ticket")
         if self.background:
             log.info(
@@ -369,11 +376,9 @@ class Actions(commands.Cog):
     async def reopen_ticket(self):
         """reopens a ticket"""
         if self.emoji is not None:
-            # if reaction
             message = await self.channel.fetch_message(self.message_id)
             await message.remove_reaction(self.emoji, self.user)
 
-        #if open do nothing
         try:
             test_status = db.get_status(self.channel_id)
             if test_status == "open":
@@ -382,7 +387,6 @@ class Actions(commands.Cog):
         except:
             return
 
-        #get information
         number = db.get_number_previous(self.channel_id)
         current_type = db.get_ticket_type(self.channel_id)
 
@@ -393,7 +397,22 @@ class Actions(commands.Cog):
             await self.channel.send("Channel is not a ticket")
             return
 
-        #send reopened message
+        cat = Options.full_category_name(current_type)
+        category = get(self.guild.categories, name=cat)
+        if category is None:
+            new_category = await self.guild.create_category(name=cat)
+            category = self.guild.get_channel(new_category.id)
+
+        member = self.guild.get_member(user_id)
+        admin = get(self.guild.roles, name=config.ADMIN_ROLE)
+        overwrites = {
+            self.guild.default_role: discord.PermissionOverwrite(read_messages=False),
+            member: discord.PermissionOverwrite(read_messages=True, send_messages=True),
+            admin: discord.PermissionOverwrite(
+                read_messages=True, send_messages=True)
+        }
+        await self.channel.edit(overwrites=overwrites, category=category)
+
         status = "open"
         db.update_status(status, self.channel_id)
         embed = Embed(
@@ -408,19 +427,6 @@ class Actions(commands.Cog):
         await self.channel.edit(name=reopened)
         db._raw_update(
             "UPDATE requests set channel_name = $1 WHERE channel_id = $2", (reopened, self.channel_id,))
-
-        db_channel_name = db.get_channel_name(self.channel_id)
-        discord_db_channel = get(
-            self.guild.text_channels, name=db_channel_name)
-        member = self.guild.get_member(user_id)
-        admin = get(self.guild.roles, name=config.ADMIN_ROLE)
-        overwrites = {
-            self.guild.default_role: discord.PermissionOverwrite(read_messages=False),
-            member: discord.PermissionOverwrite(read_messages=True, send_messages=True),
-            admin: discord.PermissionOverwrite(
-                read_messages=True, send_messages=True)
-        }
-        await discord_db_channel.edit(overwrites=overwrites)
 
         await self.log_to_channel("Re-Opened ticket")
         log.info(
