@@ -112,7 +112,7 @@ class Background(commands.Cog):
                 return
             channels = category.channels
             for channel in channels:
-                log.info(channel.name)
+                log.debug(channel.name)
                 status = db.get_status(channel.id)
                 if channel.id in safe_tickets_list or status == "closed" or status is None:
                     continue
