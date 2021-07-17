@@ -131,18 +131,23 @@ class Others(commands.Cog):
         avatar = await member.avatar_url.read()
         webhooks = await channel.webhooks()
 
-        if len(webhooks) == 0:
-            send_web_hook = await channel.create_webhook(
+        async def create_webhook():
+            return await channel.create_webhook(
                 name="Tickets", avatar=avatar)
+
+        if len(webhooks) == 0:
+            send_web_hook = await create_webhook()
         else:
-            webhook_times = [webhook.created_at for webhook in webhooks]
-
-            shortest = min(webhook_times)
-            for webhook in webhooks:
-                if webhook.created_at == shortest:
-                    send_web_hook = webhook
-                    break
-
+            webhook_times = [webhook.created_at for webhook in webhooks if webhook.name == "Tickets"]
+            if len(webhook_times) == 0:
+                send_web_hook = await create_webhook()
+            else:
+                shortest = min(webhook_times)
+                for webhook in webhooks:
+                    if webhook.created_at == shortest:
+                        send_web_hook = webhook
+                        break
+        
         async with aiohttp.ClientSession() as session:
             webhook = Webhook.from_url(
                 send_web_hook.url, adapter=AsyncWebhookAdapter(session))
