@@ -163,7 +163,7 @@ async def on_command_error(ctx, error):
 async def inactivity_task():
     await bot.wait_until_ready()
     try:
-        await Background.inactivity(bot, hours=24)
+        await Background.inactivity(bot, hours=48)
         # await Background.inactivity(bot, seconds=6)
     except Exception as e:
         log.exception(e)
@@ -173,7 +173,7 @@ def run_bot():
         token = os.getenv("DISCORD_TOKEN")
     except:
         log.exception(
-            "Please create a .env file and enter your DISCORD TOKEN")
+            "No token in .env")
         sys.exit()
 
     inactivity_task.start()
