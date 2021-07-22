@@ -1,13 +1,13 @@
 import io
 import asyncio
 import random
-from typing import Any, NamedTuple
+from typing import Any, NamedTuple, Tuple
 from datetime import datetime
 import logging
 
 import discord
 from discord.ext import commands
-from discord import Webhook, AsyncWebhookAdapter
+from discord import Webhook
 import aiohttp
 import chat_exporter
 
@@ -19,7 +19,7 @@ class Others(commands.Cog):
     """Abstract helper methods"""
 
     @staticmethod
-    async def transcript(channel, user: discord.Member = None, to_channel: discord.TextChannel = None):
+    async def transcript(channel, user: discord.User = None, to_channel: discord.TextChannel = None) -> discord.Message:
         """send a transcript of a channel to a user or a channel
 
         Parameters
@@ -31,19 +31,25 @@ class Others(commands.Cog):
         to_channel : `discord.TextChannel`, `optional`\n
             channel to send transcript to, by default None
         """
-        transcript = await chat_exporter.export(channel, None, "America/Los_Angeles")
+        print(type(user), type(to_channel))
+        if not user and not to_channel:
+            await channel.send("log could not be sent anywhere")
+            return
 
+        transcript = await chat_exporter.export(channel, None, "America/Los_Angeles")
         if transcript is None:
             return
 
-        transcript_file = discord.File(io.BytesIO(transcript.encode()),
-                                       filename=f"transcript-{channel}.html")
-        if to_channel is None:
-            message = await user.send(file=transcript_file)
-        elif user is None:
+        if to_channel:
+            transcript_file = discord.File(io.BytesIO(transcript.encode()),
+                                           filename=f"transcript-{channel}.html")
             message = await to_channel.send(file=transcript_file)
-        else:
-            await log.critical("log could not be sent anywhere")
+
+        if user:
+            transcript_file = discord.File(io.BytesIO(transcript.encode()),
+                                           filename=f"transcript-{channel}.html")
+            message = await user.send(file=transcript_file)
+
         with open(f"transcripts/transcript-{channel}.html", "w+") as file:
             file.write(transcript)
 
@@ -95,7 +101,7 @@ class Others(commands.Cog):
         return dict_values[emoji]
 
     @staticmethod
-    async def make_embed(color: str, desc: Any) -> discord.embeds.Embed:
+    async def make_embed(color: str, desc: Any, **kwargs) -> discord.embeds.Embed:
         """returns an embed with no fields
 
         Parameters
@@ -110,7 +116,7 @@ class Others(commands.Cog):
         `discord.embeds.Embed`: the returned embed
         """
         embed = discord.Embed(description=desc,
-                              timestamp=datetime.utcnow(), color=color)
+                              timestamp=datetime.utcnow(), color=color, **kwargs)
         return embed
 
     @staticmethod
@@ -129,7 +135,7 @@ class Others(commands.Cog):
 
     @staticmethod
     async def say_in_webhook(member, channel, avatar_url, allow_mention, args, return_message=False):
-        avatar = await member.avatar_url.read()
+        avatar = await member.avatar.url.read()
         webhooks = await channel.webhooks()
 
         if len(webhooks) == 0:
@@ -146,7 +152,7 @@ class Others(commands.Cog):
 
         async with aiohttp.ClientSession() as session:
             webhook = Webhook.from_url(
-                send_web_hook.url, adapter=AsyncWebhookAdapter(session))
+                send_web_hook.url, session)
             if allow_mention is True:
                 message = await webhook.send(f'{args}', username=f'{member.display_name}', avatar_url=avatar_url, wait=True)
 
@@ -156,7 +162,7 @@ class Others(commands.Cog):
             return channel.get_partial_message(message.id)
 
     @staticmethod
-    async def random_member_webhook(guild):
+    async def random_member_webhook(guild) -> discord.Member:
         role = discord.utils.get(guild.roles, name=config.ADMIN_ROLE)
         person = random.choice(role.members)
         return person

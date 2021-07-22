@@ -74,7 +74,7 @@ class AutoClose(commands.Cog):
         log.info(f"check: {check}")
 
         if check == 1:
-            epicreactions = Actions(commands.Cog, bot, guild, bot,
+            epicreactions = Actions(bot, guild, bot,
                                     channel, message.id, emoji=None, background=True)
             await epicreactions.close()
             db.update_check("0", channel.id)
@@ -84,7 +84,7 @@ class AutoClose(commands.Cog):
             member = guild.get_member(int(user_id))
             message = f"If that is all we can help you with {member.mention}, please close this ticket."
             random = await Others.random_member_webhook(guild)
-            sent_message = await Others.say_in_webhook(random, channel, random.avatar_url, True, message, return_message=True)
+            sent_message = await Others.say_in_webhook(random, channel, random.avatar.url, True, message, return_message=True)
             await sent_message.add_reaction("🔒")
             log.info(f"{random.name} said the message in {channel.name}")
             db.update_check("1", channel.id)
@@ -102,8 +102,7 @@ class AutoClose(commands.Cog):
         """
         cat = Options.full_category_name("help")
         for guild in bot.guilds:
-            bot_guild = guild.get_member(bot.user.id)
-            if bot_guild.guild_permissions.administrator is None:
+            if guild.get_member(bot.user.id).guild_permissions.administrator is None:
                 return
             safe_tickets = db.get_guild_check(guild.id)
             safe_tickets_list = list(chain(*safe_tickets))

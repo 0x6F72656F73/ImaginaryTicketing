@@ -12,7 +12,7 @@ from discord.ext import commands
 
 from discord_slash import ComponentContext
 from discord_slash.utils.manage_components import create_button, create_select, create_select_option, create_actionrow, wait_for_component
-from discord_slash.model import ButtonStyle
+from discord_slash.model import ButtonStyle, CogBaseCommandObject
 
 import config
 from utils.others import Others
@@ -20,9 +20,6 @@ from utils.options import Options
 from utils.database.db import DatabaseManager as db
 
 log = logging.getLogger(__name__)
-
-
-# class Actions()
 
 class Actions(commands.Cog):
     """handles all reactions"""
@@ -42,6 +39,7 @@ class Actions(commands.Cog):
         self.channel_id = channel.id
         self.message_id = message_id
         self.emoji = emoji
+        self.background = background
 
     async def _log_to_channel(self, msg: str):
         """Logs a message to channel ticket-log
@@ -54,7 +52,7 @@ class Actions(commands.Cog):
         channel_log = get(
             self.guild.text_channels, name="ticket-log")
         logembed = await Others.log_embed(
-            msg, self.user, self.user.avatar.url, self.channel)
+            msg, self.user, self.user.avatar_url, self.channel)
         await channel_log.send(embed=logembed)
 
     async def create(self, ctx: ComponentContext = None, cmd: bool = False, type_: str = None) -> discord.TextChannel:

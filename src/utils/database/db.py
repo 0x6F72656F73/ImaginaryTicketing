@@ -34,27 +34,11 @@ class DatabaseManager():
 
     @classmethod
     def _raw_update(cls, query: str, *values):
-        conn = cls._db_connect()
-        cur = conn.cursor()
-        try:
-            with conn:
-                cur.execute(query, *values)
-        except Exception as e:
-            log.exception(str(e))
-        finally:
-            conn.close()
+        return cls._raw_insert(query, *values)
 
     @classmethod
     def _raw_delete(cls, query: str, *values):
-        conn = cls._db_connect()
-        cur = conn.cursor()
-        try:
-            with conn:
-                cur.execute(query, *values)
-        except Exception as e:
-            log.exception(str(e))
-        finally:
-            conn.close()
+        return cls._raw_insert(query, *values)
 
     @classmethod
     def _raw_select(cls, query: str, *values, fetch_one: bool = False, fetch_all: bool = True) -> Union[sqlite3.Row, list]:

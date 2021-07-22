@@ -2,7 +2,7 @@ OWNERS = [650187980606275589, 720055120137552042, 572630612469481492]
 ADMIN_ROLE = "Board"
 TICKET_PING_ROLE = "Available Mods"
 STARTUP_COGS = [
-    "cogs.event", "cogs.admin", "cogs.reaction_commands", "cogs.submit", "cogs.slash_test_cog"]
+    "cogs.event", "cogs.admin", "cogs.reaction_commands", "cogs.submit", "cogs.tasks"]
 LOG_CHANNEL_CATEGORY = "logs"
 LOG_CHANNEL_NAME = "ticket-log"
 

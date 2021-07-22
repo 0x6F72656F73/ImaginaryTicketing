@@ -4,17 +4,15 @@ import platform
 import asyncio
 import traceback
 import logging
+from environs import Env
 
 import discord
 from discord_slash import SlashCommand, SlashContext
 from discord.ext.commands import Bot
 from discord.ext import commands
-from discord.ext import tasks
 from pretty_help import PrettyHelp, DefaultMenu
-from dotenv import load_dotenv
 import chat_exporter
 
-from utils.background import AutoClose
 from utils.runcmds import startlogging
 
 startlogging('tickets.log')
@@ -25,7 +23,8 @@ if not os.path.isfile("config.py"):
 else:
     import config
 
-load_dotenv()
+env = Env()
+env.read_env()
 
 log = logging.getLogger()
 log.info('logging has started')
@@ -42,7 +41,7 @@ finally:
 intents = discord.Intents().all()
 
 try:
-    BOT_PREFIX = eval(os.getenv("BOT_PREFIX"))
+    BOT_PREFIX = env.list("BOT_PREFIX")
 except TypeError:
     log.exception(
         'please put at least 1 prefix in the format BOT_PREFIX = ["t."]')
@@ -66,6 +65,14 @@ async def on_ready():
     log.info("-------------------")
     chat_exporter.init_exporter(bot)
 
+    # aa = await slash.to_dict()
+    # log.debug(aa)
+    # commands = []
+    # for guild in parsed["guild"]:
+    #     for command in parsed["guild"][guild]:
+    #         if command not in commands:
+    #             commands.add({command.name}) # jes add to embed directly
+
 async def status_task():
     while True:
         await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=(f"great stuff | {BOT_PREFIX[0]}help")))
@@ -74,7 +81,8 @@ menu = DefaultMenu(page_left="👈", page_right="👉",
                    active_time=15)
 
 ending_note = f"Type {BOT_PREFIX[0]}help command for more info on a command. \
-You can also type {BOT_PREFIX[0]}help category for more info on a category."
+You can also type {BOT_PREFIX[0]}help category for more info on a category. \
+Type {BOT_PREFIX[0]}help_slash for help on slash commands"  # note: make this
 
 bot.help_command = PrettyHelp(
     menu=menu, ending_note=ending_note, sort_commands=True)
@@ -95,7 +103,7 @@ if __name__ == "__main__":
 
 @bot.event
 async def on_message(message):
-    if message.author == bot.user or message.author.bot:
+    if message.author == bot.user or message.author.bot or not message.guild:
         return
     await bot.process_commands(message)
     # if message.guild:
@@ -149,8 +157,6 @@ async def on_command_error(ctx, error):
         await ctx.channel.send("member not found")
         return
     if isinstance(error, commands.CommandNotFound):
-        # print(*bot.commands)
-        # await ctx.channel.send(f"Please enter a valid command")
         return
     if isinstance(error, commands.MissingRole):
         await ctx.channel.send("You do not have enough permissions to run this command")
@@ -167,17 +173,6 @@ async def on_command_error(ctx, error):
     log.info(lines)
     await ctx.channel.send(f"{ctx.command.name} was invoked incorrectly.")
 
-
-# @tasks.loop(seconds=5, count=None)
-@tasks.loop(hours=1, count=None)
-async def inactivity_task():
-    await bot.wait_until_ready()
-    try:
-        await AutoClose.inactivity(bot, hours=24)
-        # await AutoClose.inactivity(bot, seconds=6)
-    except Exception as e:
-        log.exception(e)
-
 def run_bot():
     try:
         token = os.getenv("DISCORD_TOKEN")
@@ -185,8 +180,6 @@ def run_bot():
         log.exception(
             "Please create a .env file and enter your DISCORD TOKEN")
         sys.exit()
-
-    inactivity_task.start()
     bot.run(token)
 
 

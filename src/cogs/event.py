@@ -20,15 +20,22 @@ class Event(commands.Cog):
 
     @commands.Cog.listener()
     async def on_component(self, ctx: ComponentContext):
-        log.debug(f"{ctx.custom_id=}")
-        if ctx.custom_id in ('help', 'submit', 'misc'):
+        if ctx.custom_id in ('request_help', 'request_submit', 'request_misc'):
             await ctx.defer(edit_origin=True)
-            epicreactions = Actions(commands.Cog, self.bot,
+            epicreactions = Actions(self.bot,
                                     ctx.guild, ctx.author, ctx.channel, 1234)
-            await epicreactions.create(ctx=ctx)
+            await epicreactions.create(ctx=ctx, type_=ctx.custom_id.split('_')[1])
 
-        #do rest
-        # await ctx.edit_origin(content="You pressed a button!")
+        if ctx.custom_id in ('ticket_close', 'ticket_reopen', 'ticket_delete'):
+            await ctx.defer(edit_origin=True)
+            epicreactions = Actions(self.bot,
+                                    ctx.guild, ctx.author, ctx.channel, 1234)
+            if ctx.custom_id == 'ticket_close':
+                await epicreactions.close(ctx)
+            if ctx.custom_id == 'ticket_reopen':
+                await epicreactions.reopen_ticket()
+            if ctx.custom_id == 'ticket_delete':
+                await epicreactions.delete()
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload: discord.raw_models.RawReactionActionEvent):
@@ -53,7 +60,7 @@ class Event(commands.Cog):
             emoji = payload.emoji.name
             ticket_channel_ids = db.get_all_ticket_channels(guild_id)
             epicreactions = Actions(
-                commands.Cog, self.bot, guild, user, channel, message_id, emoji)
+                self.bot, guild, user, channel, message_id, emoji)
         except Exception as e:
             channel_log = discord.utils.get(
                 guild.text_channels, name=config.LOG_CHANNEL_NAME)

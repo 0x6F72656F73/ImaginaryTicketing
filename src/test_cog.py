@@ -1,13 +1,10 @@
 import textwrap
 
-from discord import Embed
+from discord.ext import commands
 from discord_slash import SlashContext, ComponentContext
 from discord_slash.cog_ext import cog_slash, cog_component
-from discord.ext import commands
-
-from discord_slash.utils.manage_components import create_button, create_actionrow
 from discord_slash.model import ButtonStyle
-from discord_slash.utils.manage_components import create_select, create_select_option, create_actionrow
+from discord_slash.utils.manage_components import create_select, create_select_option, create_button, create_actionrow
 
 from cogs.helpers.actions import Actions
 from utils.database.db import DatabaseManager as db
@@ -43,7 +40,7 @@ class Slash(commands.Cog):
     @cog_component()
     async def testing(self, ctx: ComponentContext):
         print(ctx.selected_options[0])
-        epicreactions = Actions(commands.Cog, self.bot,
+        epicreactions = Actions(self.bot,
                                 ctx.guild, ctx.author, ctx.channel, 1234, challenge=ctx.selected_options[0])
         await epicreactions.create()
         await ctx.send('a')

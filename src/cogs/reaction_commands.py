@@ -1,5 +1,5 @@
 # from datetime import datetime
-from typing import Optional
+from typing import Union
 import logging
 
 import discord
@@ -9,8 +9,8 @@ from discord.utils import get
 # import humanize
 
 from discord_slash import SlashContext
-from discord_slash.utils.manage_commands import create_option
-from discord_slash.utils.manage_components import create_button, create_actionrow
+from discord_slash.utils.manage_commands import create_option, create_choice
+from discord_slash.utils.manage_components import create_button, create_actionrow, emoji_to_dict
 from discord_slash.model import ButtonStyle
 from discord_slash.cog_ext import cog_slash
 
@@ -41,55 +41,76 @@ class MiscCommands(commands.Cog):
             create_button(
                 style=ButtonStyle.primary,
                 label="help",
-                custom_id='help'
+                custom_id='request_help'
             ),
             create_button(
                 style=ButtonStyle.success,
                 label="submit",
-                custom_id='submit'
+                custom_id='request_submit'
             ),
             create_button(
                 style=ButtonStyle.danger,
                 label="misc",
-                custom_id='misc'
+                custom_id='request_misc'
             ),
         ]
         action_row = create_actionrow(*buttons)
         await ctx.send("_ _", components=[action_row])
 
-    # @cog_slash(name="create", description="create a new ticket for the user if non-admin, or with the user specified if admin", guild_ids=guild_ids)
-    # @commands.cooldown(rate=5, per=10, type=commands.BucketType.default)
-    # async def create(self, ctx, member: Optional[discord.Member] = None, type_: str = "help",):
-    #     """create a new ticket for the user if non-admin, or with the user specified if admin"""
-    #     if member:
-    #         if member.bot:
-    #             await ctx.channel.send("tickets cannot be created for bots")
-    #             return
-    #     admin = get(ctx.guild.roles, name=config.ADMIN_ROLE)
-    #     if admin not in ctx.author.roles:
-    #         member = ctx.author
-    #         epicreactions = Actions(commands.Cog, self.bot, ctx.guild, member,
-    #                                 ctx.channel, ctx.message.id, type_)
-    #         await epicreactions.create(True)
-    #     else:
-    #         member = member or ctx.author
-    #         epicreactions = Actions(commands.Cog, self.bot, ctx.guild, member,
-    #                                 ctx.channel, ctx.message.id, type_)
-    #         await epicreactions.create(True)
-    #     # await Others.delmsg(ctx)
-
-    # @create.error
-    # async def create_error(self, ctx, error):
-    #     if isinstance(error, commands.MemberNotFound):
-    #         user = error.argument
-    #         await ctx.channel.send(f"member {user} does not exist")
+    @cog_slash(name="create", description="create a new ticket for the user if non-admin, or with the user specified if admin", guild_ids=guild_ids,
+               options=[
+                    create_option(
+                        name="ticket_type",
+                        description="the type of ticket",
+                        option_type=3,
+                        required=False,
+                        choices=[
+                            create_choice(
+                                name="help",
+                                value="help"
+                            ),
+                            create_choice(
+                                name="submit",
+                                value="submit"
+                            ),
+                            create_choice(
+                                name="misc",
+                                value="misc"
+                            )
+                        ]),
+                    create_option(
+                        name="member",
+                        description="for admins only: user to create the ticket for",
+                        option_type=6,
+                        required=False,
+                    )])
+    @commands.cooldown(rate=5, per=10, type=commands.BucketType.default)
+    async def create(self, ctx: SlashContext, ticket_type: str = "help", member: discord.Member = None):
+        """create a new ticket for the user if non-admin, or with the user specified if admin"""
+        log.debug(ctx, ticket_type, member)
+        if member:
+            if member.bot:
+                await ctx.send("tickets cannot be created for bots", hidden=True)
+                return
+        admin = get(ctx.guild.roles, name=config.ADMIN_ROLE)
+        if admin not in ctx.author.roles:
+            member = ctx.author
+            epicreactions = Actions(self.bot, ctx.guild, member,
+                                    ctx.channel, 1234, ticket_type)
+            ticket_channel = await epicreactions.create(ctx, True)
+        else:
+            member = member or ctx.author
+            epicreactions = Actions(self.bot, ctx.guild, member,
+                                    ctx.channel, 1234, ticket_type)
+            ticket_channel = await epicreactions.create(ctx, True, ticket_type)
+        await ctx.send(f'your ticket has been created at {ticket_channel.mention}', hidden=True)
 
     @commands.command(name="add", aliases=["a"], help="add a user to a ticket", usage="add <user>")
     @commands.has_role(config.ADMIN_ROLE)
     async def add(self, ctx, member: discord.Member):
         """adds a user from a ticket"""
 
-        epicreactions = Actions(commands.Cog, self.bot, ctx.guild, member,
+        epicreactions = Actions(self.bot, ctx.guild, member,
                                 ctx.channel, ctx.message.id)
 
         memids = [member.id for member in ctx.channel.members]
@@ -124,7 +145,7 @@ class MiscCommands(commands.Cog):
             await ctx.channel.send(embed=emby)
             return
 
-        epicreactions = Actions(commands.Cog, self.bot, ctx.guild, member,
+        epicreactions = Actions(self.bot, ctx.guild, member,
                                 ctx.channel, ctx.message.id)
         await epicreactions.remove(member)
         await Others.delmsg(ctx)
@@ -139,7 +160,7 @@ class MiscCommands(commands.Cog):
         admin = get(guild.roles, name=config.ADMIN_ROLE)
         if admin in ctx.author.roles or user_id == ctx.author.id:
 
-            epicreactions = Actions(commands.Cog, self.bot, ctx.guild, ctx.author,
+            epicreactions = Actions(self.bot, ctx.guild, ctx.author,
                                     ctx.channel, ctx.message.id)
 
             await Others.delmsg(ctx)
@@ -168,7 +189,7 @@ class MiscCommands(commands.Cog):
     # @commands.command(name="close_stats_helper", aliases=["test"])
     # async def test(self, ctx):
 
-    #     epicreactions = Actions(commands.Cog, self.bot, ctx.guild.id, ctx.guild, ctx.author.id, ctx.author,
+    #     epicreactions = Actions(self.bot, ctx.guild.id, ctx.guild, ctx.author.id, ctx.author,
     #                                    ctx.channel.id, ctx.channel, ctx.message.id,)
 
     #     await epicreactions.close_stats_helper()
@@ -178,7 +199,7 @@ class MiscCommands(commands.Cog):
     async def delete(self, ctx):
         """deletes a ticket"""
 
-        epicreactions = Actions(commands.Cog, self.bot, ctx.guild, ctx.author,
+        epicreactions = Actions(self.bot, ctx.guild, ctx.author,
                                 ctx.channel, ctx.message.id)
         await Others.delmsg(ctx, time=0.0)
         try:
@@ -191,7 +212,7 @@ class MiscCommands(commands.Cog):
     async def reopen(self, ctx):
         """reopens a ticket"""
 
-        epicreactions = Actions(commands.Cog, self.bot, ctx.guild, ctx.author,
+        epicreactions = Actions(self.bot, ctx.guild, ctx.author,
                                 ctx.channel, ctx.message.id)
         await epicreactions.reopen_ticket()
 
@@ -200,10 +221,10 @@ class MiscCommands(commands.Cog):
     @commands.command(name="transcript", alias=["tsc"])
     @commands.has_role(config.ADMIN_ROLE)
     @commands.cooldown(rate=1, per=10, type=commands.BucketType.default)
-    async def transcript(self, ctx, member: discord.Member):
-        """sends a transcript to a user in DMS"""
-
-        await Others.transcript(ctx.channel, member)
+    async def transcript(self, ctx, user: discord.User):
+        """sends a transcript to a user via DM"""
+        #make slash
+        await Others.transcript(ctx.channel, user)
         await ctx.channel.send("transcript sent to dms")
 
     @commands.command(name="autoclose", aliases=["ac"])

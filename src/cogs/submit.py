@@ -79,7 +79,7 @@ class Submit(commands.Cog):
     async def say(self, ctx, *, message):
         """says a message through a webhook"""
 
-        await Others.say_in_webhook(ctx.author, ctx.channel, ctx.author.avatar_url, False, message)
+        await Others.say_in_webhook(ctx.author, ctx.channel, ctx.avatar.url, False, message)
         await ctx.message.delete()
 
     @commands.command(name="saymember", aliases=["saym"])
@@ -87,7 +87,7 @@ class Submit(commands.Cog):
     async def saymember(self, ctx, member: discord.User, *, message):
         """says a message through a webhook from the specified *user*"""
 
-        await Others.say_in_webhook(member, ctx.channel, member.avatar_url, False, message)
+        await Others.say_in_webhook(member, ctx.channel, member.avatar.url, False, message)
         await ctx.message.delete()
 
 def setup(bot: commands.Bot):
