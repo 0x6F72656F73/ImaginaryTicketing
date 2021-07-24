@@ -3,9 +3,6 @@ import logging
 import discord
 from discord.ext import commands
 
-from discord_slash import ComponentContext
-from discord_slash.cog_ext import cog_component
-
 import config
 from cogs.helpers.actions import Actions
 from utils.database.db import DatabaseManager as db
@@ -18,24 +15,24 @@ class Event(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.Cog.listener()
-    async def on_component(self, ctx: ComponentContext):
-        if ctx.custom_id in ('request_help', 'request_submit', 'request_misc'):
-            await ctx.defer(edit_origin=True)
-            epicreactions = Actions(self.bot,
-                                    ctx.guild, ctx.author, ctx.channel, 1234)
-            await epicreactions.create(ctx=ctx, type_=ctx.custom_id.split('_')[1])
+    # @commands.Cog.listener()
+    # async def on_component(self, ctx: ComponentContext):
+    #     if ctx.custom_id in ('request_help', 'request_submit', 'request_misc'):
+    #         await ctx.defer(edit_origin=True)
+    #         epicreactions = Actions(self.bot,
+    #                                 ctx.guild, ctx.author, ctx.channel, 1234)
+    #         await epicreactions.create(type_=ctx.custom_id.split('_')[1])
 
-        if ctx.custom_id in ('ticket_close', 'ticket_reopen', 'ticket_delete'):
-            await ctx.defer(edit_origin=True)
-            epicreactions = Actions(self.bot,
-                                    ctx.guild, ctx.author, ctx.channel, 1234)
-            if ctx.custom_id == 'ticket_close':
-                await epicreactions.close(ctx)
-            if ctx.custom_id == 'ticket_reopen':
-                await epicreactions.reopen_ticket()
-            if ctx.custom_id == 'ticket_delete':
-                await epicreactions.delete()
+    #     if ctx.custom_id in ('ticket_close', 'ticket_reopen', 'ticket_delete'):
+    #         await ctx.defer(edit_origin=True)
+    #         epicreactions = Actions(self.bot,
+    #                                 ctx.guild, ctx.author, ctx.channel, 1234)
+    #         if ctx.custom_id == 'ticket_close':
+    #             await epicreactions.close(ctx)
+    #         if ctx.custom_id == 'ticket_reopen':
+    #             await epicreactions.reopen_ticket()
+    #         if ctx.custom_id == 'ticket_delete':
+    #             await epicreactions.delete()
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload: discord.raw_models.RawReactionActionEvent):
@@ -59,8 +56,7 @@ class Event(commands.Cog):
             message_id = payload.message_id
             emoji = payload.emoji.name
             ticket_channel_ids = db.get_all_ticket_channels(guild_id)
-            epicreactions = Actions(
-                self.bot, guild, user, channel, message_id, emoji)
+            epicreactions = Actions(guild, user, channel, message_id)
         except Exception as e:
             channel_log = discord.utils.get(
                 guild.text_channels, name=config.LOG_CHANNEL_NAME)
@@ -70,7 +66,7 @@ class Event(commands.Cog):
 
         # make classes out of these (eventually 3 tables so another class maybe)
         if emoji in config.EMOJIS:
-            await epicreactions.create()
+            await epicreactions.create('help')
 
         if channel_id in ticket_channel_ids and emoji == "🔒" and user.bot is False:
             await epicreactions.close()

@@ -10,9 +10,9 @@ from discord.utils import get
 from discord.ext import commands
 # from discord.ext.forms import NaiveForm, ReactionForm
 
-from discord_slash import ComponentContext
-from discord_slash.utils.manage_components import create_button, create_select, create_select_option, create_actionrow, wait_for_component
-from discord_slash.model import ButtonStyle
+# from discord_slash import ComponentContext
+# from discord_slash.utils.manage_components import create_button, create_select, create_select_option, create_actionrow, wait_for_component
+# from discord_slash.model import ButtonStyle
 
 import config
 from utils.others import Others
@@ -27,11 +27,10 @@ log = logging.getLogger(__name__)
 class Actions(commands.Cog):
     """handles all reactions"""
 
-    def __init__(self, client, guild: discord.Guild, user: discord.User,
-                 channel: discord.TextChannel, message_id: int, emoji: str = None,
-                 background: bool = False):
-        self.client = client
+    def __init__(self, guild: discord.Guild, user: discord.User,
+                 channel: discord.TextChannel, message_id: int, background: bool = False):
         self.guild = guild
+        self._background = background
         if background:
             self.user = user.user
             self.user_id = self.user.id
@@ -41,7 +40,6 @@ class Actions(commands.Cog):
         self.channel = channel
         self.channel_id = channel.id
         self.message_id = message_id
-        self.emoji = emoji
 
     async def _log_to_channel(self, msg: str):
         """Logs a message to channel ticket-log
@@ -57,7 +55,7 @@ class Actions(commands.Cog):
             msg, self.user, self.user.avatar.url, self.channel)
         await channel_log.send(embed=logembed)
 
-    async def create(self, ctx: ComponentContext = None, cmd: bool = False, type_: str = None) -> discord.TextChannel:
+    async def create(self, type_: str, cmd: bool = False) -> discord.TextChannel:
         """Creates a ticket"""
         # ticket_id_list = db.get_all_ticket_channel_messages(self.guild_id)
         # if not self.message_id in ticket_id_list and cmd is not True: #prolly gonna del ##prolly not gonna del
@@ -91,87 +89,77 @@ class Actions(commands.Cog):
 
             return await category.create_text_channel(channel_name, overwrites=overwrites)
 
-        async def get_challenge():
-            async def choose_challenge(challenges: List[Others.Challenge]):
-                options = [create_select_option(
-                    label=textwrap.shorten(challenge.title, 25, placeholder='...'), value=f"{challenge.id_}") for challenge in challenges]
-                select = create_select(
-                    options=options,
-                    placeholder="Please choose a challenge",
-                    max_values=1)
+        # async def get_challenge():
+            # async def choose_challenge(challenges: List[Others.Challenge]):
+            #     options = [create_select_option(
+            #         label=textwrap.shorten(challenge.title, 25, placeholder='...'), value=f"{challenge.id_}") for challenge in challenges]
+            #     select = create_select(
+            #         options=options,
+            #         placeholder="Please choose a challenge",
+            #         max_values=1)
 
-                action_row = create_actionrow(select)
-                await ctx.channel.send(components=[action_row], content="challenge selection")
+            #     action_row = create_actionrow(select)
+            #     await ctx.channel.send(components=[action_row], content="challenge selection")
 
-                select_ctx: ComponentContext = await wait_for_component(self.client, components=action_row)
-                await select_ctx.defer(edit_origin=True)
-                selected_chall = [
-                    chall for chall in challenges if chall.id_ == int(select_ctx.selected_options[0])][0]
-                await ticket_channel.edit(topic=f"this ticket is about {selected_chall}")
-                await select_ctx.origin_message.delete()
+            #     select_ctx: ComponentContext = await wait_for_component(self.client, components=action_row)
+            #     await select_ctx.defer(edit_origin=True)
+            #     selected_chall = [
+            #         chall for chall in challenges if chall.id_ == int(select_ctx.selected_options[0])][0]
+            #     await ticket_channel.edit(topic=f"this ticket is about {selected_chall}")
+            #     await select_ctx.origin_message.delete()
 
-            async def choose_category(categories) -> List[Others.Challenge]:
-                category_options = [create_select_option(
-                    label=category, value=f"{idx}") for idx, category in categories.items()]
-                select = create_select(
-                    options=category_options,
-                    placeholder="Please choose a category",
-                    max_values=1)
+            # async def choose_category(categories) -> List[Others.Challenge]:
+            #     category_options = [create_select_option(
+            #         label=category, value=f"{idx}") for idx, category in categories.items()]
+            #     select = create_select(
+            #         options=category_options,
+            #         placeholder="Please choose a category",
+            #         max_values=1)
 
-                action_row = create_actionrow(select)
-                await ctx.channel.send(components=[action_row], content="category selection")
+            #     action_row = create_actionrow(select)
+            #     await ctx.channel.send(components=[action_row], content="category selection")
 
-                select_ctx: ComponentContext = await wait_for_component(self.client, components=action_row)
-                await select_ctx.defer(edit_origin=True)
-                selected_category = [
-                    chall.category for chall in challenges if chall.id_ == int(select_ctx.selected_options[0])][0]
-                await select_ctx.origin_message.delete()
-                category_challenges = [
-                    chall for chall in challenges if chall.category == selected_category]
-                return category_challenges
+            #     select_ctx: ComponentContext = await wait_for_component(self.client, components=action_row)
+            #     await select_ctx.defer(edit_origin=True)
+            #     selected_category = [
+            #         chall.category for chall in challenges if chall.id_ == int(select_ctx.selected_options[0])][0]
+            #     await select_ctx.origin_message.delete()
+            #     category_challenges = [
+            #         chall for chall in challenges if chall.category == selected_category]
+            #     return category_challenges
 
-            def fake_challenges(num, categories):
-                list_categories = list(categories)
-                return [Others.Challenge(
-                    i, f"author{i}", f"chall{i}", list_categories[i % len(categories)], i % 3 == 0) for i in range(num)]
+            # def fake_challenges(num, categories):
+            #     list_categories = list(categories)
+            #     return [Others.Challenge(
+            #         i, f"author{i}", f"chall{i}", list_categories[i % len(categories)], i % 3 == 0) for i in range(num)]
 
-            categories = ["Crypto", "Web", "Pwn", "Rev", "Misc"]
-            challenges = [(i, f"chall{i}", categories[i % len(
-                categories)], i % 3 == 0) for i in range(30)]
-            categories = {}
-            for idx, chall in enumerate(challenges):
-                if chall[2] not in categories.values():
-                    categories[idx] = chall[2]
+            # categories = ["Crypto", "Web", "Pwn", "Rev", "Misc"]
+            # challenges = [(i, f"chall{i}", categories[i % len(
+            #     categories)], i % 3 == 0) for i in range(30)]
+            # categories = {}
+            # for idx, chall in enumerate(challenges):
+            #     if chall[2] not in categories.values():
+            #         categories[idx] = chall[2]
 
-            challenges = fake_challenges(60, categories)
-            challenges = [Others.Challenge(*list(challenge))
-                          for challenge in db.get_all_challenges()]
+            # challenges = fake_challenges(60, categories)
+            # challenges = [Others.Challenge(*list(challenge))
+            #               for challenge in db.get_all_challenges()]
 
-            print(f"{challenges=}")
+            # print(f"{challenges=}")
 
-            if len(challenges) < 1:
-                pass  # no challenges
-            elif len(challenges) < 25:
-                await choose_challenge(challenges)
-            else:
-                await choose_challenge(await choose_category(categories))
+            # if len(challenges) < 1:
+            #     pass  # no challenges
+            # elif len(challenges) < 25:
+            #     await choose_challenge(challenges)
+            # else:
+            #     await choose_challenge(await choose_category(categories))
 
-        if self.emoji is not None and cmd is False:
-            ticket_type = Others.emoji_to_string(self.emoji)
+        # this loop can be deleted since reaction limits, and so does slash commands
+        if type_ not in {'help', 'submit', 'misc'}:
+            await self.channel.send("possible ticket types are help, submit, and misc")
+            return
         else:
-            if ctx:
-                if not type_:
-                    return
-                ticket_type = type_
-            else:
-                try:  # this loop can be deleted since reaction limits, and so does slash cmds
-                    dict_values = {'help': 'help',
-                                   'submit': 'submit',
-                                   'misc': 'misc'}
-                    ticket_type = dict_values[self.emoji]
-                except KeyError:
-                    await self.channel.send("possible ticket types are help, submit, and misc")
-                    return
+            ticket_type = type_
 
         admin = get(self.guild.roles, name=config.ADMIN_ROLE)
         member = self.guild.get_member(self.user_id)
@@ -180,14 +168,14 @@ class Actions(commands.Cog):
 
         ticket_channel = await create_ticket_channel()
         ticket_channel_id = ticket_channel.id
-        ctx.channel_id = ticket_channel_id
+
         status = "open"
         checked = "0"
         db._raw_insert("INSERT INTO requests (channel_id, channel_name, guild_id, user_id, ticket_type, status, checked) VALUES ($1,$2,$3,$4,$5,$6,$8 )", (
             ticket_channel_id, str(ticket_channel), self.guild.id, self.user_id, ticket_type, status, checked))
         print(ticket_type)
-        if ticket_type == "help":
-            await get_challenge()
+        # if ticket_type == "help":
+        #     await get_challenge()
 
         avail_mods = get(
             self.guild.roles, name=config.TICKET_PING_ROLE)
@@ -332,12 +320,8 @@ class Actions(commands.Cog):
 
     #         return result
 
-    async def close(self, ctx: ComponentContext = None):
+    async def close(self):
         """closes a ticket"""
-        if self.emoji is not None:
-            message = await self.channel.fetch_message(self.message_id)
-            await message.remove_reaction(self.emoji, self.user)
-
         current_status = db.get_status(self.channel_id)
         if current_status == "closed":
             await self.channel.send("Channel is already closed")
@@ -448,9 +432,6 @@ class Actions(commands.Cog):
 
     async def reopen_ticket(self):
         """reopens a ticket"""
-        if self.emoji is not None:
-            message = await self.channel.fetch_message(self.message_id)
-            await message.remove_reaction(self.emoji, self.user)
         try:
             test_status = db.get_status(self.channel_id)
             if test_status == "open":
@@ -463,7 +444,7 @@ class Actions(commands.Cog):
         current_type = db.get_ticket_type(self.channel_id)
 
         user_id = db.get_user_id(self.channel_id)
-        current_name = self.client.get_user(user_id)
+        current_name = self.guild.get_member(user_id)
 
         if None in (number, current_type, user_id, current_name):
             await self.channel.send("Channel is not a ticket")
@@ -506,10 +487,6 @@ class Actions(commands.Cog):
 
     async def delete(self):
         """deletes a ticket"""
-
-        if self.emoji is not None:
-            message = await self.channel.fetch_message(self.message_id)
-            await message.remove_reaction(self.emoji, self.user)
         try:
             db_channel_name = db.get_channel_name(self.channel_id)
             if db_channel_name is None:
