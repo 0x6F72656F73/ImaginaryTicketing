@@ -58,9 +58,6 @@ class Actions(commands.Cog):
 
     async def create(self, type_: str) -> discord.TextChannel:
         """Creates a ticket"""
-        # ticket_id_list = db.get_all_ticket_channel_messages(self.guild_id)
-        # if not self.message_id in ticket_id_list and cmd is not True:
-        #     return
         async def maximum_tickets():
             n_tickets = db._raw_select(
                 "SELECT count(1) FROM (SELECT * FROM requests WHERE ticket_type=$1 and user_id=$2)", (ticket_type, self.user_id,), fetch_one=True)

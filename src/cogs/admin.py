@@ -47,26 +47,9 @@ class Admin(commands.Cog):
         """purges x amount of messages"""
 
         await ctx.channel.purge(limit=limit + 1)
-        clearmsg = await ctx.send(f'Cleared {limit} messages')
+        msg = await ctx.send(f'Purged {limit} messages')
         await asyncio.sleep(3)
-        await clearmsg.delete()
-
-    @commands.command(name="setticketmessage", aliases=['stm', 'sm'])
-    @commands.has_role(config.ADMIN_ROLE)
-    async def setticketid(self, ctx, ticket_id: str):
-        """sets a ticket message"""
-
-        try:
-            db._raw_insert(
-                "INSERT into tickets (guild_id, ticket_id) VALUES($1,$2) ON CONFLICT(ticket_id) DO UPDATE SET ticket_id=excluded.ticket_id;", (ctx.guild.id, ticket_id,))
-            conf = await ctx.channel.send("ticket message was set")
-            await asyncio.sleep(5)
-            await conf.delete()
-        except Exception as e:
-            log.exception(f"{e}")
-            await ctx.channel.send("ticket message could not be set")
-
-        await Others.delmsg(ctx, time=2)
+        await msg.delete()
 
     @commands.command(name="deleteticketmessage", aliases=["dtm", "dm"])
     @commands.has_role(config.ADMIN_ROLE)
@@ -97,10 +80,8 @@ class Admin(commands.Cog):
             if all(checks.values()):
                 return True
 
-            failures = []
-            for check, status in checks.items():
-                if status is False:
-                    failures.append(check)
+            failures = [check for check, status
+                        in checks.items() if status is False]
 
             if return_print:
                 return failures
