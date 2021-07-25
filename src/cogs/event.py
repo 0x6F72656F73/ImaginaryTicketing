@@ -15,25 +15,6 @@ class Event(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    # @commands.Cog.listener()
-    # async def on_component(self, ctx: ComponentContext):
-    #     if ctx.custom_id in ('request_help', 'request_submit', 'request_misc'):
-    #         await ctx.defer(edit_origin=True)
-    #         epicreactions = Actions(self.bot,
-    #                                 ctx.guild, ctx.author, ctx.channel, 1234)
-    #         await epicreactions.create(type_=ctx.custom_id.split('_')[1])
-
-    #     if ctx.custom_id in ('ticket_close', 'ticket_reopen', 'ticket_delete'):
-    #         await ctx.defer(edit_origin=True)
-    #         epicreactions = Actions(self.bot,
-    #                                 ctx.guild, ctx.author, ctx.channel, 1234)
-    #         if ctx.custom_id == 'ticket_close':
-    #             await epicreactions.close(ctx)
-    #         if ctx.custom_id == 'ticket_reopen':
-    #             await epicreactions.reopen_ticket()
-    #         if ctx.custom_id == 'ticket_delete':
-    #             await epicreactions.delete()
-
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload: discord.raw_models.RawReactionActionEvent):
         """if an emoji is in config.emojis' create a ticket. etc.
@@ -72,7 +53,7 @@ class Event(commands.Cog):
             await epicreactions.close()
 
         if channel_id in ticket_channel_ids and emoji == "🔓" and user.bot is False:
-            await epicreactions.reopen_ticket()
+            await epicreactions.reopen()
 
         if channel_id in ticket_channel_ids and emoji == "⛔" and user.bot is False:
             admin_role = discord.utils.get(

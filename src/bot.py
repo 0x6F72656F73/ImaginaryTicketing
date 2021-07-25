@@ -7,12 +7,11 @@ import logging
 from environs import Env
 
 import discord
-from discord.ext.commands import Bot
 from discord.ext import commands
 from pretty_help import PrettyHelp, DefaultMenu
 import chat_exporter
 
-from cogs.helpers.views.command_views import *
+from cogs.helpers import views
 from utils.runcmds import startlogging
 
 startlogging('tickets.log')
@@ -50,7 +49,7 @@ class TicketBot(commands.Bot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.loop = loop
-        self.ticket_view_added = False
+        self.persistent_views_added = False
         self.add_check(self.check_bot_perms)
         # aa = await slash.to_dict()
         # log.debug(aa)
@@ -94,9 +93,10 @@ class TicketBot(commands.Bot):
         )
 
     async def on_ready(self):
-        if not self.ticket_view_added:
-            self.add_view(TicketView())
-            self.ticket_view_added = True
+        if not self.persistent_views_added:
+            views.setup(self)
+            self.persistent_views_added = True
+            log.info("Loaded all views")
         log.info(f"Logged in as {self.user.name}")
         log.info(f"discord.py API version: {discord.__version__}")
         log.info(f"Python version: {platform.python_version()}")
@@ -163,10 +163,10 @@ class TicketBot(commands.Bot):
 
 def run_bot():
     try:
-        token = os.getenv("DISCORD_TOKEN")
+        token = env.str("DISCORD_TOKEN")
     except:
         log.exception(
-            "Please create a .env file and enter your DISCORD TOKEN")
+            "Please create a .env file with your TOKEN")
         sys.exit()
     instance = TicketBot.create()
     instance.run(token)

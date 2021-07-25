@@ -14,10 +14,11 @@ from discord.ext import commands
 # from discord_slash.utils.manage_components import create_button, create_select, create_select_option, create_actionrow, wait_for_component
 # from discord_slash.model import ButtonStyle
 
-import config
+import cogs.helpers.views.action_views as action_views
 from utils.others import Others
 from utils.options import Options
 from utils.database.db import DatabaseManager as db
+import config
 
 log = logging.getLogger(__name__)
 
@@ -55,10 +56,10 @@ class Actions(commands.Cog):
             msg, self.user, self.user.avatar.url, self.channel)
         await channel_log.send(embed=logembed)
 
-    async def create(self, type_: str, cmd: bool = False) -> discord.TextChannel:
+    async def create(self, type_: str) -> discord.TextChannel:
         """Creates a ticket"""
         # ticket_id_list = db.get_all_ticket_channel_messages(self.guild_id)
-        # if not self.message_id in ticket_id_list and cmd is not True: #prolly gonna del ##prolly not gonna del
+        # if not self.message_id in ticket_id_list and cmd is not True:
         #     return
         async def maximum_tickets():
             n_tickets = db._raw_select(
@@ -173,7 +174,6 @@ class Actions(commands.Cog):
         checked = "0"
         db._raw_insert("INSERT INTO requests (channel_id, channel_name, guild_id, user_id, ticket_type, status, checked) VALUES ($1,$2,$3,$4,$5,$6,$8 )", (
             ticket_channel_id, str(ticket_channel), self.guild.id, self.user_id, ticket_type, status, checked))
-        print(ticket_type)
         # if ticket_type == "help":
         #     await get_challenge()
 
@@ -187,17 +187,7 @@ class Actions(commands.Cog):
 
         embed = await Others.make_embed(0x5dc169, message)
 
-        buttons = [
-            create_button(
-                style=ButtonStyle.blue,
-                label="Close",
-                # emoji=":lock:",
-                custom_id='ticket_close'
-            )
-        ]
-        action_row = create_actionrow(*buttons)
-
-        ticket_channel_message = await ctx.channel.send(welcome_message, embed=embed, components=[action_row])
+        ticket_channel_message = await ticket_channel.send(welcome_message, embed=embed, view=action_views.CloseView())
 
         await ticket_channel_message.pin()
         await ticket_channel.purge(limit=1)
@@ -399,23 +389,8 @@ class Actions(commands.Cog):
         admin_message = Embed(
             title="Closed Ticket Actions", description=""":unlock: Reopen Ticket\n:no_entry: Delete Ticket""",
             color=0xff0000)
-        buttons = [
-            create_button(
-                style=ButtonStyle.blue,
-                label="Re-Open",
-                # emoji=":lock:",
-                custom_id="ticket_reopen"
-            ),
-            create_button(
-                style=ButtonStyle.red,
-                label="Delete",
-                # emoji="no_entry",
-                custom_id="ticket_delete"
-            )
-        ]
-        action_row = create_actionrow(*buttons)
 
-        await ctx.channel.send(embed=admin_message, components=[action_row])
+        await self.channel.send(embed=admin_message, view=action_views.ReopenDeleteView())
 
         # await self.survey()
 
@@ -430,7 +405,7 @@ class Actions(commands.Cog):
         log.info(
             f"[CLOSED] {self.channel} by {self.user} (ID: {self.channel_id})")
 
-    async def reopen_ticket(self):
+    async def reopen(self):
         """reopens a ticket"""
         try:
             test_status = db.get_status(self.channel_id)

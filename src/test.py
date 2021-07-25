@@ -4,8 +4,6 @@ import textwrap
 from utils.database.db import DatabaseManager as db
 from utils.others import Others
 
-from discord_slash.utils.manage_components import create_select_option
-
 categories = ["Crypto", "Web", "Pwn", "Rev", "Misc"]
 challenges = [Others.Challenge(
     i, f"chall{i}", f"author{i}", categories[i % len(categories)], i % 3 == 0) for i in range(27)]

@@ -31,7 +31,6 @@ class Others(commands.Cog):
         to_channel : `discord.TextChannel`, `optional`\n
             channel to send transcript to, by default None
         """
-        print(type(user), type(to_channel))
         if not user and not to_channel:
             await channel.send("log could not be sent anywhere")
             return
