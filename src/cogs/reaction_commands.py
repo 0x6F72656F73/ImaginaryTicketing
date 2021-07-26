@@ -8,7 +8,7 @@ from discord.utils import get
 # from discord.ext.forms import Form, ReactionForm
 # import humanize
 
-from cogs.helpers.actions import Actions
+from cogs.helpers.actions import CloseTicket, DeleteTicket
 from cogs.helpers.views import command_views
 from utils.others import Others
 from utils.database.db import DatabaseManager as db
@@ -102,8 +102,8 @@ class MiscCommands(commands.Cog):
         admin = get(guild.roles, name=config.ADMIN_ROLE)
         if admin in ctx.author.roles or user_id == ctx.author.id:
 
-            epicreactions = Actions(ctx.guild, ctx.author,
-                                    ctx.channel, ctx.message.id)
+            epicreactions = DeleteTicket(ctx.guild, ctx.author,
+                                         ctx.channel)
 
             await Others.delmsg(ctx)
 
@@ -125,16 +125,8 @@ class MiscCommands(commands.Cog):
     #         color=0x008080)
     #     emby.add_field(name="Time open:",
     #                    value=f"{prettyTime}", inline=True)
-    #     # emby.add_field()  # add to sql people who were added(`added` is a column, and everytiem added just insert or smth, and over here jut do select count(1)
+    #     # emby.add_field()
     #     await ctx.send(embed=emby)
-
-    # @commands.command(name="close_stats_helper", aliases=["test"])
-    # async def test(self, ctx):
-
-    #     epicreactions = Actions(ctx.guild.id, ctx.guild, ctx.author.id, ctx.author,
-    #                                    ctx.channel.id, ctx.channel, ctx.message.id,)
-
-    #     await epicreactions.close_stats_helper()
 
     @commands.command(name="delete", aliases=["del"])
     @commands.has_role(config.ADMIN_ROLE)

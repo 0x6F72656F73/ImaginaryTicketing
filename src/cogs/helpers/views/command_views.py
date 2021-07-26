@@ -8,9 +8,9 @@ class CreateHelpButton(discord.ui.Button):  # add emoji
         super().__init__(**kwargs)
 
     async def callback(self, interaction: discord.Interaction):
-        epicreactions = actions.Actions(
-            interaction.guild, interaction.user, interaction.channel, 1234)
-        ticket_channel = await epicreactions.create(type_=self.label)
+        create_ticket = actions.CreateTicket(self.label,
+                                             interaction.guild, interaction.user, interaction.channel)
+        ticket_channel = await create_ticket.main()
         await interaction.response.send_message(f'You can view your ticket at {ticket_channel.mention}', ephemeral=True)
 
 class TicketView(discord.ui.View):

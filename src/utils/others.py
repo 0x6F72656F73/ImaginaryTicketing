@@ -133,8 +133,8 @@ class Others(commands.Cog):
         await ctx.message.delete()
 
     @staticmethod
-    async def say_in_webhook(member, channel, avatar_url, allow_mention, args, return_message=False):
-        avatar = await member.avatar.url.read()
+    async def say_in_webhook(member: discord.Member, channel: discord.TextChannel, avatar_url: discord.Asset.url, allow_mention: bool, message, return_message: bool = False):
+        avatar = await member.avatar.read()
         webhooks = await channel.webhooks()
 
         if len(webhooks) == 0:
@@ -150,18 +150,19 @@ class Others(commands.Cog):
                     break
 
         async with aiohttp.ClientSession() as session:
+            print(send_web_hook.url, session)
             webhook = Webhook.from_url(
-                send_web_hook.url, session)
+                url=send_web_hook.url, session=session)
             if allow_mention is True:
-                message = await webhook.send(f'{args}', username=f'{member.display_name}', avatar_url=avatar_url, wait=True)
+                ret_message = await webhook.send(f'{message}', username=f'{member.display_name}', avatar_url=avatar_url, wait=True)
 
             else:
-                message = await webhook.send(f'{args}', username=f'{member.display_name}', avatar_url=avatar_url, allowed_mentions=discord.AllowedMentions.none())
+                ret_message = await webhook.send(f'{message}', username=f'{member.display_name}', avatar_url=avatar_url, allowed_mentions=discord.AllowedMentions.none())
         if return_message:
-            return channel.get_partial_message(message.id)
+            return channel.get_partial_message(ret_message.id)
 
     @staticmethod
-    async def random_member_webhook(guild) -> discord.Member:
+    async def random_admin_member(guild) -> discord.Member:
         role = discord.utils.get(guild.roles, name=config.ADMIN_ROLE)
         person = random.choice(role.members)
         return person

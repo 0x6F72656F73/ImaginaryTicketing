@@ -12,7 +12,7 @@ import discord
 from discord.ext import commands
 
 import config
-from cogs.helpers.actions import Actions
+from cogs.helpers.actions import CloseTicket
 from utils.options import Options
 from utils.others import Others
 from utils.database.db import DatabaseManager as db
@@ -46,7 +46,7 @@ class AutoClose(commands.Cog):
         else:
             pass
         old = message.created_at
-        now = datetime.utcnow()
+        now = discord.utils.utcnow()
         return message, now - old
 
     @classmethod
@@ -74,16 +74,15 @@ class AutoClose(commands.Cog):
         log.info(f"check: {check}")
 
         if check == 1:
-            epicreactions = Actions(bot, guild, bot,
-                                    channel, message.id, emoji=None, background=True)
-            await epicreactions.close()
+            close = CloseTicket(guild, bot, channel, background=True)
+            await close.close()
             db.update_check("0", channel.id)
 
         elif check == 0:
             user_id = db.get_user_id(channel.id)
             member = guild.get_member(int(user_id))
             message = f"If that is all we can help you with {member.mention}, please close this ticket."
-            random = await Others.random_member_webhook(guild)
+            random = await Others.random_admin_member(guild)
             sent_message = await Others.say_in_webhook(random, channel, random.avatar.url, True, message, return_message=True)
             await sent_message.add_reaction("🔒")
             log.info(f"{random.name} said the message in {channel.name}")
@@ -104,8 +103,7 @@ class AutoClose(commands.Cog):
         for guild in bot.guilds:
             if guild.get_member(bot.user.id).guild_permissions.administrator is None:
                 return
-            safe_tickets = db.get_guild_check(guild.id)
-            safe_tickets_list = list(chain(*safe_tickets))
+            safe_tickets_list = list(chain(*db.get_guild_check(guild.id)))
             category = discord.utils.get(guild.categories, name=cat)
             if category is None:
                 return

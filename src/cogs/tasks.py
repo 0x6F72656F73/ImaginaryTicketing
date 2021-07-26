@@ -9,12 +9,11 @@ class Tasks(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-        # @aiocron.crontab("* * * * * */10")
-        # # @aiocron.crontab("0 * * * *")
-        # async def start_auto_close():
-        #     print('a')
-        #     # await AutoClose.inactivity(self.bot, hours=48)
-        #     # await AutoClose.inactivity(self.bot, seconds=6)
+        @aiocron.crontab("* * * * * */5")
+        # @aiocron.crontab("0 * * * *")
+        async def start_auto_close():
+            # await AutoClose.inactivity(self.bot, hours=48)
+            await AutoClose.inactivity(self.bot, seconds=1)
 
 
 def setup(bot):

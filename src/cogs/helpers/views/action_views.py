@@ -9,9 +9,9 @@ class ActionButton(discord.ui.Button):  # add emoji
 
     async def callback(self, interaction: discord.Interaction):
         await interaction.response.defer()
-        epicreactions = actions.Actions(
-            interaction.guild, interaction.user, interaction.channel, 1234)
-        await getattr(epicreactions, self.custom_id.split('_')[1])()
+        ticket_action = getattr(
+            actions, f"{self.custom_id.split('_')[1].capitalize()}Ticket")(interaction.guild, interaction.user, interaction.channel)
+        await ticket_action.main()
 
 class CloseView(discord.ui.View):
     def __init__(self):
@@ -30,9 +30,5 @@ class ReopenDeleteView(discord.ui.View):
 class DeleteView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
-
-    @discord.ui.button(label='delete', style=ButtonStyle.red, custom_id='ticketing:action_delete')
-    async def delete(self, button: discord.ui.Button, interaction: discord.Interaction):
-        epicreactions = actions.Actions(
-            interaction.guild, interaction.user, interaction.channel, 1234)
-        await epicreactions.delete()
+        self.add_item(ActionButton(
+            label='delete', style=ButtonStyle.red, custom_id='ticketing:action_delete'))
