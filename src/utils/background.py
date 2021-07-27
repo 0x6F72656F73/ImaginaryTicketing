@@ -5,17 +5,18 @@
 """
 
 from itertools import chain
-from datetime import datetime, timedelta
+from datetime import timedelta
 import logging
 
 import discord
 from discord.ext import commands
 
-import config
+import cogs.helpers.views.action_views as action_views
 from cogs.helpers.actions import CloseTicket
 from utils.options import Options
 from utils.others import Others
 from utils.database.db import DatabaseManager as db
+import config
 
 log = logging.getLogger(__name__)
 
@@ -75,7 +76,7 @@ class AutoClose(commands.Cog):
 
         if check == 1:
             close = CloseTicket(guild, bot, channel, background=True)
-            await close.close()
+            await close.main()
             db.update_check("0", channel.id)
 
         elif check == 0:
@@ -83,8 +84,7 @@ class AutoClose(commands.Cog):
             member = guild.get_member(int(user_id))
             message = f"If that is all we can help you with {member.mention}, please close this ticket."
             random = await Others.random_admin_member(guild)
-            sent_message = await Others.say_in_webhook(random, channel, random.avatar.url, True, message, return_message=True)
-            await sent_message.add_reaction("🔒")
+            await Others.say_in_webhook(bot, random, channel, random.avatar.url, True, message, return_message=True, view=action_views.CloseView())
             log.info(f"{random.name} said the message in {channel.name}")
             db.update_check("1", channel.id)
         else:  # ticket ignored

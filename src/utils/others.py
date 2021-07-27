@@ -133,7 +133,7 @@ class Others(commands.Cog):
         await ctx.message.delete()
 
     @staticmethod
-    async def say_in_webhook(member: discord.Member, channel: discord.TextChannel, avatar_url: discord.Asset.url, allow_mention: bool, message, return_message: bool = False):
+    async def say_in_webhook(bot: discord.ext.commands.Bot, member: discord.Member, channel: discord.TextChannel, avatar_url: discord.Asset.url, allow_mention: bool, message, return_message: bool = False, **kwargs):
         avatar = await member.avatar.read()
         webhooks = await channel.webhooks()
 
@@ -144,20 +144,16 @@ class Others(commands.Cog):
             webhook_times = [webhook.created_at for webhook in webhooks]
 
             shortest = min(webhook_times)
-            for webhook in webhooks:
-                if webhook.created_at == shortest:
-                    send_web_hook = webhook
+            for wh in webhooks:
+                if wh.created_at == shortest:
+                    send_web_hook = wh
                     break
 
-        async with aiohttp.ClientSession() as session:
-            print(send_web_hook.url, session)
-            webhook = Webhook.from_url(
-                url=send_web_hook.url, session=session)
-            if allow_mention is True:
-                ret_message = await webhook.send(f'{message}', username=f'{member.display_name}', avatar_url=avatar_url, wait=True)
-
-            else:
-                ret_message = await webhook.send(f'{message}', username=f'{member.display_name}', avatar_url=avatar_url, allowed_mentions=discord.AllowedMentions.none())
+        webhook = await bot.fetch_webhook(send_web_hook.id)
+        if allow_mention is True:
+            ret_message = await webhook.send(f'{message}', username=f'{member.display_name}', avatar_url=avatar_url, wait=True, **kwargs)
+        else:
+            ret_message = await webhook.send(f'{message}', username=f'{member.display_name}', avatar_url=avatar_url, allowed_mentions=discord.AllowedMentions.none(), **kwargs)
         if return_message:
             return channel.get_partial_message(ret_message.id)
 
