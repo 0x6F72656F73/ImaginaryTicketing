@@ -369,23 +369,6 @@ class DatabaseManager():
             values = (id_, author, title, category, ignore)
             cls._raw_insert(insert_query, values)
 
-    # def put_challenge(self, all_params):
-    #     query = "INSERT into submit VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)"
-    #     values = all_params
-    #     self._raw_insert(query, values)
-
-    # def get_challenge_user(self, userid: int):
-    #     query = "SELECT title FROM submit WHERE challenge_author = $1"
-    #     values = (userid)
-    #     allvals = self._raw_select(query, values)
-    #     return list(chain(*allvals))
-
-    # @classmethod
-    # def get_challenges(cls):
-    #     query = "SELECT title FROM submit"
-    #     allvals = cls._raw_select(query)
-    #     return list(chain(*allvals))
-
     # def insert_survey(self, values: list):
     #     query = "INSERT INTO (create table survey) VALUES all form choices(including opt in)"
     #     self._raw_insert()

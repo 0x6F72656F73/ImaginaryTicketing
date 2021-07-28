@@ -17,6 +17,7 @@ from discord.ext import commands
 import cogs.helpers.views.action_views as action_views
 from utils.others import Others
 from utils.options import Options
+import utils.exceptions as exceptions
 from utils.database.db import DatabaseManager as db
 import config
 
@@ -67,151 +68,165 @@ class BaseActions(commands.Cog):
         return number, current_type, user_id, user
 
 class CreateTicket(BaseActions):
-    def __init__(self, type_: str, *args, **kwargs):
-        self.type_ = type_
+    def __init__(self, ticket_type: str, interaction: discord.Interaction, *args, **kwargs):
+        self.ticket_type = ticket_type
+        self.interaction = interaction
+        self.ticket_channel: discord.TextChannel = None
         super().__init__(*args, *kwargs)
 
-    async def main(self) -> discord.TextChannel:
-        """Creates a ticket"""
-        async def maximum_tickets():
-            n_tickets = db._raw_select(
-                "SELECT count(1) FROM (SELECT * FROM requests WHERE ticket_type=$1 and user_id=$2)", (ticket_type, self.user_id,), fetch_one=True)
-            current = n_tickets[0]
-            limit = Options.limit(ticket_type)
-            if current >= limit:
-                emby = await Others.make_embed(
-                    0x00FFFF, f"You have reached the maximum limit ({current}/{limit}) for this ticket type")
-                await self.user.send(embed=emby)
-                return
-
-        async def create_ticket_channel() -> discord.TextChannel:
-            number = db.get_number_new(ticket_type)
-            channel_name = Options.name_open(ticket_type, number, self.user)
-            cat = Options.full_category_name(ticket_type)
-            category = get(self.guild.categories, name=cat)
-            if category is None:
-                new_category = await self.guild.create_category(name=cat)
-                category = self.guild.get_channel(new_category.id)
-
-            overwrites = {
-                self.guild.default_role: discord.PermissionOverwrite(read_messages=False),
-                # add trusted bots role
-                member: discord.PermissionOverwrite(read_messages=True, send_messages=True),
-                admin: discord.PermissionOverwrite(
-                    read_messages=True, send_messages=True)
-            }
-
-            return await category.create_text_channel(channel_name, overwrites=overwrites)
-
-        # async def get_challenge():
-            # async def choose_challenge(challenges: List[Others.Challenge]):
-            #     options = [create_select_option(
-            #         label=textwrap.shorten(challenge.title, 25, placeholder='...'), value=f"{challenge.id_}") for challenge in challenges]
-            #     select = create_select(
-            #         options=options,
-            #         placeholder="Please choose a challenge",
-            #         max_values=1)
-
-            #     action_row = create_actionrow(select)
-            #     await ctx.channel.send(components=[action_row], content="challenge selection")
-
-            #     select_ctx: ComponentContext = await wait_for_component(self.client, components=action_row)
-            #     await select_ctx.defer(edit_origin=True)
-            #     selected_chall = [
-            #         chall for chall in challenges if chall.id_ == int(select_ctx.selected_options[0])][0]
-            #     await ticket_channel.edit(topic=f"this ticket is about {selected_chall}")
-            #     await select_ctx.origin_message.delete()
-
-            # async def choose_category(categories) -> List[Others.Challenge]:
-            #     category_options = [create_select_option(
-            #         label=category, value=f"{idx}") for idx, category in categories.items()]
-            #     select = create_select(
-            #         options=category_options,
-            #         placeholder="Please choose a category",
-            #         max_values=1)
-
-            #     action_row = create_actionrow(select)
-            #     await ctx.channel.send(components=[action_row], content="category selection")
-
-            #     select_ctx: ComponentContext = await wait_for_component(self.client, components=action_row)
-            #     await select_ctx.defer(edit_origin=True)
-            #     selected_category = [
-            #         chall.category for chall in challenges if chall.id_ == int(select_ctx.selected_options[0])][0]
-            #     await select_ctx.origin_message.delete()
-            #     category_challenges = [
-            #         chall for chall in challenges if chall.category == selected_category]
-            #     return category_challenges
-
-            # def fake_challenges(num, categories):
-            #     list_categories = list(categories)
-            #     return [Others.Challenge(
-            #         i, f"author{i}", f"chall{i}", list_categories[i % len(categories)], i % 3 == 0) for i in range(num)]
-
-            # categories = ["Crypto", "Web", "Pwn", "Rev", "Misc"]
-            # challenges = [(i, f"chall{i}", categories[i % len(
-            #     categories)], i % 3 == 0) for i in range(30)]
-            # categories = {}
-            # for idx, chall in enumerate(challenges):
-            #     if chall[2] not in categories.values():
-            #         categories[idx] = chall[2]
-
-            # challenges = fake_challenges(60, categories)
-            # challenges = [Others.Challenge(*list(challenge))
-            #               for challenge in db.get_all_challenges()]
-
-            # print(f"{challenges=}")
-
-            # if len(challenges) < 1:
-            #     pass  # no challenges
-            # elif len(challenges) < 25:
-            #     await choose_challenge(challenges)
-            # else:
-            #     await choose_challenge(await choose_category(categories))
-
+    async def _setup(self):
         # this loop can be deleted since reaction limits, and so does slash commands
-        if self.type_ not in {'help', 'submit', 'misc'}:
+        if self.ticket_type not in {'help', 'submit', 'misc'}:
             await self.channel.send("possible ticket types are help, submit, and misc")
             return
-        else:
-            ticket_type = self.type_
 
         admin = get(self.guild.roles, name=config.ADMIN_ROLE)
         member = self.guild.get_member(self.user_id)
         if admin not in member.roles:
-            await maximum_tickets()
+            await self._maximum_tickets()
 
-        ticket_channel = await create_ticket_channel()
-        ticket_channel_id = ticket_channel.id
+        self.ticket_channel = await self._create_ticket_channel()
 
+        await self.interaction.response.send_message(f'You can view your ticket at {self.ticket_channel.mention}', ephemeral=True)
+
+    async def _maximum_tickets(self):
+        n_tickets = db._raw_select(
+            "SELECT count(1) FROM (SELECT * FROM requests WHERE ticket_type=$1 and user_id=$2)", (self.ticket_type, self.user_id,), fetch_one=True)
+        current = n_tickets[0]
+        limit = Options.limit(self.ticket_type)
+        if current >= limit:
+            await self.interaction.response.send_message(f"You have reached the maximum limit ({current}/{limit}) for this ticket type", ephemeral=True)
+            raise exceptions.MaxUserTicketError
+
+    async def _create_ticket_channel(self) -> discord.TextChannel:
+        number = db.get_number_new(self.ticket_type)
+        channel_name = Options.name_open(
+            self.ticket_type, number, self.user)
+        cat = Options.full_category_name(self.ticket_type)
+        category = get(self.guild.categories, name=cat)
+        if category is None:
+            new_category = await self.guild.create_category(name=cat)
+            category = self.guild.get_channel(new_category.id)
+        # print(len(category.channels))
+        # if len(category.channels) > 3:
+        #     emby = await Others.make_embed(
+        #         0x00FFFF, "There are over 50 channels in the selected category. Please contact a server admin.")
+        #     await self.user.send(embed=emby)
+        #     return False
+        admin = get(self.guild.roles, name=config.ADMIN_ROLE)
+        member = self.guild.get_member(self.user_id)
+        overwrites = {
+            self.guild.default_role: discord.PermissionOverwrite(read_messages=False),
+            # add trusted bots role
+            member: discord.PermissionOverwrite(read_messages=True, send_messages=True),
+            admin: discord.PermissionOverwrite(
+                read_messages=True, send_messages=True)
+        }
+
+        return await category.create_text_channel(channel_name, overwrites=overwrites)
+
+    def _fake_challenges(self, num, categories):
+        list_categories = list(categories)
+        return [Others.Challenge(
+            i, f"author{i}", f"chall{i}", list_categories[i % len(categories)], i % 3 == 0) for i in range(num)]
+
+    async def _ask_for_challenge(self, challenges: List[Others.Challenge]):
+        options = [discord.SelectOption(
+            label=textwrap.shorten(challenge.title, 25, placeholder='...'), value=f"{challenge.id_}") for challenge in challenges]
+
+        class AskView(discord.ui.Select):
+            def __init__(self):
+                super().__init__(custom_id="ticketing:challenge_request", placeholder="Please choose a challenge",
+                                 min_values=1, max_values=1, options=options)
+
+            async def callback(self, interaction: discord.Interaction):
+                await interaction.message.delete()
+                self.view.stop()
+
+        view = discord.ui.View()
+        view.add_item(AskView())
+        if not view.children[0]._selected_values:
+            while True:
+                await self.ticket_channel.send("challenge selection", view=view)
+                await view.wait()
+                if view.children[0]._selected_values:
+                    break
+        selected_chall = [
+            chall for chall in challenges if chall.id_ == int(view.children[0]._selected_values[0])][0]
+        await self.ticket_channel.edit(topic=f"this ticket is about {selected_chall}")
+
+    # async def choose_category(self, categories) -> List[Others.Challenge]:
+    #     category_options = [discord.SelectOption(
+    #         label=category, value=f"{idx}") for idx, category in categories.items()]
+    #     select = create_select(
+    #         options=category_options,
+    #         placeholder="Please choose a category",
+    #         max_values=1)
+
+    #     action_row = create_actionrow(select)
+    #     await ctx.channel.send(components=[action_row], content="category selection")
+
+    #     select_ctx: ComponentContext = await wait_for_component(self.client, components=action_row)
+    #     await select_ctx.defer(edit_origin=True)
+    #     selected_category = [
+    #         chall.category for chall in challenges if chall.id_ == int(select_ctx.selected_options[0])][0]
+    #     await select_ctx.origin_message.delete()
+    #     category_challenges = [
+    #         chall for chall in challenges if chall.category == selected_category]
+    #     return category_challenges
+
+    async def challenge_selection(self):
+        categories = ["Crypto", "Web", "Pwn", "Rev", "Misc"]
+        challenges = [(i, f"chall{i}", categories[i % len(
+            categories)], i % 3 == 0) for i in range(30)]
+        categories = {}
+        for idx, chall in enumerate(challenges):
+            if chall[2] not in categories.values():
+                categories[idx] = chall[2]
+
+        challenges = self._fake_challenges(60, categories)
+        challenges = [Others.Challenge(*list(challenge))
+                      for challenge in db.get_all_challenges()]
+
+        if len(challenges) < 1:
+            pass  # no challenges
+        elif len(challenges) < 25:
+            await self._ask_for_challenge(challenges)
+        else:
+            await self._ask_for_challenge(await self.choose_category(categories))
+
+    async def main(self) -> discord.TextChannel:
+        """Creates a ticket"""
+
+        await self._setup()
         status = "open"
         checked = "0"
         db._raw_insert("INSERT INTO requests (channel_id, channel_name, guild_id, user_id, ticket_type, status, checked) VALUES ($1,$2,$3,$4,$5,$6,$8 )", (
-            ticket_channel_id, str(ticket_channel), self.guild.id, self.user_id, ticket_type, status, checked))
-        # if ticket_type == "help":
-        #     await get_challenge()
+            self.ticket_channel.id, str(self.ticket_channel), self.guild.id, self.user_id, self.ticket_type, status, checked))
+        if self.ticket_type == "help":
+            await self.challenge_selection()
 
         avail_mods = get(
             self.guild.roles, name=config.TICKET_PING_ROLE)
-        if not ticket_type == "submit":
+        if not self.ticket_type == "submit":
             welcome_message = f'Welcome <@{self.user_id}>,\nA new ticket has been opened {avail_mods.mention}\n\n'
         else:
             welcome_message = f'Welcome <@{self.user_id}>\n\n'
-        message = Options.message(ticket_type, avail_mods)
+        message = Options.message(self.ticket_type, avail_mods)
 
         embed = await Others.make_embed(0x5dc169, message)
-
-        ticket_channel_message = await ticket_channel.send(welcome_message, embed=embed, view=action_views.CloseView())
+        ticket_channel_message = await self.ticket_channel.send(welcome_message, embed=embed, view=action_views.CloseView())
 
         await ticket_channel_message.pin()
-        await ticket_channel.purge(limit=1)
+        await self.ticket_channel.purge(limit=1)
 
-        if ticket_type == "help":
-            await ticket_channel.send("What have your tried so far?")
+        if self.ticket_type == "help":
+            await self.ticket_channel.send("What have your tried so far?")
 
         await self._log_to_channel("Created ticket")
         log.info(
-            f"[CREATED] {ticket_channel} by {self.user} (ID: {self.channel_id})")
-        return ticket_channel
+            f"[CREATED] {self.ticket_channel} by {self.user} (ID: {self.channel_id})")
+        return self.ticket_channel
 
 #class Utility???
     # async def add(self, member: discord.Member):
@@ -416,7 +431,7 @@ class ReopenTicket(BaseActions):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    async def reopen(self):
+    async def main(self):
         """reopens a ticket"""
         try:
             test_status = db.get_status(self.channel_id)
@@ -454,7 +469,7 @@ class ReopenTicket(BaseActions):
             description=f"Ticket was re-opened by {self.user.mention}",
             timestamp=datetime.datetime.utcnow(),
             color=0xFF0000)
-        msg = await self.channel.send(embed=embed, view=action_views.DeleteView())
+        await self.channel.send(embed=embed, view=action_views.CloseView())
 
         reopened = Options.name_open(
             t_current_type, count=t_number, user=t_user)

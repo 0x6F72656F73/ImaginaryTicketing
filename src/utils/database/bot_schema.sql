@@ -13,7 +13,6 @@ CREATE TABLE requests (
   checked BOOLEAN
 );
 
--- CREATE TABLE requests (\n  channel_id bigint,\n  channel_name VARCHAR(255),\n  guild_id bigint,\n  user_id VARCHAR(255),\n  user_name VARCHAR(255),\n  type varchar(255),\n  status VARCHAR(255)\n)
 CREATE TABLE archive (
   channel_id bigint,
   channel_name VARCHAR(255),
@@ -39,16 +38,3 @@ CREATE TABLE challenges (
 --   message2 VARCHAR(255),
 --   message3 VARCHAR(255)
 -- );
-
--- CREATE TABLE submit (
---   challenge_author VARCHAR(255),
---   title VARCHAR(255),
---   category VARCHAR(255),
---   difficulty VARCHAR(255),
---   description VARCHAR(255),
---   player_attachments VARCHAR(255),
---   admin_attachments VARCHAR(255),
---   general_solve VARCHAR(255),
---   hosting_comments VARCHAR(255),
---   flag VARCHAR(255)
--- )

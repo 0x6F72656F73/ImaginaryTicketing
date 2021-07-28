@@ -34,4 +34,3 @@ async def test(ctx: commands.Context):
 
 
 bot.run('ODM5NjM0MTAxNDgwMzI1MjEw.YJMgMQ.a4xlyjoWHAiCV_5-OPusFX5FRFw')
-#dont do the selects, just all the buttons. cuz ctf, yk. it doesn't REALLY apply

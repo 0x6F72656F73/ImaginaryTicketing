@@ -39,7 +39,6 @@ class AutoClose(commands.Cog):
             try:
                 message = message_list[0]
             except IndexError:
-                log.info(f"no message in {channel.name}")
                 return
         except discord.errors.NotFound as e:
             log.warning(e)

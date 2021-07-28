@@ -4,7 +4,6 @@ import discord
 from discord.ext import commands
 
 import config
-# from cogs.helpers.actions import CreateTicket
 from utils.database.db import DatabaseManager as db
 
 log = logging.getLogger(__name__)

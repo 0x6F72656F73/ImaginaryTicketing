@@ -1,17 +1,20 @@
 import discord
+from discord.ext import commands
 from discord import ButtonStyle
 
 import cogs.helpers.actions as actions
-
+import utils.exceptions as exceptions
 class CreateHelpButton(discord.ui.Button):  # add emoji
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
     async def callback(self, interaction: discord.Interaction):
-        create_ticket = actions.CreateTicket(self.label,
+        create_ticket = actions.CreateTicket(self.label, interaction,
                                              interaction.guild, interaction.user, interaction.channel)
-        ticket_channel = await create_ticket.main()
-        await interaction.response.send_message(f'You can view your ticket at {ticket_channel.mention}', ephemeral=True)
+        try:
+            await create_ticket.main()
+        except exceptions.MaxUserTicketError:
+            pass
 
 class TicketView(discord.ui.View):
     def __init__(self):

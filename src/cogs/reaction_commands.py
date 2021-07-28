@@ -17,7 +17,7 @@ import config
 log = logging.getLogger(__name__)
 guild_ids = [788162899515801637, 861845094415728681]
 
-class MiscCommands(commands.Cog):
+class MiscCommands(commands.Cog, command_attrs=dict(hidden=True)):
     """other useful commands"""
 
     def __init__(self, bot: commands.Bot):
@@ -102,12 +102,12 @@ class MiscCommands(commands.Cog):
         admin = get(guild.roles, name=config.ADMIN_ROLE)
         if admin in ctx.author.roles or user_id == ctx.author.id:
 
-            epicreactions = DeleteTicket(ctx.guild, ctx.author,
-                                         ctx.channel)
+            epicreactions = CloseTicket(ctx.guild, ctx.author,
+                                        ctx.channel)
 
             await Others.delmsg(ctx)
 
-            await epicreactions.close()
+            await epicreactions.main()
         else:
             await ctx.channel.send("You do not have enough permissions to run this command")
 
@@ -133,11 +133,11 @@ class MiscCommands(commands.Cog):
     async def delete(self, ctx):
         """deletes a ticket"""
 
-        epicreactions = Actions(ctx.guild, ctx.author,
-                                ctx.channel, ctx.message.id)
+        epicreactions = DeleteTicket(ctx.guild, ctx.author,
+                                     ctx.channel)
         await Others.delmsg(ctx, time=0.0)
         try:
-            await epicreactions.delete()
+            await epicreactions.main()
         except discord.errors.NotFound:
             pass
 
