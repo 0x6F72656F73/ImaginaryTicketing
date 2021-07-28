@@ -7,8 +7,6 @@ import logging
 
 import discord
 from discord.ext import commands
-from discord import Webhook
-import aiohttp
 import chat_exporter
 
 import config
@@ -166,10 +164,10 @@ class Others(commands.Cog):
     @staticmethod
     class Challenge(NamedTuple):
         id_: int
-        author: str
         title: str
+        author: str
         category: str
         ignore: bool = False
 
         def __repr__(self):
-            return self.title
+            return f"{self.title}({self.id_}, {self.author}, {self.category}, {self.ignore})"

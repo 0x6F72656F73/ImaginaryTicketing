@@ -128,29 +128,49 @@ class CreateTicket(BaseActions):
     def _fake_challenges(self, num, categories):
         list_categories = list(categories)
         return [Others.Challenge(
-            i, f"author{i}", f"chall{i}", list_categories[i % len(categories)], i % 3 == 0) for i in range(num)]
+            i, f"chall{i}", f"author{i}", list_categories[i % len(categories)], i % 3 == 0) for i in range(num)]
 
     async def _ask_for_challenge(self, challenges: List[Others.Challenge]):
         options = [discord.SelectOption(
             label=textwrap.shorten(challenge.title, 25, placeholder='...'), value=f"{challenge.id_}") for challenge in challenges]
 
-        class AskView(discord.ui.Select):
-            def __init__(self):
-                super().__init__(custom_id="ticketing:challenge_request", placeholder="Please choose a challenge",
-                                 min_values=1, max_values=1, options=options)
+        # class AskView(discord.ui.Select):
+        #     def __init__(self):
+        #         super().__init__(custom_id="ticketing:challenge_request", placeholder="Please choose a challenge",
+        #                          min_values=1, max_values=1, options=options)
 
-            async def callback(self, interaction: discord.Interaction):
+        #     async def callback(self, interaction: discord.Interaction):
+        #         await interaction.message.delete()
+        #         self.view.stop()
+
+        class AskView(discord.ui.View):
+            def __init__(self, author: discord.Member):
+                self.author = author
+                super().__init__(timeout=5)
+
+            @discord.ui.select(custom_id="ticketing:challenge_request", placeholder="Please choose a challenge", min_values=1, max_values=1, options=options)
+            async def callback(self, select: discord.ui.Select, interaction: discord.Interaction):
                 await interaction.message.delete()
-                self.view.stop()
+                self.stop()
 
-        view = discord.ui.View()
-        view.add_item(AskView())
-        if not view.children[0]._selected_values:
-            while True:
-                await self.ticket_channel.send("challenge selection", view=view)
-                await view.wait()
-                if view.children[0]._selected_values:
-                    break
+            async def interaction_check(self, interaction: discord.Interaction) -> bool:
+                print(interaction.user == self.author)
+                # return interaction.user == self.author
+                return False
+
+            async def on_timeout(self):
+                self.children[0].
+
+        while True:
+            # view = discord.ui.View(timeout=5)
+            # view.add_item(AskView())
+            view = AskView(self.user)
+            await self.ticket_channel.send("challenge selection", view=view)
+            await view.wait()
+            # print(vars(view.))
+            if view.children[0]._selected_values:
+                break
+
         selected_chall = [
             chall for chall in challenges if chall.id_ == int(view.children[0]._selected_values[0])][0]
         await self.ticket_channel.edit(topic=f"this ticket is about {selected_chall}")
@@ -184,12 +204,12 @@ class CreateTicket(BaseActions):
             if chall[2] not in categories.values():
                 categories[idx] = chall[2]
 
-        challenges = self._fake_challenges(60, categories)
+        # challenges = self._fake_challenges(23, categories)
         challenges = [Others.Challenge(*list(challenge))
                       for challenge in db.get_all_challenges()]
 
         if len(challenges) < 1:
-            pass  # no challenges
+            await self.ticket_channel.send("There are no released challenges")
         elif len(challenges) < 25:
             await self._ask_for_challenge(challenges)
         else:

@@ -30,8 +30,7 @@ class Admin(commands.Cog):
 
         embed = discord.Embed(
             description="Shutting down. Bye! :wave:",
-            color=0x00FF00
-        )
+            color=0x00FF00)
         await ctx.send(embed=embed)
         log.warning(f"{ctx.author} is closing the bot")
         await self.bot.close()

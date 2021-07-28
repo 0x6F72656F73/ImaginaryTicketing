@@ -364,9 +364,9 @@ class DatabaseManager():
     def refresh_database(cls, challenges: List[Others.Challenge]):
         delete_query = "DELETE FROM challenges"
         cls._raw_delete(delete_query)
-        insert_query = "INSERT INTO challenges(id, author, title, category, ignore) VALUES($1,$2,$3,$4,$5)"
-        for id_, author, title, category, ignore in challenges:
-            values = (id_, author, title, category, ignore)
+        insert_query = "INSERT INTO challenges(id, title, author, category, ignore) VALUES($1,$2,$3,$4,$5)"
+        for id_, title, author, category, ignore in challenges:
+            values = (id_, title, author, category, ignore)
             cls._raw_insert(insert_query, values)
 
     # def insert_survey(self, values: list):

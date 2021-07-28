@@ -6,6 +6,8 @@
 
 from itertools import chain
 from datetime import timedelta
+import requests
+from environs import Env
 import logging
 
 import discord
@@ -90,7 +92,7 @@ class AutoClose(commands.Cog):
             pass
 
     @classmethod
-    async def inactivity(cls, bot, **kwargs):
+    async def main(cls, bot, **kwargs):
         """check for inactivity in a channel
 
         Parameters
@@ -135,4 +137,24 @@ class AutoClose(commands.Cog):
                 elif duration > timedelta(**kwargs):
                     await cls.old_ticket_actions(bot, guild, channel, message)
 
-# class ScrapeChallenges()
+class ScrapeChallenges():
+    @classmethod
+    def _setup(cls):
+        env = Env()
+        env.read_env()
+        return {'apikey': env.str('apikey')}
+
+    @classmethod
+    def main(cls):
+        params = cls._setup()
+        r = requests.get(
+            'https://imaginaryctf.org/api/challenges/unapproved', params=params)
+
+        challenges = r.json()
+        all_challenges = []
+        for challenge in challenges:
+            ignore = challenge['author'] == 'Board'
+            all_challenges.append(Others.Challenge(
+                challenge["id"], challenge["title"], challenge["author"], challenge["category"].split(",")[0], ignore))
+
+        db.refresh_database(all_challenges)

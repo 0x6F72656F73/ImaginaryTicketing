@@ -1,33 +1,21 @@
 import requests
-from dotenv import dotenv_values
-import textwrap
+from environs import Env
 from utils.database.db import DatabaseManager as db
 from utils.others import Others
 
-categories = ["Crypto", "Web", "Pwn", "Rev", "Misc"]
-challenges = [Others.Challenge(
-    i, f"chall{i}", f"author{i}", categories[i % len(categories)], i % 3 == 0) for i in range(27)]
+challenges = [Others.Challenge(*list(chall))
+              for chall in db.get_all_challenges()]
 
-# challenges = [Others.Challenge(*list(challenge))
-#               for challenge in db.get_all_challenges()]
+print(challenges)
+db.refresh_database(challenges)
 
-print(list({challenge.category for challenge in challenges}))
+# env = Env()
+# env.read_env()
 
-# options = [create_select_option(
-#     label=textwrap.shorten(challenge.title, 25, placeholder='...'), value=f"{challenge.id_}") for challenge in challenges]
-
-# options = [(f"{challenge}", f"{challenge.id_}") for challenge in challenges]
-
-# print(options)
-
-# db.refresh_database(new_challenges)
-
-# API_KEY = dotenv_values("../.env")['API_KEY']
-
-# params = {'API_KEY': API_KEY}
+# params = {'apikey': env.str('API_KEY')}
 
 # r = requests.get(
-#     'https://imaginaryctf.org/api/challenges/released', params=params)
+#     'https://imaginaryctf.org/api/challenges/unapproved', params=params)
 
 # challenges = r.json()
 # all_challenges = []

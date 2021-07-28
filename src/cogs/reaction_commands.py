@@ -17,20 +17,20 @@ import config
 log = logging.getLogger(__name__)
 guild_ids = [788162899515801637, 861845094415728681]
 
-class MiscCommands(commands.Cog, command_attrs=dict(hidden=True)):
+class MiscCommands(commands.Cog):
     """other useful commands"""
 
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    @commands.command(name="ticket")
-    @commands.has_role(config.ADMIN_ROLE)
+    @ commands.command(name="ticket")
+    @ commands.has_role(config.ADMIN_ROLE)
     async def ticket(self, ctx: commands.Context):
         """prints a ticket message"""
         await ctx.channel.send("_ _", view=command_views.TicketView())
 
-    @commands.command(name="create", aliases=["new", "cr"])
-    @commands.cooldown(rate=5, per=10, type=commands.BucketType.default)
+    @ commands.command(name="create", aliases=["new", "cr"])
+    @ commands.cooldown(rate=5, per=10, type=commands.BucketType.default)
     async def create(self, ctx: commands.Context, ticket_type: str = "help", member: discord.Member = None):
         """create a new ticket for the user if non-admin, or with the user specified if admin"""
         admin = get(ctx.guild.roles, name=config.ADMIN_ROLE)
@@ -47,8 +47,8 @@ class MiscCommands(commands.Cog, command_attrs=dict(hidden=True)):
                                     ctx.channel, 1234)
             await epicreactions.create(ticket_type)
 
-    @commands.command(name="add", aliases=["a"], help="add a user to a ticket")
-    @commands.has_role(config.ADMIN_ROLE)
+    @ commands.command(name="add", aliases=["a"], help="add a user to a ticket")
+    @ commands.has_role(config.ADMIN_ROLE)
     async def add(self, ctx, member: discord.Member):
         """adds a user from a ticket"""
 
