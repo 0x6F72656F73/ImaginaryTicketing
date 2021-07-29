@@ -13,7 +13,7 @@ class CreateHelpButton(discord.ui.Button):  # add emoji
                                              interaction.guild, interaction.user, interaction.channel)
         try:
             await create_ticket.main()
-        except exceptions.MaxUserTicketError:
+        except (exceptions.MaxUserTicketError, exceptions.MaxChannelTicketError):
             pass
 
 class TicketView(discord.ui.View):

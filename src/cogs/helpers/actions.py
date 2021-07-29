@@ -1,6 +1,5 @@
 import datetime
 import asyncio
-import textwrap
 import logging
 from typing import List, Tuple, Union
 
@@ -107,12 +106,10 @@ class CreateTicket(BaseActions):
         if category is None:
             new_category = await self.guild.create_category(name=cat)
             category = self.guild.get_channel(new_category.id)
-        # print(len(category.channels))
-        # if len(category.channels) > 3:
-        #     emby = await Others.make_embed(
-        #         0x00FFFF, "There are over 50 channels in the selected category. Please contact a server admin.")
-        #     await self.user.send(embed=emby)
-        #     return False
+        if len(category.channels) > 49:
+            await self.interaction.response.send_message("There are over 50 channels in the selected category. Please contact a server admin.", ephemeral=True)
+            raise exceptions.MaxChannelTicketError
+
         admin = get(self.guild.roles, name=config.ADMIN_ROLE)
         member = self.guild.get_member(self.user_id)
         overwrites = {
@@ -132,8 +129,7 @@ class CreateTicket(BaseActions):
 
     async def _ask_for_challenge(self, challenges: List[Others.Challenge]):
         options = [discord.SelectOption(
-            label=textwrap.shorten(challenge.title, 25, placeholder='...'), value=f"{challenge.id_}") for challenge in challenges]
-
+            label=(challenge.title[:23] + '..') if len(challenge.title) > 25 else challenge.title, value=f"{challenge.id_}") for challenge in challenges]
         # class AskView(discord.ui.Select):
         #     def __init__(self):
         #         super().__init__(custom_id="ticketing:challenge_request", placeholder="Please choose a challenge",
@@ -144,33 +140,42 @@ class CreateTicket(BaseActions):
         #         self.view.stop()
 
         class AskView(discord.ui.View):
-            def __init__(self, author: discord.Member):
+            def __init__(self, author: discord.Member, **kwargs):
                 self.author = author
-                super().__init__(timeout=5)
+                super().__init__(**kwargs)
 
             @discord.ui.select(custom_id="ticketing:challenge_request", placeholder="Please choose a challenge", min_values=1, max_values=1, options=options)
             async def callback(self, select: discord.ui.Select, interaction: discord.Interaction):
+                print('chooes message')
                 await interaction.message.delete()
                 self.stop()
 
-            async def interaction_check(self, interaction: discord.Interaction) -> bool:
-                print(interaction.user == self.author)
-                # return interaction.user == self.author
-                return False
+            # async def interaction_check(self, interaction: discord.Interaction) -> bool:
+            #     print(interaction.user == self.author)
+            #     # return interaction.user == self.author
+            #     return False
 
-            async def on_timeout(self):
-                self.children[0].
-
-        while True:
-            # view = discord.ui.View(timeout=5)
-            # view.add_item(AskView())
-            view = AskView(self.user)
-            await self.ticket_channel.send("challenge selection", view=view)
+        async def send():
+            view = AskView(self.user, timeout=5)
+            await self.ticket_channel.send("Please select which challenge you need help with", view=view)
             await view.wait()
-            # print(vars(view.))
-            if view.children[0]._selected_values:
-                break
-
+            return view
+        view = AskView(self.user, timeout=5)
+        await self.ticket_channel.send("Please select which challenge you need help with", view=view)
+        await view.wait()
+        print('before')
+        if not view.children[0]._selected_values:
+            print('sad')
+            while True:
+                view = await send()
+                print('a')
+                if view.children[0]._selected_values:
+                    print('b')
+                    break
+                else:
+                    print('c')
+                    continue
+        print('d')
         selected_chall = [
             chall for chall in challenges if chall.id_ == int(view.children[0]._selected_values[0])][0]
         await self.ticket_channel.edit(topic=f"this ticket is about {selected_chall}")
@@ -225,6 +230,12 @@ class CreateTicket(BaseActions):
             self.ticket_channel.id, str(self.ticket_channel), self.guild.id, self.user_id, self.ticket_type, status, checked))
         if self.ticket_type == "help":
             await self.challenge_selection()
+            # while True:
+            #     try:
+            #         await self.challenge_selection()
+            #         break
+            #     except exceptions.NoChallengeSelected:
+            #         continue
 
         avail_mods = get(
             self.guild.roles, name=config.TICKET_PING_ROLE)
