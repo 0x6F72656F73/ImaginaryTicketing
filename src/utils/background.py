@@ -6,12 +6,12 @@
 
 from itertools import chain
 from datetime import timedelta
-import requests
-from environs import Env
 import logging
 
 import discord
 from discord.ext import commands
+from environs import Env
+import requests
 
 import cogs.helpers.views.action_views as action_views
 from cogs.helpers.actions import CloseTicket
@@ -29,8 +29,10 @@ class AutoClose(commands.Cog):
     async def get_message_time(cls, channel: discord.channel.TextChannel):
         """get the total time of the last message send
 
-        ### Args:
-            channel (str): channel to get message from
+        Parameters
+        ----------
+        channel : `str`
+            channel to get message from
 
         Returns:
             duration (int): duration from message creation till now
@@ -119,10 +121,7 @@ class AutoClose(commands.Cog):
                 except:
                     return
 
-                try:
-                    message, duration = await cls.get_message_time(channel)
-                except:
-                    return
+                message, duration = await cls.get_message_time(channel)
 
                 if duration < timedelta(**kwargs):
                     check = db.get_check(channel.id)
@@ -147,10 +146,10 @@ class ScrapeChallenges():
     @classmethod
     def main(cls):
         params = cls._setup()
-        r = requests.get(
+        req = requests.get(
             'https://imaginaryctf.org/api/challenges/unapproved', params=params)
 
-        challenges = r.json()
+        challenges = req.json()
         all_challenges = []
         for challenge in challenges:
             ignore = challenge['author'] == 'Board'

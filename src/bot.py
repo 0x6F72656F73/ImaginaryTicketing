@@ -1,4 +1,3 @@
-import sys
 import os
 import platform
 import asyncio
@@ -18,7 +17,7 @@ startlogging('tickets.log')
 
 
 if not os.path.isfile("config.py"):
-    sys.exit("'config.py' not found! Please add it and try again.")
+    raise RuntimeError("config.py not found")
 else:
     import config
 
@@ -37,12 +36,7 @@ else:
 finally:
     loop = asyncio.get_event_loop()
 
-try:
-    BOT_PREFIX = env.list("BOT_PREFIX")
-except TypeError:
-    log.exception(
-        'please put at least 1 prefix in the format BOT_PREFIX = ["t."]')
-    sys.exit()
+BOT_PREFIX = env.list("BOT_PREFIX")
 
 
 class TicketBot(commands.Bot):
@@ -128,26 +122,20 @@ class TicketBot(commands.Bot):
         if cog and cog._get_overridden_method(cog.cog_command_error) is not None:
             return
         if isinstance(error, commands.errors.NoPrivateMessage):
-            await ctx.channel.send("Command cannot be used in DMs.")
-            return
+            return await ctx.channel.send("Command cannot be used in DMs.")
         if isinstance(error, commands.MissingRequiredArgument):
-            await ctx.channel.send("Please provide all required arguments")
-            return
+            return await ctx.channel.send("Please provide all required arguments")
         if isinstance(error, commands.CommandOnCooldown):
-            await ctx.channel.send("Command is on cooldown")
-            return
+            return await ctx.channel.send("Command is on cooldown")
         if isinstance(error, commands.MemberNotFound):
-            await ctx.channel.send("member not found")
-            return
+            return await ctx.channel.send("member not found")
         if isinstance(error, commands.CommandNotFound):
             return
         if isinstance(error, commands.MissingRole):
-            await ctx.channel.send("You do not have enough permissions to run this command")
-            return
+            return await ctx.channel.send("You do not have enough permissions to run this command")
         if isinstance(error, commands.CheckFailure):
-            await ctx.send('Bot does not have administrator permissions.')
-            return
-        # log.exception(error)
+            return await ctx.send('Bot does not have administrator permissions.')
+
         exc = getattr(error, 'original', error)
         lines = ''.join(traceback.format_exception(
             exc.__class__, exc, exc.__traceback__))
@@ -162,20 +150,15 @@ class TicketBot(commands.Bot):
         return bot_guild.guild_permissions.administrator
 
 def run_bot():
-    try:
-        token = env.str("DISCORD_TOKEN")
-    except:
-        log.exception(
-            "Please create a .env file with your TOKEN")
-        sys.exit()
+    token = env.str("DISCORD_TOKEN")
     instance = TicketBot.create()
-    instance.run(token)
 
-# @bot.command(name="rel")
-# async def reload_cog(ctx):
-#     bot.reload_extension("cogs.reaction_commands")
-#     bot.reload_extension("cogs.slash_test_cog")
-#     await ctx.channel.send("cog reloaded successfully")
+    @instance.command(name="rel")
+    async def reload_cog(ctx):
+        instance.reload_extension("cogs.reaction_commands")
+        await ctx.channel.send("cog reloaded successfully")
+
+    instance.run(token)
 
 
 run_bot()

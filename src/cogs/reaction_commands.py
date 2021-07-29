@@ -1,14 +1,10 @@
-# from datetime import datetime
-from typing import Union
 import logging
 
 import discord
 from discord.ext import commands
 from discord.utils import get
-# from discord.ext.forms import Form, ReactionForm
-# import humanize
 
-from cogs.helpers.actions import CloseTicket, DeleteTicket
+from cogs.helpers.actions import CreateTicket, CloseTicket, ReopenTicket, DeleteTicket
 from cogs.helpers.views import command_views
 from utils.others import Others
 from utils.database.db import DatabaseManager as db
@@ -17,38 +13,43 @@ import config
 log = logging.getLogger(__name__)
 guild_ids = [788162899515801637, 861845094415728681]
 
-class MiscCommands(commands.Cog):
+class TicketCommands(commands.Cog):
     """other useful commands"""
 
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    @ commands.command(name="ticket")
-    @ commands.has_role(config.ADMIN_ROLE)
+    @commands.command(name="ticket")
+    @commands.has_role(config.ADMIN_ROLE)
     async def ticket(self, ctx: commands.Context):
         """prints a ticket message"""
         await ctx.channel.send("_ _", view=command_views.TicketView())
+        await Others.delmsg(ctx)
 
-    @ commands.command(name="create", aliases=["new", "cr"])
-    @ commands.cooldown(rate=5, per=10, type=commands.BucketType.default)
+    @commands.command(name="create", aliases=["new", "cr"])
+    @commands.cooldown(rate=5, per=10, type=commands.BucketType.default)
     async def create(self, ctx: commands.Context, ticket_type: str = "help", member: discord.Member = None):
         """create a new ticket for the user if non-admin, or with the user specified if admin"""
+        if ticket_type not in {'help', 'submit', 'misc'}:
+            await ctx.channel.send("possible ticket types are help, submit, and misc")
+            return
         admin = get(ctx.guild.roles, name=config.ADMIN_ROLE)
         if admin not in ctx.author.roles:
             member = ctx.author
-            epicreactions = Actions(ctx.guild, member,
-                                    ctx.channel, 1234)
-            await epicreactions.create(ticket_type)
+            create_ticket = CreateTicket(
+                ticket_type, None, ctx.guild, member, ctx.channel)
         else:
             if member and member.bot:
+                await ctx.channel.send("tickets cannot be created for bots")
                 return
             member = member or ctx.author
-            epicreactions = Actions(ctx.guild, member,
-                                    ctx.channel, 1234)
-            await epicreactions.create(ticket_type)
+            create_ticket = CreateTicket(
+                ticket_type, None, ctx.guild, member, ctx.channel)
+        await create_ticket.main()
+        await Others.delmsg(ctx)
 
-    @ commands.command(name="add", aliases=["a"], help="add a user to a ticket")
-    @ commands.has_role(config.ADMIN_ROLE)
+    @commands.command(name="add", aliases=["a"], help="add a user to a ticket")
+    @commands.has_role(config.ADMIN_ROLE)
     async def add(self, ctx, member: discord.Member):
         """adds a user from a ticket"""
 
@@ -68,7 +69,6 @@ class MiscCommands(commands.Cog):
             return
 
         await epicreactions.add(member)
-
         await Others.delmsg(ctx)
 
     @commands.command(name="remove", aliases=["r", "d"])
@@ -104,40 +104,20 @@ class MiscCommands(commands.Cog):
 
             epicreactions = CloseTicket(ctx.guild, ctx.author,
                                         ctx.channel)
-
             await Others.delmsg(ctx)
-
             await epicreactions.main()
         else:
             await ctx.channel.send("You do not have enough permissions to run this command")
-
-    # @commands.command(name="close_stats_helper", aliases=["test"])
-    # async def test(self, ctx: commands.Context):
-    #     old = ctx.channel.created_at
-    #     now = datetime.utcnow()
-    #     duration = now - old
-    #     prettyTime = humanize.precisedelta(
-    #         duration, format="%0.0f", minimum_unit="minutes")
-    #     emby = discord.Embed(
-    #         title="Ticket closed",
-    #         description=f"Ticket was closed by self.user.mention",
-    #         timestamp=datetime.utcnow(),
-    #         color=0x008080)
-    #     emby.add_field(name="Time open:",
-    #                    value=f"{prettyTime}", inline=True)
-    #     # emby.add_field()
-    #     await ctx.send(embed=emby)
 
     @commands.command(name="delete", aliases=["del"])
     @commands.has_role(config.ADMIN_ROLE)
     async def delete(self, ctx):
         """deletes a ticket"""
 
-        epicreactions = DeleteTicket(ctx.guild, ctx.author,
+        delete_ticket = DeleteTicket(ctx.guild, ctx.author,
                                      ctx.channel)
-        await Others.delmsg(ctx, time=0.0)
         try:
-            await epicreactions.main()
+            await delete_ticket.main()
         except discord.errors.NotFound:
             pass
 
@@ -145,10 +125,9 @@ class MiscCommands(commands.Cog):
     @commands.has_role(config.ADMIN_ROLE)
     async def reopen(self, ctx):
         """reopens a ticket"""
-
-        epicreactions = Actions(ctx.guild, ctx.author,
-                                ctx.channel, ctx.message.id)
-        await epicreactions.reopen()
+        reopen_ticket = ReopenTicket(ctx.guild, ctx.author,
+                                     ctx.channel)
+        await reopen_ticket.main()
 
         await Others.delmsg(ctx)
 
@@ -157,7 +136,7 @@ class MiscCommands(commands.Cog):
     @commands.cooldown(rate=1, per=10, type=commands.BucketType.default)
     async def transcript(self, ctx, user: discord.User):
         """sends a transcript to a user via DM"""
-        #make slash
+
         await Others.transcript(ctx.channel, user)
         await ctx.channel.send("transcript sent to dms")
 
@@ -175,15 +154,6 @@ class MiscCommands(commands.Cog):
             db.update_check("0", channel.id)
             await ctx.channel.send(f"autoclose is now on for {ctx.channel.name}")
 
-    @commands.command(name="about")
-    async def about(self, ctx):
-        """returns about info"""
-
-        emby = discord.Embed(title="about",
-                             description="This bot was proudly made by 0x6F72656F73#8221 :cookie:")
-
-        await ctx.send(embed=emby)
-
     def cog_check(self, ctx):
         if not ctx.message.guild:
             raise commands.errors.NoPrivateMessage(
@@ -191,4 +161,4 @@ class MiscCommands(commands.Cog):
         return True
 
 def setup(bot: commands.Bot):
-    bot.add_cog(MiscCommands(bot))
+    bot.add_cog(TicketCommands(bot))

@@ -1,8 +1,7 @@
 import io
 import asyncio
 import random
-from typing import Any, NamedTuple, Tuple
-from datetime import datetime
+from typing import Any, NamedTuple
 import logging
 
 import discord
@@ -72,7 +71,7 @@ class Others(commands.Cog):
         `discord.embeds.Embed`: an embed
         """
         embed = discord.Embed(title=f"{title}",
-                              timestamp=datetime.utcnow(), color=0xff0000)
+                              timestamp=discord.utils.utcnow(), color=0xff0000)
         embed.set_author(name=f"{user}", icon_url=f"{avatar_url}")
         embed.add_field(name="Channel",
                         value=f"{channel_name}")
@@ -113,7 +112,7 @@ class Others(commands.Cog):
         `discord.embeds.Embed`: the returned embed
         """
         embed = discord.Embed(description=desc,
-                              timestamp=datetime.utcnow(), color=color, **kwargs)
+                              timestamp=discord.utils.utcnow(), color=color, **kwargs)
         return embed
 
     @staticmethod
@@ -142,9 +141,9 @@ class Others(commands.Cog):
             webhook_times = [webhook.created_at for webhook in webhooks]
 
             shortest = min(webhook_times)
-            for wh in webhooks:
-                if wh.created_at == shortest:
-                    send_web_hook = wh
+            for hook in webhooks:
+                if hook.created_at == shortest:
+                    send_web_hook = hook
                     break
 
         webhook = await bot.fetch_webhook(send_web_hook.id)

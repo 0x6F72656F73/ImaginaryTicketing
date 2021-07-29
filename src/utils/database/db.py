@@ -368,7 +368,3 @@ class DatabaseManager():
         for id_, title, author, category, ignore in challenges:
             values = (id_, title, author, category, ignore)
             cls._raw_insert(insert_query, values)
-
-    # def insert_survey(self, values: list):
-    #     query = "INSERT INTO (create table survey) VALUES all form choices(including opt in)"
-    #     self._raw_insert()

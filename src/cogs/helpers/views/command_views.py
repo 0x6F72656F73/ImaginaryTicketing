@@ -1,5 +1,4 @@
 import discord
-from discord.ext import commands
 from discord import ButtonStyle
 
 import cogs.helpers.actions as actions
