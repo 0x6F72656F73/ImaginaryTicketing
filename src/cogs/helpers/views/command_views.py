@@ -3,7 +3,7 @@ from discord import ButtonStyle
 
 import cogs.helpers.actions as actions
 import utils.exceptions as exceptions
-class CreateHelpButton(discord.ui.Button):  # add emoji
+class CreateHelpButton(discord.ui.Button['TicketView']):  # add emoji
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 

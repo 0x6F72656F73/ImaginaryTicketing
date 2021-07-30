@@ -146,8 +146,8 @@ class ScrapeChallenges():
     @classmethod
     def main(cls):
         params = cls._setup()
-        req = requests.get(
-            'https://imaginaryctf.org/api/challenges/unapproved', params=params)
+        req = requests.get(config.BASE_API_LINK +
+                           '/challenges/released', params=params)
 
         challenges = req.json()
         all_challenges = []

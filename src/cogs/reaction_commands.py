@@ -5,9 +5,10 @@ from discord.ext import commands
 from discord.utils import get
 
 from cogs.helpers.actions import CreateTicket, CloseTicket, ReopenTicket, DeleteTicket
-from cogs.helpers.views import command_views
 from utils.others import Others
+from cogs.helpers.views import command_views
 from utils.database.db import DatabaseManager as db
+from utils.background import ScrapeChallenges
 import config
 
 log = logging.getLogger(__name__)
@@ -153,6 +154,14 @@ class TicketCommands(commands.Cog):
         else:
             db.update_check("0", channel.id)
             await ctx.channel.send(f"autoclose is now on for {ctx.channel.name}")
+
+    @commands.command(name="refresh", aliases=["ref"])
+    @commands.has_role(config.ADMIN_ROLE)
+    async def refresh(self, ctx):
+        """refreshes challenges from the api"""
+        ScrapeChallenges.main()
+        await ctx.channel.send("challenges refreshed")
+        await Others.delmsg(ctx)
 
     def cog_check(self, ctx):
         if not ctx.message.guild:

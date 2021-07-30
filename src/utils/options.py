@@ -44,7 +44,7 @@ If you want to close this ticket, click on the :lock:""",
 
     @staticmethod
     def limit(ticket_type: str) -> int:
-        """limit number of tickets for someone
+        """max number of tickets for someone
 
         Parameters
         ----------

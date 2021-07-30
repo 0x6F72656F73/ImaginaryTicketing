@@ -17,9 +17,12 @@ class Tasks(commands.Cog):
         @aiocron.crontab("* * * * * */10")
         # @aiocron.crontab("0 * * * *")
         async def start_scraping_challenges():
-            # await ScrapeChallenges.main()
             ScrapeChallenges.main()
 
+        # @aiocron.crontab("* * * * * */10")
+        # # @aiocron.crontab("* * * * 10 *")
+        # async def start_adding_users():  # better name lol
+        #     ScrapeChallenges.main()  # another class
 
 def setup(bot):
     bot.add_cog(Tasks(bot))

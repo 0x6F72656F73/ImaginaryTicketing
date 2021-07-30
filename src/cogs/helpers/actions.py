@@ -1,4 +1,5 @@
 import asyncio
+from collections import Counter
 import logging
 from typing import List, Tuple, Union, Optional
 
@@ -129,76 +130,69 @@ class CreateTicket(BaseActions):
         return await category.create_text_channel(channel_name, overwrites=overwrites)
 
     def _fake_challenges(self, num, categories):
-        list_categories = list(categories)
+        list_categories = list(categories.values())
         return [Others.Challenge(
             i, f"chall{i}", f"author{i}", list_categories[i % len(categories)], i % 3 == 0) for i in range(num)]
 
+    class ChallengeSelect(discord.ui.Select['ChallengeView']):
+        def __init__(self, custom_id: str, options: List[discord.SelectOption], placeholder: str):
+            super().__init__(custom_id=custom_id,
+                             placeholder=placeholder, min_values=1, max_values=1, options=options)
+
+        async def callback(self, interaction: discord.Interaction):
+            await interaction.message.delete()
+            view = self.view  # pylint: disable=maybe-no-member
+            view.stop()
+
+    class ChallengeView(discord.ui.View, ChallengeSelect):
+        def __init__(self, author: discord.Member, custom_id: str, options: List[discord.SelectOption], placeholder: str, **kwargs):
+            super().__init__(**kwargs)
+            self.add_item(CreateTicket.ChallengeSelect(
+                custom_id, options, placeholder))
+            self.author = author
+
+        async def interaction_check(self, interaction: discord.Interaction):
+            if interaction.user == self.author:
+                return True
+            else:
+                await interaction.response.send_message("You're not allowed to choose", ephemeral=True)
+                return False
+
     async def _ask_for_challenge(self, challenges: List[Others.Challenge]):
-        options = [discord.SelectOption(
+        challenge_options = [discord.SelectOption(
             label=(challenge.title[:23] + '..') if len(challenge.title) > 25 else challenge.title, value=f"{challenge.id_}") for challenge in challenges]
-        # class AskView(discord.ui.Select):
-        #     def __init__(self):
-        #         super().__init__(custom_id="ticketing:challenge_request", placeholder="Please choose a challenge",
-        #                          min_values=1, max_values=1, options=options)
 
-        #     async def callback(self, interaction: discord.Interaction):
-        #         await interaction.message.delete()
-        #         self.view.stop()
-
-        class AskView(discord.ui.View):
-            def __init__(self, author: discord.Member, **kwargs):
-                self.author = author
-                super().__init__(**kwargs)
-
-            @discord.ui.select(custom_id="ticketing:challenge_request", placeholder="Please choose a challenge", min_values=1, max_values=1, options=options)
-            async def callback(self, select: discord.ui.Select, interaction: discord.Interaction):
-                await interaction.message.delete()
-                self.stop()
-
-            # async def interaction_check(self, interaction: discord.Interaction) -> bool:
-            #     print(interaction.user == self.author)
-            #     # return interaction.user == self.author
-            #     return False
-
-        async def send():
-            view = AskView(self.user, timeout=5)
-            await self.ticket_channel.send("Please select which challenge you need help with", view=view)
+        while True:
+            view = self.ChallengeView(author=self.user, custom_id="ticketing:challenge_request", options=challenge_options,
+                                      placeholder="Please choose a challenge", timeout=5)
+            select_messages = await self.ticket_channel.send("Please select which challenge you need help with", view=view)
             await view.wait()
-            return view
-        view = AskView(self.user, timeout=5)
-        await self.ticket_channel.send("Please select which challenge you need help with", view=view)
-        await view.wait()
-        if not view.children[0]._selected_values:
-            while True:
-                view = await send()
-                if view.children[0]._selected_values:
-                    break
-                continue
-        selected_chall = [
-            chall for chall in challenges if chall.id_ == int(view.children[0]._selected_values[0])][0]
-        await self.ticket_channel.edit(topic=f"this ticket is about {selected_chall}")
+            if view.children[0]._selected_values:
+                break
+            await select_messages.delete()
 
-    # async def choose_category(self, categories) -> List[Others.Challenge]:
-    #     category_options = [discord.SelectOption(
-    #         label=category, value=f"{idx}") for idx, category in categories.items()]
-    #     select = create_select(
-    #         options=category_options,
-    #         placeholder="Please choose a category",
-    #         max_values=1)
+        selected_challenge = [
+            ch for ch in challenges if ch.id_ == int(view.children[0]._selected_values[0])][0]
+        await self.ticket_channel.edit(topic=f"this ticket is about {selected_challenge.title}")
 
-    #     action_row = create_actionrow(select)
-    #     await ctx.channel.send(components=[action_row], content="category selection")
+    async def _ask_for_category(self, challenges: List[Others.Challenge]) -> List[Others.Challenge]:
+        categories = {ch.category for ch in challenges}
+        category_options = [discord.SelectOption(
+            label=cat, value=cat) for cat in categories]
+        while True:
+            view = self.ChallengeView(author=self.user, custom_id="ticketing:challenge_request", options=category_options,
+                                      placeholder="Please choose a category", timeout=5)
+            select_messages = await self.ticket_channel.send("Please select which category you need help with", view=view)
+            await view.wait()
+            if view.children[0]._selected_values:
+                break
+            await select_messages.delete()
+        category_challenges = [
+            ch for ch in challenges if ch.category == view.children[0]._selected_values[0]]
+        print(category_challenges)
+        return category_challenges
 
-    #     select_ctx: ComponentContext = await wait_for_component(self.client, components=action_row)
-    #     await select_ctx.defer(edit_origin=True)
-    #     selected_category = [
-    #         chall.category for chall in challenges if chall.id_ == int(select_ctx.selected_options[0])][0]
-    #     await select_ctx.origin_message.delete()
-    #     category_challenges = [
-    #         chall for chall in challenges if chall.category == selected_category]
-    #     return category_challenges
-
-    async def challenge_selection(self):
+    async def _challenge_selection(self):
         categories = ["Crypto", "Web", "Pwn", "Rev", "Misc"]
         challenges = [(i, f"chall{i}", categories[i % len(
             categories)], i % 3 == 0) for i in range(30)]
@@ -206,17 +200,17 @@ class CreateTicket(BaseActions):
         for idx, chall in enumerate(challenges):
             if chall[2] not in categories.values():
                 categories[idx] = chall[2]
-
-        # challenges = self._fake_challenges(23, categories)
-        challenges = [Others.Challenge(*list(challenge))
-                      for challenge in db.get_all_challenges()]
+        print(categories)
+        challenges = self._fake_challenges(24, categories)
+        # challenges = [Others.Challenge(*list(challenge))
+        #               for challenge in db.get_all_challenges()]
 
         if len(challenges) < 1:
             await self.ticket_channel.send("There are no released challenges")
-        elif len(challenges) < 25:
+        elif len(challenges) <= 25:
             await self._ask_for_challenge(challenges)
         else:
-            await self._ask_for_challenge(await self.choose_category(categories))
+            await self._ask_for_challenge(await self._ask_for_category(challenges))
 
     async def main(self) -> discord.TextChannel:
         """Creates a ticket"""
@@ -227,13 +221,7 @@ class CreateTicket(BaseActions):
         db._raw_insert("INSERT INTO requests (channel_id, channel_name, guild_id, user_id, ticket_type, status, checked) VALUES ($1,$2,$3,$4,$5,$6,$8 )", (
             self.ticket_channel.id, str(self.ticket_channel), self.guild.id, self.user_id, self.ticket_type, status, checked))
         if self.ticket_type == "help":
-            await self.challenge_selection()
-            # while True:
-            #     try:
-            #         await self.challenge_selection()
-            #         break
-            #     except exceptions.NoChallengeSelected:
-            #         continue
+            await self._challenge_selection()
 
         avail_mods = get(
             self.guild.roles, name=config.TICKET_PING_ROLE)
@@ -288,7 +276,7 @@ class CloseTicket(BaseActions):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, *kwargs)
 
-    async def close_stats_helper(self, channel: discord.TextChannel) -> Tuple[List, int, str]:
+    async def close_stats_helper(self, channel: discord.TextChannel) -> Tuple[str, str]:
         """gets all the users in a channel
 
         Parameters
@@ -298,26 +286,24 @@ class CloseTicket(BaseActions):
 
         Returns
         -------
-        `List`: list of users from channel,
-        `int`: number of messages,
+        `str`: joined list of users to count reference from channel,
         `str`: time the channel was open
         """
         users = []
-        count = 0
         async for msg in channel.history(limit=2000):
-            if msg.author.name not in users:
-                users.append(msg.author.name)
-            count += 1
+            users.append(msg.author.name)
 
-        channel_users = '\n'.join([self.guild.get_member_named(
-            member).mention for member in users])
-
+        message_distribution = Counter(users)
+        total_messages = sum(message_distribution.values())
+        channel_users = '\n'.join(
+            [f"{self.guild.get_member_named(member).mention} ({count/total_messages:.0%})" for member, count in message_distribution.most_common()])
         old = channel.created_at
+
         now = discord.utils.utcnow()
         duration = now - old
         time_open = precisedelta(
             duration, format="%0.0f", minimum_unit="minutes")
-        return channel_users, count, time_open
+        return channel_users, time_open
 
     async def main(self):
         """closes a ticket"""
@@ -366,18 +352,17 @@ class CloseTicket(BaseActions):
             return
 
         transcript_message = await Others.transcript(self.channel, t_user, channel_log)
-        if transcript_message is None:
-            close_stats_embed.add_field(
-                name="transcript", value="transcript could not be sent to DMs")
-        else:
+        if transcript_message:
             close_stats_embed.add_field(name="transcript",
                                         value=f"[transcript url]({config.TRANSCRIPT_DOMAIN}:{config.TRANSCRIPT_PORT}/direct?link={transcript_message.attachments[0].url} \"oreos taste good dont they\") ")
+        else:
+            close_stats_embed.add_field(
+                name="transcript", value="transcript could not be sent to DMs")
 
-        channel_users, count, time_open = await self.close_stats_helper(self.channel)
+        channel_users, time_open = await self.close_stats_helper(self.channel)
 
-        close_stats_embed.add_field(name="users", value=f"{channel_users}")
         close_stats_embed.add_field(
-            name="messages", value=f"{count}")
+            name="users(message distribution)", value=f"{channel_users}")
         close_stats_embed.add_field(
             name="time open", value=f"{time_open}")
 
@@ -429,11 +414,13 @@ class ReopenTicket(BaseActions):
 
         status = "open"
         db.update_status(status, self.channel_id)
-        embed = discord.Embed(
-            description=f"Ticket was re-opened by {self.user.mention}",
+        reopened_embed = discord.Embed(
+            description="Ticket was re-opened",
             timestamp=discord.utils.utcnow(),
             color=0xFF0000)
-        await self.channel.send(embed=embed, view=action_views.CloseView())
+        reopened_embed.set_author(
+            name=f"{self.user}", icon_url=f"{self.user.avatar.url}")
+        await self.channel.send(embed=reopened_embed, view=action_views.CloseView())
 
         reopened = Options.name_open(
             t_current_type, count=t_number, user=t_user)

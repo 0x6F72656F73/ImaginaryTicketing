@@ -78,25 +78,6 @@ class Others(commands.Cog):
         return embed
 
     @staticmethod
-    def emoji_to_string(emoji: str) -> str:
-        """converters an emoji to string for db actions
-
-        Parameters
-        ----------
-        emoji : `str`
-            emoji to be converted\n
-
-        Returns
-        -------
-        `str`: string representation of the emoji
-        """
-        emoji_list = config.EMOJIS
-        dict_values = {emoji_list[0]: 'help',
-                       emoji_list[1]: 'submit',
-                       emoji_list[2]: 'misc'}
-        return dict_values[emoji]
-
-    @staticmethod
     async def make_embed(color: str, desc: Any, **kwargs) -> discord.embeds.Embed:
         """returns an embed with no fields
 

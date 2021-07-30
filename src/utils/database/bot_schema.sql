@@ -28,7 +28,7 @@ CREATE TABLE challenges (
     title VARCHAR(255),
     author VARCHAR(255),
     category VARCHAR(255),
-    -- helper_id VARCHAR(255), -- will add SOON :tm:
+    helper_id VARCHAR(255),
     ignore BOOLEAN
 )
 

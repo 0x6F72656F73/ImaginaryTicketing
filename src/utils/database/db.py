@@ -155,12 +155,12 @@ class DatabaseManager():
 
     @classmethod
     def get_number_new(cls, ticket_type: int) -> str:
-        """gets the number of tickets of that emoji type
+        """gets the number of tickets of that ticket type
 
         Parameters
         ----------
         ticket_type : `str`
-            type of ticket(emoji)\n
+            type of ticket\n
 
         Returns
         -------
@@ -182,7 +182,7 @@ class DatabaseManager():
 
     @classmethod
     def get_number_previous(cls, channel_id: int) -> str:
-        """gets the number of tickets of that emoji type
+        """gets the number of tickets of that ticket type
 
         Parameters
         ----------
@@ -216,7 +216,7 @@ class DatabaseManager():
             the channel id\n
         Returns
         -------
-        `str`: string representation of the emoji
+        `str`: ticket type
         """
         query = "SELECT ticket_type FROM requests WHERE channel_id = $1"
         values = (channel_id,)
