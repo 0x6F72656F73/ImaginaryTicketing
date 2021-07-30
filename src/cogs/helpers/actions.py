@@ -295,17 +295,21 @@ class CloseTicket(BaseActions):
         `str`: time the channel was open
         """
         users = []
-        async for msg in channel.history(limit=2000):
+
+        async for msg in channel.history(limit=2000).filter(lambda message: not message.author.bot):
             users.append(msg.author.name)
 
         message_distribution = Counter(users)
         total_messages = sum(message_distribution.values())
         channel_users = '\n'.join(
             [f"{self.guild.get_member_named(member).mention} ({count/total_messages:.0%})" for member, count in message_distribution.most_common()])
+        if not channel_users:
+            channel_users = 'None'
         old = channel.created_at
 
         now = discord.utils.utcnow()
         duration = now - old
+        print(duration.total_seconds())
         time_open = precisedelta(
             duration, format="%0.0f", minimum_unit="minutes")
         return channel_users, time_open
@@ -367,7 +371,7 @@ class CloseTicket(BaseActions):
         channel_users, time_open = await self.close_stats_helper(self.channel)
 
         close_stats_embed.add_field(
-            name="users (message distribution)", value=f"{channel_users}")
+            name="message distribution", value=f"{channel_users}")
         close_stats_embed.add_field(
             name="time open", value=f"{time_open}")
 
