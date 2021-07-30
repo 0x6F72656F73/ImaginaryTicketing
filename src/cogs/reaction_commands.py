@@ -4,7 +4,7 @@ import discord
 from discord.ext import commands
 from discord.utils import get
 
-from cogs.helpers.actions import CreateTicket, CloseTicket, ReopenTicket, DeleteTicket
+import cogs.helpers.actions as actions
 from utils.others import Others
 from cogs.helpers.views import command_views
 from utils.database.db import DatabaseManager as db
@@ -37,14 +37,14 @@ class TicketCommands(commands.Cog):
         admin = get(ctx.guild.roles, name=config.ADMIN_ROLE)
         if admin not in ctx.author.roles:
             member = ctx.author
-            create_ticket = CreateTicket(
+            create_ticket = actions.CreateTicket(
                 ticket_type, None, ctx.guild, member, ctx.channel)
         else:
             if member and member.bot:
                 await ctx.channel.send("tickets cannot be created for bots")
                 return
             member = member or ctx.author
-            create_ticket = CreateTicket(
+            create_ticket = actions.CreateTicket(
                 ticket_type, None, ctx.guild, member, ctx.channel)
         await create_ticket.main()
         await Others.delmsg(ctx)
@@ -53,9 +53,6 @@ class TicketCommands(commands.Cog):
     @commands.has_role(config.ADMIN_ROLE)
     async def add(self, ctx, member: discord.Member):
         """adds a user from a ticket"""
-
-        epicreactions = Actions(ctx.guild, member,
-                                ctx.channel, ctx.message.id)
 
         memids = [member.id for member in ctx.channel.members]
         if member.id in memids:
@@ -69,10 +66,10 @@ class TicketCommands(commands.Cog):
             await ctx.channel.send(embed=emby)
             return
 
-        await epicreactions.add(member)
+        await actions.Utility.add(ctx.channel, member)
         await Others.delmsg(ctx)
 
-    @commands.command(name="remove", aliases=["r", "d"])
+    @commands.command(name="remove", aliases=["r"])
     @commands.has_role(config.ADMIN_ROLE)
     async def remove(self, ctx, member: discord.Member):
         """removes a user from a ticket"""
@@ -88,9 +85,7 @@ class TicketCommands(commands.Cog):
             await ctx.channel.send(embed=emby)
             return
 
-        epicreactions = Actions(ctx.guild, member,
-                                ctx.channel, ctx.message.id)
-        await epicreactions.remove(member)
+        await actions.Utility.remove(ctx.channel, member)
         await Others.delmsg(ctx)
 
     @commands.command(name="close", aliases=["cl"])
@@ -103,8 +98,8 @@ class TicketCommands(commands.Cog):
         admin = get(guild.roles, name=config.ADMIN_ROLE)
         if admin in ctx.author.roles or user_id == ctx.author.id:
 
-            epicreactions = CloseTicket(ctx.guild, ctx.author,
-                                        ctx.channel)
+            epicreactions = actions.CloseTicket(ctx.guild, ctx.author,
+                                                ctx.channel)
             await Others.delmsg(ctx)
             await epicreactions.main()
         else:
@@ -115,8 +110,8 @@ class TicketCommands(commands.Cog):
     async def delete(self, ctx):
         """deletes a ticket"""
 
-        delete_ticket = DeleteTicket(ctx.guild, ctx.author,
-                                     ctx.channel)
+        delete_ticket = actions.DeleteTicket(ctx.guild, ctx.author,
+                                             ctx.channel)
         try:
             await delete_ticket.main()
         except discord.errors.NotFound:
@@ -126,8 +121,8 @@ class TicketCommands(commands.Cog):
     @commands.has_role(config.ADMIN_ROLE)
     async def reopen(self, ctx):
         """reopens a ticket"""
-        reopen_ticket = ReopenTicket(ctx.guild, ctx.author,
-                                     ctx.channel)
+        reopen_ticket = actions.ReopenTicket(ctx.guild, ctx.author,
+                                             ctx.channel)
         await reopen_ticket.main()
 
         await Others.delmsg(ctx)

@@ -17,7 +17,7 @@ import config
 
 log = logging.getLogger(__name__)
 
-class BaseActions(commands.Cog):
+class BaseActions:
     """Base class for all actions"""
 
     def __init__(self, guild: discord.Guild, user: Union[discord.User, discord.ClientUser],
@@ -71,7 +71,6 @@ class BaseActions(commands.Cog):
         user = self.guild.get_member(user_id)
 
         return number, current_type, user_id, user
-
 class CreateTicket(BaseActions):
     def __init__(self, ticket_type: str, interaction: Optional[discord.Interaction], *args, **kwargs):
         self.ticket_type = ticket_type
@@ -82,7 +81,8 @@ class CreateTicket(BaseActions):
             self.send_pm = lambda message: self.user.send(message)
 
         self.ticket_channel: discord.TextChannel = None
-        super().__init__(*args, *kwargs)
+        self._args = [interaction, args, kwargs]
+        super().__init__(*args, **kwargs)
 
     async def _setup(self):
         admin = get(self.guild.roles, name=config.ADMIN_ROLE)
@@ -129,7 +129,51 @@ class CreateTicket(BaseActions):
 
         return await category.create_text_channel(channel_name, overwrites=overwrites)
 
-    def _fake_challenges(self, num, categories):
+    async def main(self) -> discord.TextChannel:
+        """Creates a ticket"""
+
+        await self._setup()
+        status = "open"
+        checked = "0"
+        db._raw_insert("INSERT INTO requests (channel_id, channel_name, guild_id, user_id, ticket_type, status, checked) VALUES ($1,$2,$3,$4,$5,$6,$8 )", (
+            self.ticket_channel.id, str(self.ticket_channel), self.guild.id, self.user_id, self.ticket_type, status, checked))
+        if self.ticket_type == "help":
+            helper = _CreateTicketHelper(
+                self.ticket_channel, self.ticket_type, self._args[0], *self._args[1], **self._args[2])
+            await helper.challenge_selection()
+
+        avail_mods = get(
+            self.guild.roles, name=config.TICKET_PING_ROLE)
+        if not self.ticket_type == "submit":
+            welcome_message = f'Welcome <@{self.user_id}>,\nA new ticket has been opened {avail_mods.mention}\n\n'
+        else:
+            welcome_message = f'Welcome <@{self.user_id}>\n\n'
+        message = Options.message(self.ticket_type, avail_mods)
+
+        embed = await Others.make_embed(0x5dc169, message)
+        ticket_channel_message = await self.ticket_channel.send(welcome_message, embed=embed, view=action_views.CloseView())
+
+        await ticket_channel_message.pin()
+        await self.ticket_channel.purge(limit=1)
+
+        if self.ticket_type == "help":
+            await self.ticket_channel.send("What have your tried so far?")
+
+        await self._log_to_channel("Created ticket")
+        log.info(
+            f"[CREATED] {self.ticket_channel} by {self.user} (ID: {self.channel_id})")
+        return self.ticket_channel
+
+class _CreateTicketHelper(CreateTicket):
+    def __init__(self, ticket_channel: discord.TextChannel, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.ticket_channel = ticket_channel
+
+    def _fake_challenges(self, num):
+        category_list = ["Crypto", "Web", "Pwn", "Rev", "Misc"]
+        categories = {}
+        for idx, category in enumerate(category_list):
+            categories[idx] = category
         list_categories = list(categories.values())
         return [Others.Challenge(
             i, f"chall{i}", f"author{i}", list_categories[i % len(categories)], i % 3 == 0) for i in range(num)]
@@ -147,7 +191,7 @@ class CreateTicket(BaseActions):
     class ChallengeView(discord.ui.View, ChallengeSelect):
         def __init__(self, author: discord.Member, custom_id: str, options: List[discord.SelectOption], placeholder: str, **kwargs):
             super().__init__(**kwargs)
-            self.add_item(CreateTicket.ChallengeSelect(
+            self.add_item(_CreateTicketHelper.ChallengeSelect(
                 custom_id, options, placeholder))
             self.author = author
 
@@ -192,16 +236,8 @@ class CreateTicket(BaseActions):
         print(category_challenges)
         return category_challenges
 
-    async def _challenge_selection(self):
-        categories = ["Crypto", "Web", "Pwn", "Rev", "Misc"]
-        challenges = [(i, f"chall{i}", categories[i % len(
-            categories)], i % 3 == 0) for i in range(30)]
-        categories = {}
-        for idx, chall in enumerate(challenges):
-            if chall[2] not in categories.values():
-                categories[idx] = chall[2]
-        print(categories)
-        challenges = self._fake_challenges(24, categories)
+    async def challenge_selection(self):
+        challenges = self._fake_challenges(24)
         # challenges = [Others.Challenge(*list(challenge))
         #               for challenge in db.get_all_challenges()]
 
@@ -212,64 +248,33 @@ class CreateTicket(BaseActions):
         else:
             await self._ask_for_challenge(await self._ask_for_category(challenges))
 
-    async def main(self) -> discord.TextChannel:
-        """Creates a ticket"""
+class Utility:
+    @staticmethod
+    async def add(channel: discord.TextChannel, member: discord.Member):
+        """adds a member to a ticket(try adding roles(typehint optional))
 
-        await self._setup()
-        status = "open"
-        checked = "0"
-        db._raw_insert("INSERT INTO requests (channel_id, channel_name, guild_id, user_id, ticket_type, status, checked) VALUES ($1,$2,$3,$4,$5,$6,$8 )", (
-            self.ticket_channel.id, str(self.ticket_channel), self.guild.id, self.user_id, self.ticket_type, status, checked))
-        if self.ticket_type == "help":
-            await self._challenge_selection()
+        Parameters
+        ----------
+        member : `discord.Member`
+            member to be added\n
+        """
+        await channel.set_permissions(member, read_messages=True, send_messages=True)
 
-        avail_mods = get(
-            self.guild.roles, name=config.TICKET_PING_ROLE)
-        if not self.ticket_type == "submit":
-            welcome_message = f'Welcome <@{self.user_id}>,\nA new ticket has been opened {avail_mods.mention}\n\n'
-        else:
-            welcome_message = f'Welcome <@{self.user_id}>\n\n'
-        message = Options.message(self.ticket_type, avail_mods)
+        embed = await Others.make_embed(0x00FF00, f"{member.mention} was added")
+        await channel.send(embed=embed)
 
-        embed = await Others.make_embed(0x5dc169, message)
-        ticket_channel_message = await self.ticket_channel.send(welcome_message, embed=embed, view=action_views.CloseView())
+    @staticmethod
+    async def remove(channel: discord.TextChannel, member: discord.Member):
+        """remove a member to a ticket(try adding roles(typehint optional))
 
-        await ticket_channel_message.pin()
-        await self.ticket_channel.purge(limit=1)
-
-        if self.ticket_type == "help":
-            await self.ticket_channel.send("What have your tried so far?")
-
-        await self._log_to_channel("Created ticket")
-        log.info(
-            f"[CREATED] {self.ticket_channel} by {self.user} (ID: {self.channel_id})")
-        return self.ticket_channel
-
-#class Utility???
-    # async def add(self, member: discord.Member):
-    #     """adds a member to a ticket(try adding roles(typehint optional))
-
-    #     Parameters
-    #     ----------
-    #     member : `discord.Member`
-    #         member to be added\n
-    #     """
-    #     await self.channel.set_permissions(member, read_messages=True, send_messages=True)
-
-    #     emby = await Others.make_embed(0x00FF00, f"{member.mention} was added")
-    #     await self.channel.send(embed=emby)
-
-    # async def remove(self, member: discord.Member):
-    #     """remove a member to a ticket(try adding roles(typehint optional))
-
-    #     Parameters
-    #     ----------
-    #     member : `discord.Member`
-    #         member to be removed\n
-    #     """
-    #     await self.channel.set_permissions(member, read_messages=False, send_messages=False)
-    #     emby = await Others.make_embed(0xff0000, f"{member.mention} was removed")
-    #     await self.channel.send(embed=emby)
+        Parameters
+        ----------
+        member : `discord.Member`
+            member to be removed\n
+        """
+        await channel.set_permissions(member, read_messages=False, send_messages=False)
+        embed = await Others.make_embed(0xff0000, f"{member.mention} was removed")
+        await channel.send(embed=embed)
 
 
 class CloseTicket(BaseActions):
@@ -362,7 +367,7 @@ class CloseTicket(BaseActions):
         channel_users, time_open = await self.close_stats_helper(self.channel)
 
         close_stats_embed.add_field(
-            name="users(message distribution)", value=f"{channel_users}")
+            name="users (message distribution)", value=f"{channel_users}")
         close_stats_embed.add_field(
             name="time open", value=f"{time_open}")
 

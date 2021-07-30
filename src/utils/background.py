@@ -116,12 +116,11 @@ class AutoClose(commands.Cog):
                 status = db.get_status(channel.id)
                 if channel.id in safe_tickets_list or status == "closed" or status is None:
                     continue
-                try:
-                    status = db.get_status(channel.id)
-                except:
-                    return
 
-                message, duration = await cls.get_message_time(channel)
+                try:
+                    message, duration = await cls.get_message_time(channel)
+                except:
+                    continue
 
                 if duration < timedelta(**kwargs):
                     check = db.get_check(channel.id)
