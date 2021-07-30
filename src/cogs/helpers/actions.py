@@ -309,9 +309,12 @@ class CloseTicket(BaseActions):
 
         now = discord.utils.utcnow()
         duration = now - old
-        print(duration.total_seconds())
-        time_open = precisedelta(
-            duration, format="%0.0f", minimum_unit="minutes")
+        if duration.total_seconds() < 60:
+            time_open = precisedelta(
+                duration, format="%0.0f", minimum_unit="seconds")
+        else:
+            time_open = precisedelta(
+                duration, format="%0.0f", minimum_unit="minutes")
         return channel_users, time_open
 
     async def main(self):
