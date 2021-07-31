@@ -7,12 +7,12 @@ from discord.utils import get
 import cogs.helpers.actions as actions
 from utils.others import Others
 from cogs.helpers.views import command_views
-from utils.database.db import DatabaseManager as db
-from utils.background import ScrapeChallenges
 import config
 
+from utils.database.db import DatabaseManager as db
+from utils.background import ScrapeChallenges
+
 log = logging.getLogger(__name__)
-guild_ids = [788162899515801637, 861845094415728681]
 
 class TicketCommands(commands.Cog):
     """other useful commands"""
@@ -24,7 +24,7 @@ class TicketCommands(commands.Cog):
     @commands.has_role(config.ADMIN_ROLE)
     async def ticket(self, ctx: commands.Context):
         """prints a ticket message"""
-        await ctx.channel.send("_ _", view=command_views.TicketView())
+        await ctx.channel.send("_ _", view=command_views.TicketView(self.bot))
         await Others.delmsg(ctx)
 
     @commands.command(name="create", aliases=["new", "cr"])
@@ -56,14 +56,15 @@ class TicketCommands(commands.Cog):
 
         memids = [member.id for member in ctx.channel.members]
         if member.id in memids:
-            emby = await Others.make_embed(0x0000FF, f"User {member.name} already in channel")
-            await ctx.channel.send(embed=emby)
+            embed = Others.Embed(
+                description=f"User {member.name} already in channel")
+            await ctx.channel.send(embed=embed)
             return
 
         admin = get(ctx.guild.roles, name=config.ADMIN_ROLE)
         if admin in member.roles:
-            emby = await Others.make_embed(0x0000FF, f"User {member.name} is an admin")
-            await ctx.channel.send(embed=emby)
+            embed = Others.Embed(description=f"User {member.name} is an admin")
+            await ctx.channel.send(embed=embed)
             return
 
         await actions.Utility.add(ctx.channel, member)
@@ -76,13 +77,14 @@ class TicketCommands(commands.Cog):
 
         memids = [member.id for member in ctx.channel.members]
         if member.id not in memids:
-            emby = await Others.make_embed(0x0000FF, f"User {member.name} not in channel")
-            await ctx.channel.send(embed=emby)
+            embed = Others.Embed(
+                description=f"User {member.name} not in channel")
+            await ctx.channel.send(embed=embed)
             return
         admin = get(ctx.guild.roles, name=config.ADMIN_ROLE)
         if admin in member.roles:
-            emby = await Others.make_embed(0x0000FF, f"User {member.name} is an admin")
-            await ctx.channel.send(embed=emby)
+            embed = Others.Embed(description=f"User {member.name} is an admin")
+            await ctx.channel.send(embed=embed)
             return
 
         await actions.Utility.remove(ctx.channel, member)

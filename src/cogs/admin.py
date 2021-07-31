@@ -28,9 +28,8 @@ class Admin(commands.Cog):
     async def shutdown(self, ctx):
         """shutdowns the bot"""
 
-        embed = discord.Embed(
-            description="Shutting down. Bye! :wave:",
-            color=0x00FF00)
+        embed = Others.Embed(
+            description="Shutting down. Bye! :wave:")
         await ctx.send(embed=embed)
         log.warning(f"{ctx.author} is closing the bot")
         await self.bot.close()
@@ -90,8 +89,8 @@ class Admin(commands.Cog):
         failure = check_all()
         if not failure:
             fails = "\n".join(check_all(return_print=True))
-            emby = discord.Embed(title="Failed Checks", description=fails)
-            await ctx.channel.send(embed=emby)
+            embed = Others.Embed(title="Failed Checks", description=fails)
+            await ctx.channel.send(embed=embed)
             return
 
         await ctx.channel.send("All checks were successful 😎")

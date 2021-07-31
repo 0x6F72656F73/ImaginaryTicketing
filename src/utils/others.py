@@ -5,6 +5,7 @@ from typing import Any, NamedTuple
 import logging
 
 import discord
+from discord import Embed
 from discord.ext import commands
 import chat_exporter
 
@@ -49,7 +50,8 @@ class Others(commands.Cog):
         with open(f"transcripts/transcript-{channel}.html", "w+") as file:
             file.write(transcript)
 
-        return message
+        return message, discord.File(io.BytesIO(transcript.encode()),
+                                     filename=f"transcript-{channel}.html")
 
     @staticmethod
     async def log_embed(title: str, user: discord.user.User, avatar_url: discord.asset.Asset, channel_name: discord.channel.TextChannel) -> discord.Embed:
@@ -70,31 +72,24 @@ class Others(commands.Cog):
         -------
         `discord.embeds.Embed`: an embed
         """
-        embed = discord.Embed(title=f"{title}",
-                              timestamp=discord.utils.utcnow(), color=0xff0000)
+        embed = Others.Embed(title=f"{title}",
+                             timestamp=discord.utils.utcnow())
         embed.set_author(name=f"{user}", icon_url=f"{avatar_url}")
         embed.add_field(name="Channel",
                         value=f"{channel_name}")
         return embed
 
     @staticmethod
-    async def make_embed(color: str, desc: Any, **kwargs) -> discord.embeds.Embed:
-        """returns an embed with no fields
-
-        Parameters
-        ----------
-        color : `str`
-            the color of the embed\n
-        desc : `Any`
-            the description of the embed\n
+    class Embed(Embed):
+        """returns an embed with a random color
 
         Returns
         -------
-        `discord.embeds.Embed`: the returned embed
+        `discord.embeds.Embed`: the embed
         """
-        embed = discord.Embed(description=desc,
-                              timestamp=discord.utils.utcnow(), color=color, **kwargs)
-        return embed
+
+        def __new__(cls, **kwargs) -> discord.embeds.Embed:
+            return discord.Embed(color=discord.Color.random(), **kwargs)
 
     @staticmethod
     async def delmsg(ctx, time: int = 1):

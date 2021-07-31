@@ -5,6 +5,7 @@ import logging
 from typing import List, Tuple, Union, Optional
 
 import discord
+from discord.ext import commands
 from discord.utils import get
 from humanize import precisedelta
 
@@ -72,7 +73,8 @@ class BaseActions:
 
         return number, current_type, user_id, user
 class CreateTicket(BaseActions):
-    def __init__(self, ticket_type: str, interaction: Optional[discord.Interaction], *args, **kwargs):
+    def __init__(self, bot: commands.Bot, ticket_type: str, interaction: Optional[discord.Interaction], *args, **kwargs):
+        self.bot = bot
         self.ticket_type = ticket_type
         if interaction:
             self.send_pm = lambda message: interaction.response.send_message(
@@ -144,7 +146,7 @@ class CreateTicket(BaseActions):
             self.ticket_channel.id, str(self.ticket_channel), self.guild.id, self.user_id, self.ticket_type, status, checked))
         if self.ticket_type == "help":
             helper = _CreateTicketHelper(
-                self.ticket_channel, self.ticket_type, self._args[0], *self._args[1], **self._args[2])
+                self.ticket_channel, self.bot, self.ticket_type, self._args[0], *self._args[1], **self._args[2])
             await helper.challenge_selection()
 
         avail_mods = get(
@@ -157,14 +159,11 @@ class CreateTicket(BaseActions):
             welcome_message = f'Welcome <@{self.user_id}>\n,A new ticket has been opened {avail_mods.mention}\n'
         message = Options.message(self.ticket_type, avail_mods)
 
-        embed = await Others.make_embed(0x5dc169, message)
+        embed = Others.Embed(description=message)
         ticket_channel_message = await self.ticket_channel.send(welcome_message, embed=embed, view=action_views.CloseView())
 
         await ticket_channel_message.pin()
         await self.ticket_channel.purge(limit=1)
-
-        if self.ticket_type == "help":
-            await self.ticket_channel.send("What have your tried so far?")
 
         await self._log_to_channel("Created ticket")
         log.info(
@@ -223,7 +222,7 @@ class _CreateTicketHelper(CreateTicket):
 
         selected_challenge = [
             ch for ch in challenges if ch.id_ == int(view.children[0]._selected_values[0])][0]
-        await self.ticket_channel.edit(topic=f"this ticket is about {selected_challenge.title}")
+        await self.ticket_channel.edit(topic=f"{selected_challenge.title}")
 
     async def _ask_for_category(self, challenges: List[Others.Challenge]) -> List[Others.Challenge]:
         categories = {ch.category for ch in challenges}
@@ -246,6 +245,9 @@ class _CreateTicketHelper(CreateTicket):
         challenges = self._fake_challenges(24)
         # challenges = [Others.Challenge(*list(challenge))
         #               for challenge in db.get_all_challenges()]
+        member = self.guild.get_member(self.user_id)
+        await self.ticket_channel.set_permissions(member, read_messages=True,
+                                                  send_messages=False)
 
         if len(challenges) < 1:
             await self.ticket_channel.send("There are no released challenges")
@@ -253,6 +255,11 @@ class _CreateTicketHelper(CreateTicket):
             await self._ask_for_challenge(challenges)
         else:
             await self._ask_for_challenge(await self._ask_for_category(challenges))
+        overwrites = {
+            member: discord.PermissionOverwrite(send_messages=True)
+        }
+        await self.ticket_channel.edit(overwrites=overwrites)
+        await self.ticket_channel.send("What have your tried so far?")
 
 class Utility:
     @staticmethod
@@ -266,7 +273,7 @@ class Utility:
         """
         await channel.set_permissions(member, read_messages=True, send_messages=True)
 
-        embed = await Others.make_embed(0x00FF00, f"{member.mention} was added")
+        embed = Others.Embed(description=f"{member.mention} was added")
         await channel.send(embed=embed)
 
     @staticmethod
@@ -279,7 +286,7 @@ class Utility:
             member to be removed\n
         """
         await channel.set_permissions(member, read_messages=False, send_messages=False)
-        embed = await Others.make_embed(0xff0000, f"{member.mention} was removed")
+        embed = Others.Embed(description=f"{member.mention} was removed")
         await channel.send(embed=embed)
 
 
@@ -330,9 +337,8 @@ class CloseTicket(BaseActions):
             await self.channel.send("Channel is already closed")
             return
 
-        close_stats_embed = discord.Embed(
-            timestamp=discord.utils.utcnow(),
-            color=0xFF0000)
+        close_stats_embed = Others.Embed(
+            timestamp=discord.utils.utcnow())
         close_stats_embed.set_author(
             name=f"{self.user}", icon_url=f"{self.user.avatar.url}")
         embed_message = await self.channel.send(embed=close_stats_embed)
@@ -369,7 +375,7 @@ class CloseTicket(BaseActions):
             await self.channel.send("ticket-log channel does not exist in category logs")
             return
 
-        transcript_message = await Others.transcript(self.channel, t_user, channel_log)
+        transcript_message, transcript_file = await Others.transcript(self.channel, channel_log)
         if transcript_message:
             close_stats_embed.add_field(name="transcript",
                                         value=f"[transcript url]({config.TRANSCRIPT_DOMAIN}:{config.TRANSCRIPT_PORT}/direct?link={transcript_message.attachments[0].url} \"oreos taste good dont they\") ")
@@ -384,7 +390,7 @@ class CloseTicket(BaseActions):
         close_stats_embed.add_field(
             name="time open", value=f"{time_open}")
 
-        await t_user.send(embed=close_stats_embed)
+        await t_user.send(embed=close_stats_embed, file=transcript_file)
         await embed_message.edit(embed=close_stats_embed, view=action_views.ReopenDeleteView())
 
         status = "closed"
@@ -432,10 +438,9 @@ class ReopenTicket(BaseActions):
 
         status = "open"
         db.update_status(status, self.channel_id)
-        reopened_embed = discord.Embed(
+        reopened_embed = Others.Embed(
             description="Ticket was re-opened",
-            timestamp=discord.utils.utcnow(),
-            color=0xFF0000)
+            timestamp=discord.utils.utcnow())
         reopened_embed.set_author(
             name=f"{self.user}", icon_url=f"{self.user.avatar.url}")
         await self.channel.send(embed=reopened_embed, view=action_views.CloseView())
@@ -461,10 +466,9 @@ class DeleteTicket(BaseActions):
             await self.channel.send("Channel is not a ticket")
             return
 
-        embed = discord.Embed(
+        embed = Others.Embed(
             title="Deleting ticket",
-            description="5 seconds left",
-            color=0xf7fcfd)
+            description="5 seconds left")
         await self.channel.send(embed=embed)
         await asyncio.sleep(5)
         await self.channel.delete()

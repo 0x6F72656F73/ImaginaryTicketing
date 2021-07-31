@@ -33,10 +33,10 @@ class MiscCommands(commands.Cog):
     async def about(self, ctx):
         """returns about info"""
 
-        emby = discord.Embed(title="about",
+        embed = Others.Embed(title="about",
                              description="This bot was proudly made by 0x6F72656F73#8221 :cookie:")
 
-        await ctx.send(embed=emby)
+        await ctx.send(embed=embed)
 
 def setup(bot: commands.Bot):
     bot.add_cog(MiscCommands(bot))
