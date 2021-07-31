@@ -13,7 +13,7 @@ EMOJIS_MESSAGE = ['<:rooSupport:811702778622771232>',
 
 # EMOJIS_MESSAGE = ['🚩', '📩', '🧐']
 
-BASE_API_LINK = "https://ictf.azurewebsites.net/api"
+BASE_API_LINK = "https://imaginaryctf.org/api"
 
 TRANSCRIPT_DOMAIN = "https://oreos.imaginaryctf.org"
 TRANSCRIPT_PORT = "1337"
