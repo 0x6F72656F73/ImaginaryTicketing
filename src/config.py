@@ -9,7 +9,7 @@ LOG_CHANNEL_NAME = "ticket-log"
 
 
 EMOJIS_MESSAGE = ['<:rooSupport:811702778622771232>',
-                  '📩', '<a:ictf:833862746927923219>']
+                  '📩', '<:imagine:871115444856160296>']
 
 # EMOJIS_MESSAGE = ['🚩', '📩', '🧐']
 
