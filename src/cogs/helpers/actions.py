@@ -255,10 +255,8 @@ class _CreateTicketHelper(CreateTicket):
             selected_challenge = await self._ask_for_challenge(await self._ask_for_category(challenges))
 
         await self.ticket_channel.edit(topic=f"{selected_challenge.title}")
-        overwrites = {
-            member: discord.PermissionOverwrite(send_messages=True)
-        }
-        await self.ticket_channel.edit(overwrites=overwrites)
+        await self.ticket_channel.set_permissions(member, read_messages=True,
+                                                  send_messages=True)
         await self.ticket_channel.send("What have your tried so far?")
 
         def user_message_check(m):
