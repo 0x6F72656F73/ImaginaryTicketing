@@ -240,9 +240,9 @@ class _CreateTicketHelper(CreateTicket):
         return category_challenges
 
     async def challenge_selection(self):
-        # challenges = self._fake_challenges(21)
-        challenges = [Others.Challenge(*list(challenge))
-                      for challenge in db.get_all_challenges()]
+        challenges = self._fake_challenges(0)
+        # challenges = [Others.Challenge(*list(challenge))
+        #               for challenge in db.get_all_challenges()]
         member = self.guild.get_member(self.user_id)
         await self.ticket_channel.set_permissions(member, read_messages=True,
                                                   send_messages=False)
@@ -251,10 +251,11 @@ class _CreateTicketHelper(CreateTicket):
             await self.ticket_channel.send("There are no released challenges")
         elif len(challenges) <= 25:
             selected_challenge = await self._ask_for_challenge(list(reversed(challenges)))
+            await self.ticket_channel.edit(topic=f"{selected_challenge.title}")
         else:
             selected_challenge = await self._ask_for_challenge(await self._ask_for_category(challenges))
+            await self.ticket_channel.edit(topic=f"{selected_challenge.title}")
 
-        await self.ticket_channel.edit(topic=f"{selected_challenge.title}")
         await self.ticket_channel.set_permissions(member, read_messages=True,
                                                   send_messages=True)
         await self.ticket_channel.send("What have your tried so far?")
