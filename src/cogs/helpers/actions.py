@@ -345,9 +345,12 @@ class CloseTicket(BaseActions):
         embed_message = await self.channel.send(embed=close_stats_embed)
 
         member = self.guild.get_member(self.user_id)
+        admin = get(self.guild.roles, name=config.ADMIN_ROLE)
         overwrites = {
             self.guild.default_role: discord.PermissionOverwrite(read_messages=False),
             member: discord.PermissionOverwrite(read_messages=None, send_messages=None),
+            admin: discord.PermissionOverwrite(
+                read_messages=True, send_messages=True)
         }
         category = await self._move_channel("Closed Tickets")
 
