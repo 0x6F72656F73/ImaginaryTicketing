@@ -1,4 +1,4 @@
 [MESSAGES CONTROL]
-disable=line-too-long, missing-function-docstring, missing-module-docstring, broad-except, anomalous-backslash-in-string, logging-fstring-interpolation, bare-except, protected-access
+disable=line-too-long, missing-function-docstring, missing-module-docstring, broad-except, anomalous-backslash-in-string, logging-fstring-interpolation, bare-except, protected-access, import-error
 generated-members=config.*
 good-names=e

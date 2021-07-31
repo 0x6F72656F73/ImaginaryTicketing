@@ -3,6 +3,8 @@ from itertools import chain
 from typing import Union, List
 import logging
 
+from utils.others import Others
+
 log = logging.getLogger(__name__)
 
 class DatabaseManager():
@@ -32,27 +34,11 @@ class DatabaseManager():
 
     @classmethod
     def _raw_update(cls, query: str, *values):
-        conn = cls._db_connect()
-        cur = conn.cursor()
-        try:
-            with conn:
-                cur.execute(query, *values)
-        except Exception as e:
-            log.exception(str(e))
-        finally:
-            conn.close()
+        return cls._raw_insert(query, *values)
 
     @classmethod
     def _raw_delete(cls, query: str, *values):
-        conn = cls._db_connect()
-        cur = conn.cursor()
-        try:
-            with conn:
-                cur.execute(query, *values)
-        except Exception as e:
-            log.exception(str(e))
-        finally:
-            conn.close()
+        return cls._raw_insert(query, *values)
 
     @classmethod
     def _raw_select(cls, query: str, *values, fetch_one: bool = False, fetch_all: bool = True) -> Union[sqlite3.Row, list]:
@@ -103,7 +89,7 @@ class DatabaseManager():
             return None
 
     @classmethod
-    def get_all_ticket_channel_messages(cls, guild_id: int) -> [List]:
+    def get_all_ticket_channel_messages(cls, guild_id: int) -> List[int]:
         """gets a list of all ticket message's ids for a guild
 
         Parameters
@@ -113,7 +99,7 @@ class DatabaseManager():
 
         Returns
         -------
-        `list`: all ticket messages\n
+        `list[int]`: all ticket messages\n
         """
         query = "SELECT ticket_id FROM tickets WHERE guild_id = $1"
         values = (guild_id,)
@@ -122,7 +108,7 @@ class DatabaseManager():
         return ticket_id_list
 
     @classmethod
-    def get_all_ticket_channels(cls, guild_id: int) -> [List]:
+    def get_all_ticket_channels(cls, guild_id: int) -> List[int]:
         """gets a list of all ticket channels for a guild
 
         Parameters
@@ -132,7 +118,7 @@ class DatabaseManager():
 
         Returns
         -------
-        `list`: all ticket channels
+        `list[int]`: all ticket channels
         """
         query = "SELECT channel_id FROM requests WHERE guild_id = $1"
         values = (guild_id,)
@@ -169,12 +155,12 @@ class DatabaseManager():
 
     @classmethod
     def get_number_new(cls, ticket_type: int) -> str:
-        """gets the number of tickets of that emoji type
+        """gets the number of tickets of that ticket type
 
         Parameters
         ----------
         ticket_type : `str`
-            type of ticket(emoji)\n
+            type of ticket\n
 
         Returns
         -------
@@ -196,7 +182,7 @@ class DatabaseManager():
 
     @classmethod
     def get_number_previous(cls, channel_id: int) -> str:
-        """gets the number of tickets of that emoji type
+        """gets the number of tickets of that ticket type
 
         Parameters
         ----------
@@ -211,7 +197,6 @@ class DatabaseManager():
         values = (channel_id,)
         db_channel_name_str = cls._raw_select(query, values, fetch_one=True)
         try:
-            # lower cuz discord channel names are lowercase
             db_channel_name = db_channel_name_str[0].lower()
         except TypeError:
             return None
@@ -231,7 +216,7 @@ class DatabaseManager():
             the channel id\n
         Returns
         -------
-        `str`: string representation of the emoji
+        `str`: ticket type
         """
         query = "SELECT ticket_type FROM requests WHERE channel_id = $1"
         values = (channel_id,)
@@ -260,7 +245,6 @@ class DatabaseManager():
         values = (channel_id,)
         db_channel_name_str = cls._raw_select(query, values, fetch_one=True)
         try:
-            # lower cuz discord channel names are lowercase
             return db_channel_name_str[0].lower()
         except TypeError:
             return None
@@ -353,7 +337,7 @@ class DatabaseManager():
         -------
         `Union[str, None]`: the channel id if a ticket exists, None if no ticket exists
         """
-        query = "SELECT channel_id from requests where user_id=$1 and ticket_type='submit' and status='open'"
+        query = "SELECT channel_id FROM requests WHERE user_id=$1 AND ticket_type='submit' AND status='open'"
         values = (user_id,)
         check = cls._raw_select(query, values, fetch_one=True)
         try:
@@ -364,22 +348,23 @@ class DatabaseManager():
             log.exception(exception)
             return None
 
-    # def put_challenge(self, all_params):
-    #     query = "INSERT into submit VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)"
-    #     values = all_params
-    #     self._raw_insert(query, values)
+    @classmethod
+    def add_challenge(cls, id_: int, author: str, title: str, ignore: bool = False):
+        query = "INSERT INTO challenges(id, author, title, ignore) VALUES($1,$2,$3,$4)"
+        values = (id_, author, title, ignore)
+        cls._raw_insert(query, values)
 
-    # def get_challenge_user(self, userid: int):
-    #     query = "SELECT title FROM submit WHERE challenge_author = $1"
-    #     values = (userid)
-    #     allvals = self._raw_select(query, values)
-    #     return list(chain(*allvals))
+    @classmethod
+    def get_all_challenges(cls):
+        query = "SELECT * FROM challenges"
+        all_challenges = cls._raw_select(query)
+        return all_challenges
 
-    # def get_challenge(self):
-    #     query = "SELECT title FROM submit"
-    #     allvals = self._raw_select(query)
-    #     return list(chain(*allvals))
-
-    # def insert_survey(self, values: list):
-    #     query = "INSERT INTO (create table survey) VALUES all form choices(including opt in)"
-    #     self._raw_insert()
+    @classmethod
+    def refresh_database(cls, challenges: List[Others.Challenge]):
+        delete_query = "DELETE FROM challenges"
+        cls._raw_delete(delete_query)
+        insert_query = "INSERT INTO challenges(id, title, author, category, ignore) VALUES($1,$2,$3,$4,$5)"
+        for id_, title, author, category, ignore in challenges:
+            values = (id_, title, author, category, ignore)
+            cls._raw_insert(insert_query, values)

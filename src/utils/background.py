@@ -5,29 +5,34 @@
 """
 
 from itertools import chain
-from datetime import datetime, timedelta
+from datetime import timedelta
 import logging
 
 import discord
 from discord.ext import commands
+from environs import Env
+import requests
 
-import config
-from cogs.helpers.actions import Actions
+import cogs.helpers.views.action_views as action_views
+from cogs.helpers.actions import CloseTicket
 from utils.options import Options
 from utils.others import Others
 from utils.database.db import DatabaseManager as db
+import config
 
 log = logging.getLogger(__name__)
 
-class Background(commands.Cog):
-    """Background Task Manager"""
+class AutoClose(commands.Cog):
+    """Autoclose ticket manager"""
 
-    @staticmethod
-    async def get_message_time(channel: discord.channel.TextChannel):
+    @classmethod
+    async def get_message_time(cls, channel: discord.channel.TextChannel):
         """get the total time of the last message send
 
-        ### Args:
-            channel (str): channel to get message from
+        Parameters
+        ----------
+        channel : `str`
+            channel to get message from
 
         Returns:
             duration (int): duration from message creation till now
@@ -38,19 +43,18 @@ class Background(commands.Cog):
             try:
                 message = message_list[0]
             except IndexError:
-                log.info(f"no message in {channel.name}")
                 return
         except discord.errors.NotFound as e:
             log.warning(e)
             return
         else:
-            pass  # nothing to do
+            pass
         old = message.created_at
-        now = datetime.utcnow()
+        now = discord.utils.utcnow()
         return message, now - old
 
-    @staticmethod
-    async def old_ticket_actions(bot: discord.ext.commands.bot.Bot, guild: discord.guild.Guild,
+    @classmethod
+    async def old_ticket_actions(cls, bot: discord.ext.commands.bot.Bot, guild: discord.guild.Guild,
                                  channel: discord.channel.TextChannel, message: discord.message.Message):
         """Check if a channel is old
 
@@ -60,7 +64,7 @@ class Background(commands.Cog):
 
         Parameters
         ----------
-        bot : `discord.ext.commands.bot.Bot`
+        bot : `discord.commands.bot.Bot`
             the bot\n
         guild : `discord.guild.Guild`
             the guild\n
@@ -71,28 +75,26 @@ class Background(commands.Cog):
         """
 
         check = db.get_check(channel.id)
-        log.info(f"check: {check}")
+        log.info(f"check: {check}- {channel}")
 
         if check == 1:
-            epicreactions = Actions(commands.Cog, bot, guild.id, guild, bot.user.id, bot,
-                                    channel.id, channel, message.id, True, bot, emoji=None, background=True)
-            await epicreactions.close()
+            close = CloseTicket(guild, bot, channel, background=True)
+            await close.main()
             db.update_check("0", channel.id)
 
         elif check == 0:
             user_id = db.get_user_id(channel.id)
             member = guild.get_member(int(user_id))
             message = f"If that is all we can help you with {member.mention}, please close this ticket."
-            random = await Others.random_member_webhook(guild)
-            sent_message = await Others.say_in_webhook(random, channel, random.avatar_url, True, message, return_message=True)
-            await sent_message.add_reaction("🔒")
+            random = await Others.random_admin_member(guild)
+            await Others.say_in_webhook(bot, random, channel, random.avatar.url, True, message, return_message=True, view=action_views.CloseView())
             log.info(f"{random.name} said the message in {channel.name}")
             db.update_check("1", channel.id)
         else:  # ticket ignored
             pass
 
-    @staticmethod
-    async def inactivity(bot, **kwargs):
+    @classmethod
+    async def main(cls, bot, **kwargs):
         """check for inactivity in a channel
 
         Parameters
@@ -102,11 +104,9 @@ class Background(commands.Cog):
         """
         cat = Options.full_category_name("help")
         for guild in bot.guilds:
-            bot_guild = guild.get_member(bot.user.id)
-            if bot_guild.guild_permissions.administrator is None:
+            if guild.get_member(bot.user.id).guild_permissions.administrator is None:
                 return
-            safe_tickets = db.get_guild_check(guild.id)
-            safe_tickets_list = list(chain(*safe_tickets))
+            safe_tickets_list = list(chain(*db.get_guild_check(guild.id)))
             category = discord.utils.get(guild.categories, name=cat)
             if category is None:
                 return
@@ -116,18 +116,13 @@ class Background(commands.Cog):
                 status = db.get_status(channel.id)
                 if channel.id in safe_tickets_list or status == "closed" or status is None:
                     continue
-                try:
-                    status = db.get_status(channel.id)
-                except:
-                    return
 
                 try:
-                    message, duration = await Background.get_message_time(channel)
+                    message, duration = await cls.get_message_time(channel)
                 except:
-                    return
+                    continue
 
                 if duration < timedelta(**kwargs):
-                    # print("activity detected")
                     check = db.get_check(channel.id)
 
                     role = discord.utils.get(
@@ -138,5 +133,27 @@ class Background(commands.Cog):
                         db.update_check("0", channel.id)
 
                 elif duration > timedelta(**kwargs):
-                    # print("no activity detected")
-                    await Background.old_ticket_actions(bot, guild, channel, message)
+                    await cls.old_ticket_actions(bot, guild, channel, message)
+
+class ScrapeChallenges():
+    """Scraps challenges"""
+    @classmethod
+    def _setup(cls):
+        env = Env()
+        env.read_env()
+        return {'apikey': env.str('apikey')}
+
+    @classmethod
+    def main(cls):
+        params = cls._setup()
+        req = requests.get(config.BASE_API_LINK +
+                           '/challenges/released', params=params)
+
+        challenges = req.json()
+        all_challenges = []
+        for challenge in challenges:
+            ignore = challenge['author'] == 'Board'
+            all_challenges.append(Others.Challenge(
+                challenge["id"], challenge["title"], challenge["author"], challenge["category"].split(",")[0], ignore))
+
+        db.refresh_database(all_challenges)

@@ -31,7 +31,7 @@ def find_level():
         level = logging.CRITICAL
     else:
         log.CRITICAL("no log level found")
-        sys.exit("please have a valid log level")
+        raise RuntimeError("please have a valid log level")
     return level
 
 def startlogging(filename: str):
@@ -65,7 +65,7 @@ def startlogging(filename: str):
         filename=filename, encoding='utf-8', mode='a', maxBytes=max_bytes, backupCount=10)
     handler.setFormatter(log_formatter)
     root_logger.addHandler(handler)
-    if level == logging.DEBUG or level == logging.INFO:
+    if level in (logging.DEBUG, logging.INFO):
         console_handler = logging.StreamHandler(sys.stdout)
         console_handler.setFormatter(log_formatter)
         root_logger.addHandler(console_handler)
