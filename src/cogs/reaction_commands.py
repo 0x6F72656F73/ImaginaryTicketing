@@ -23,7 +23,7 @@ class TicketCommands(commands.Cog):
     @commands.command(name="ticket")
     @commands.has_role(config.ADMIN_ROLE)
     async def ticket(self, ctx: commands.Context):
-        """prints a ticket message"""
+        """shows a ticket message"""
         await ctx.channel.send("_ _", view=command_views.TicketView(self.bot))
         await Others.delmsg(ctx)
 

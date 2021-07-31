@@ -77,10 +77,10 @@ class CreateTicket(BaseActions):
         self.bot = bot
         self.ticket_type = ticket_type
         if interaction:
-            self.send_pm = lambda message: interaction.response.send_message(
-                message, ephemeral=True)
+            self.send_pm = lambda m: interaction.response.send_message(
+                m, ephemeral=True)
         else:
-            self.send_pm = lambda message: self.user.send(message)
+            self.send_pm = lambda m: self.user.send(m)
 
         self.ticket_channel: discord.TextChannel = None
         self._args = [interaction, args, kwargs]
@@ -238,11 +238,10 @@ class _CreateTicketHelper(CreateTicket):
             await select_messages.delete()
         category_challenges = [
             ch for ch in challenges if ch.category == view.children[0]._selected_values[0]]
-        print(category_challenges)
         return category_challenges
 
     async def challenge_selection(self):
-        challenges = self._fake_challenges(24)
+        challenges = self._fake_challenges(21)
         # challenges = [Others.Challenge(*list(challenge))
         #               for challenge in db.get_all_challenges()]
         member = self.guild.get_member(self.user_id)
@@ -252,7 +251,7 @@ class _CreateTicketHelper(CreateTicket):
         if len(challenges) < 1:
             await self.ticket_channel.send("There are no released challenges")
         elif len(challenges) <= 25:
-            await self._ask_for_challenge(challenges)
+            await self._ask_for_challenge(reversed(challenges))
         else:
             await self._ask_for_challenge(await self._ask_for_category(challenges))
         overwrites = {
@@ -260,6 +259,10 @@ class _CreateTicketHelper(CreateTicket):
         }
         await self.ticket_channel.edit(overwrites=overwrites)
         await self.ticket_channel.send("What have your tried so far?")
+
+        def user_message_check(m):
+            return m.channel == self.ticket_channel and m.author == self.user
+        await self.bot.wait_for('message', check=user_message_check)
 
 class Utility:
     @staticmethod

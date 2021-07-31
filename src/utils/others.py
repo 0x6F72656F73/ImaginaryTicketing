@@ -1,7 +1,7 @@
 import io
 import asyncio
 import random
-from typing import Any, NamedTuple
+from typing import NamedTuple
 import logging
 
 import discord
