@@ -240,9 +240,9 @@ class _CreateTicketHelper(CreateTicket):
         return category_challenges
 
     async def challenge_selection(self):
-        challenges = self._fake_challenges(0)
-        # challenges = [Others.Challenge(*list(challenge))
-        #               for challenge in db.get_all_challenges()]
+        # challenges = self._fake_challenges(21)
+        challenges = [Others.Challenge(*list(challenge))
+                      for challenge in db.get_all_challenges()]
         member = self.guild.get_member(self.user_id)
         await self.ticket_channel.set_permissions(member, read_messages=True,
                                                   send_messages=False)
