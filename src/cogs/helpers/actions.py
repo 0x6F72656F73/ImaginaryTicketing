@@ -1,3 +1,4 @@
+import os
 import asyncio
 from collections import Counter
 import logging
@@ -5,7 +6,6 @@ from typing import List, Tuple, Union, Optional
 
 import discord
 from discord.utils import get
-from discord.ext import commands
 from humanize import precisedelta
 
 import cogs.helpers.views.action_views as action_views
@@ -133,6 +133,11 @@ class CreateTicket(BaseActions):
         """Creates a ticket"""
 
         await self._setup()
+
+        if self.ticket_type == "help":
+            welcome_message = f'Welcome <@{self.user_id}>'
+            await self.ticket_channel.send(welcome_message)
+
         status = "open"
         checked = "0"
         db._raw_insert("INSERT INTO requests (channel_id, channel_name, guild_id, user_id, ticket_type, status, checked) VALUES ($1,$2,$3,$4,$5,$6,$8 )", (
@@ -144,10 +149,12 @@ class CreateTicket(BaseActions):
 
         avail_mods = get(
             self.guild.roles, name=config.TICKET_PING_ROLE)
-        if not self.ticket_type == "submit":
-            welcome_message = f'Welcome <@{self.user_id}>,\nA new ticket has been opened {avail_mods.mention}\n\n'
+        if self.ticket_type == "help":
+            welcome_message = f'A new ticket has been opened {avail_mods.mention}'
+        elif self.ticket_type == "submit":
+            welcome_message = f'Welcome <@{self.user_id}>'
         else:
-            welcome_message = f'Welcome <@{self.user_id}>\n\n'
+            welcome_message = f'Welcome <@{self.user_id}>\n,A new ticket has been opened {avail_mods.mention}\n'
         message = Options.message(self.ticket_type, avail_mods)
 
         embed = await Others.make_embed(0x5dc169, message)
@@ -163,7 +170,6 @@ class CreateTicket(BaseActions):
         log.info(
             f"[CREATED] {self.ticket_channel} by {self.user} (ID: {self.channel_id})")
         return self.ticket_channel
-
 class _CreateTicketHelper(CreateTicket):
     def __init__(self, ticket_channel: discord.TextChannel, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -188,9 +194,9 @@ class _CreateTicketHelper(CreateTicket):
             view = self.view  # pylint: disable=maybe-no-member
             view.stop()
 
-    class ChallengeView(discord.ui.View, ChallengeSelect):
-        def __init__(self, author: discord.Member, custom_id: str, options: List[discord.SelectOption], placeholder: str, **kwargs):
-            super().__init__(**kwargs)
+    class ChallengeView(discord.ui.View):
+        def __init__(self, author: discord.Member, custom_id: str, options: List[discord.SelectOption], placeholder: str, timeout: float = 300, **kwargs):
+            super().__init__(timeout=timeout, **kwargs)
             self.add_item(_CreateTicketHelper.ChallengeSelect(
                 custom_id, options, placeholder))
             self.author = author
@@ -207,8 +213,8 @@ class _CreateTicketHelper(CreateTicket):
             label=(challenge.title[:23] + '..') if len(challenge.title) > 25 else challenge.title, value=f"{challenge.id_}") for challenge in challenges]
 
         while True:
-            view = self.ChallengeView(author=self.user, custom_id="ticketing:challenge_request", options=challenge_options,
-                                      placeholder="Please choose a challenge", timeout=5)
+            view = self.ChallengeView(author=self.user, custom_id=f"ticketing:challenge_request-{os.urandom(16).hex()}", options=challenge_options,
+                                      placeholder="Please choose a challenge")
             select_messages = await self.ticket_channel.send("Please select which challenge you need help with", view=view)
             await view.wait()
             if view.children[0]._selected_values:
@@ -224,8 +230,8 @@ class _CreateTicketHelper(CreateTicket):
         category_options = [discord.SelectOption(
             label=cat, value=cat) for cat in categories]
         while True:
-            view = self.ChallengeView(author=self.user, custom_id="ticketing:challenge_request", options=category_options,
-                                      placeholder="Please choose a category", timeout=5)
+            view = self.ChallengeView(author=self.user, custom_id="ticketing:category_request-{os.urandom(16).hex()}", options=category_options,
+                                      placeholder="Please choose a category")
             select_messages = await self.ticket_channel.send("Please select which category you need help with", view=view)
             await view.wait()
             if view.children[0]._selected_values:
