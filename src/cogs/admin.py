@@ -1,7 +1,6 @@
 import asyncio
 import logging
 
-import discord
 from discord.utils import get
 from discord.ext import commands
 
@@ -26,7 +25,7 @@ class Admin(commands.Cog):
     @commands.command(name="shutdown")
     @is_owner()
     async def shutdown(self, ctx):
-        """shutdowns the bot"""
+        """shuts the bot down"""
 
         embed = Others.Embed(
             description="Shutting down. Bye! :wave:")
@@ -48,21 +47,6 @@ class Admin(commands.Cog):
         msg = await ctx.send(f'Purged {limit} messages')
         await asyncio.sleep(3)
         await msg.delete()
-
-    @commands.command(name="deleteticketmessage", aliases=["dtm", "dm"])
-    @commands.has_role(config.ADMIN_ROLE)
-    async def delete_ticket_id(self, ctx, ticket_id: str):
-        """deletes a ticket message"""
-
-        try:
-            db._raw_delete(
-                "DELETE FROM tickets WHERE guild_id = $1 AND ticket_id = $2", (ctx.guild.id, ticket_id,))
-            await ctx.channel.send("ticket message was be deleted")
-        except Exception as e:
-            log.exception(f"{e}")
-            await ctx.channel.send("ticket message could not be deleted")
-
-        await Others.delmsg(ctx)
 
     @commands.command(name="check")
     @commands.has_role(config.ADMIN_ROLE)

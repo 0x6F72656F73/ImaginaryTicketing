@@ -7,6 +7,12 @@ STARTUP_COGS = ["cogs.admin", "cogs.reaction_commands",
 LOG_CHANNEL_CATEGORY = "logs"
 LOG_CHANNEL_NAME = "ticket-log"
 
+
+EMOJIS_MESSAGE = ['<:rooSupport:811702778622771232>',
+                  '📩', '<a:ictf:833862746927923219>']
+
+# EMOJIS_MESSAGE = ['🚩', '📩', '🧐']
+
 BASE_API_LINK = "https://ictf.azurewebsites.net/api"
 
 TRANSCRIPT_DOMAIN = "https://oreos.imaginaryctf.org"

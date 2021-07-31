@@ -37,15 +37,15 @@ class TicketCommands(commands.Cog):
         admin = get(ctx.guild.roles, name=config.ADMIN_ROLE)
         if admin not in ctx.author.roles:
             member = ctx.author
-            create_ticket = actions.CreateTicket(
-                ticket_type, None, ctx.guild, member, ctx.channel)
+            create_ticket = actions.CreateTicket(self.bot,
+                                                 ticket_type, None, ctx.guild, member, ctx.channel)
         else:
             if member and member.bot:
                 await ctx.channel.send("tickets cannot be created for bots")
                 return
             member = member or ctx.author
-            create_ticket = actions.CreateTicket(
-                ticket_type, None, ctx.guild, member, ctx.channel)
+            create_ticket = actions.CreateTicket(self.bot,
+                                                 ticket_type, None, ctx.guild, member, ctx.channel)
         await create_ticket.main()
         await Others.delmsg(ctx)
 

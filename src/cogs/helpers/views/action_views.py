@@ -17,18 +17,18 @@ class CloseView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
         self.add_item(ActionButton(
-            label='close', style=ButtonStyle.primary, custom_id='ticketing:action_close'))
+            label='close', style=ButtonStyle.primary, emoji='🔒', custom_id='ticketing:action_close'))
 
 class ReopenDeleteView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
         self.add_item(ActionButton(
-            label='reopen', style=ButtonStyle.primary, custom_id='ticketing:action_reopen'))
+            label='reopen', style=ButtonStyle.primary, emoji='🔓', custom_id='ticketing:action_reopen'))
         self.add_item(ActionButton(
-            label='delete', style=ButtonStyle.red, custom_id='ticketing:action_delete'))
+            label='delete', style=ButtonStyle.red, emoji='⛔', custom_id='ticketing:action_delete'))
 
 class DeleteView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
         self.add_item(ActionButton(
-            label='delete', style=ButtonStyle.red, custom_id='ticketing:action_delete'))
+            label='delete', style=ButtonStyle.red, emoji='⛔', custom_id='ticketing:action_delete'))

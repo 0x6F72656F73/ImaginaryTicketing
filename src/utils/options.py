@@ -21,19 +21,19 @@ class Options:
             mention = moderator.mention
         msg = {"help": f"""
 Soon a {mention} member will assist you.
-For now, you can start telling us what the issue is so that we can help you faster.
 If you don't need help anymore, or you want to close this ticket, click on the :lock:""",
                "submit": """
-**When you submit challenges, please do so in an easy format for us to understand:**
+**When you submit a challenge, please do so in an easy format for us to understand:**
 \*\*Title:\*\* 
 \*\*Category:\*\* 
 \*\*Difficulty:\*\* 
 \*\*Description:\*\* 
 \*\*Flag:\*\* ``
-\*\*Player files:(service config)\*\* 
+\*\*Player files:\*\*
 \*\*Admin files:\*\* 
-\*\*solve idea(words):\*\* 
-Thanks""",
+\*\*solve idea(mini writeup):\*\* ||||
+Additionally, please create a thread for each challenge with the name of the challenge
+""",
                "misc": f"""
 Soon a {mention} member will assist you.
 For now, you can start telling us what the issue is so that we can help you faster.
@@ -95,7 +95,7 @@ If you want to close this ticket, click on the :lock:""",
         -------
         `str`: opened ticket name
         """
-        msg = {"help": f"ctf-help-{user.name}-{count}",
+        msg = {"help": f"help-{user.name}-{count}",
                "submit": f"challenge-{user.name}",
                "misc": f"misc-{user.name}-{count}", }
 
@@ -118,7 +118,7 @@ If you want to close this ticket, click on the :lock:""",
         -------
         `str` : closed ticket name
         """
-        msg = {"help": f"ctf-help-closed-{user.name}-{count}",
+        msg = {"help": f"help-closed-{user.name}-{count}",
                "submit": f"challenge-{user.name}-closed",
                "misc": f"misc-{user.name}-closed-{count}", }
 

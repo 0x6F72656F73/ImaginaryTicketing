@@ -156,7 +156,7 @@ class CreateTicket(BaseActions):
         elif self.ticket_type == "submit":
             welcome_message = f'Welcome <@{self.user_id}>'
         else:
-            welcome_message = f'Welcome <@{self.user_id}>\n,A new ticket has been opened {avail_mods.mention}\n'
+            welcome_message = f'Welcome <@{self.user_id}>\nA new ticket has been opened {avail_mods.mention}\n'
         message = Options.message(self.ticket_type, avail_mods)
 
         embed = Others.Embed(description=message)
@@ -203,9 +203,8 @@ class _CreateTicketHelper(CreateTicket):
         async def interaction_check(self, interaction: discord.Interaction):
             if interaction.user == self.author:
                 return True
-            else:
-                await interaction.response.send_message("You're not allowed to choose", ephemeral=True)
-                return False
+            await interaction.response.send_message("You're not allowed to choose", ephemeral=True)
+            return False
 
     async def _ask_for_challenge(self, challenges: List[Others.Challenge]):
         challenge_options = [discord.SelectOption(
@@ -222,7 +221,7 @@ class _CreateTicketHelper(CreateTicket):
 
         selected_challenge = [
             ch for ch in challenges if ch.id_ == int(view.children[0]._selected_values[0])][0]
-        await self.ticket_channel.edit(topic=f"{selected_challenge.title}")
+        return selected_challenge
 
     async def _ask_for_category(self, challenges: List[Others.Challenge]) -> List[Others.Challenge]:
         categories = {ch.category for ch in challenges}
@@ -241,9 +240,9 @@ class _CreateTicketHelper(CreateTicket):
         return category_challenges
 
     async def challenge_selection(self):
-        challenges = self._fake_challenges(21)
-        # challenges = [Others.Challenge(*list(challenge))
-        #               for challenge in db.get_all_challenges()]
+        # challenges = self._fake_challenges(21)
+        challenges = [Others.Challenge(*list(challenge))
+                      for challenge in db.get_all_challenges()]
         member = self.guild.get_member(self.user_id)
         await self.ticket_channel.set_permissions(member, read_messages=True,
                                                   send_messages=False)
@@ -251,9 +250,11 @@ class _CreateTicketHelper(CreateTicket):
         if len(challenges) < 1:
             await self.ticket_channel.send("There are no released challenges")
         elif len(challenges) <= 25:
-            await self._ask_for_challenge(reversed(challenges))
+            selected_challenge = await self._ask_for_challenge(list(reversed(challenges)))
         else:
-            await self._ask_for_challenge(await self._ask_for_category(challenges))
+            selected_challenge = await self._ask_for_challenge(await self._ask_for_category(challenges))
+
+        await self.ticket_channel.edit(topic=f"{selected_challenge.title}")
         overwrites = {
             member: discord.PermissionOverwrite(send_messages=True)
         }
@@ -340,8 +341,7 @@ class CloseTicket(BaseActions):
             await self.channel.send("Channel is already closed")
             return
 
-        close_stats_embed = Others.Embed(
-            timestamp=discord.utils.utcnow())
+        close_stats_embed = Others.Embed()
         close_stats_embed.set_author(
             name=f"{self.user}", icon_url=f"{self.user.avatar.url}")
         embed_message = await self.channel.send(embed=close_stats_embed)
@@ -442,8 +442,7 @@ class ReopenTicket(BaseActions):
         status = "open"
         db.update_status(status, self.channel_id)
         reopened_embed = Others.Embed(
-            description="Ticket was re-opened",
-            timestamp=discord.utils.utcnow())
+            description="Ticket was re-opened")
         reopened_embed.set_author(
             name=f"{self.user}", icon_url=f"{self.user.avatar.url}")
         await self.channel.send(embed=reopened_embed, view=action_views.CloseView())

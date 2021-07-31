@@ -18,14 +18,14 @@ class MiscCommands(commands.Cog):
     async def say(self, ctx, *, message):
         """says a message through a webhook"""
 
-        await Others.say_in_webhook(self.bot, ctx.author, ctx.channel, ctx.avatar.url, False, message)
+        await Others.say_in_webhook(self.bot, ctx.author, ctx.channel, ctx.author.avatar.url, False, message)
         await ctx.message.delete()
 
     @commands.command(name="saymember", aliases=["saym"])
     @commands.has_role(config.ADMIN_ROLE)
     async def saymember(self, ctx, member: discord.User, *, message):
         """says a message through a webhook through the specified user"""
-
+        #todo catch invalid users
         await Others.say_in_webhook(self.bot, member, ctx.channel, member.avatar.url, False, message)
         await ctx.message.delete()
 

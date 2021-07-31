@@ -153,11 +153,6 @@ def run_bot():
     token = env.str("DISCORD_TOKEN")
     instance = TicketBot.create()
 
-    @instance.command(name="rel")
-    async def reload_cog(ctx):
-        instance.reload_extension("cogs.reaction_commands")
-        await ctx.channel.send("cog reloaded successfully")
-
     instance.run(token)
 
 

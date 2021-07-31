@@ -72,8 +72,7 @@ class Others(commands.Cog):
         -------
         `discord.embeds.Embed`: an embed
         """
-        embed = Others.Embed(title=f"{title}",
-                             timestamp=discord.utils.utcnow())
+        embed = Others.Embed(title=f"{title}")
         embed.set_author(name=f"{user}", icon_url=f"{avatar_url}")
         embed.add_field(name="Channel",
                         value=f"{channel_name}")
@@ -89,7 +88,7 @@ class Others(commands.Cog):
         """
 
         def __new__(cls, **kwargs) -> discord.embeds.Embed:
-            return discord.Embed(color=discord.Color.random(), **kwargs)
+            return discord.Embed(color=discord.Color.random(), timestamp=discord.utils.utcnow(), **kwargs)
 
     @staticmethod
     async def delmsg(ctx, time: int = 1):
@@ -106,15 +105,16 @@ class Others(commands.Cog):
         await ctx.message.delete()
 
     @staticmethod
-    async def say_in_webhook(bot: discord.ext.commands.Bot, member: discord.Member, channel: discord.TextChannel, avatar_url: discord.Asset.url, allow_mention: bool, message, return_message: bool = False, **kwargs):
+    async def say_in_webhook(bot: commands.Bot, member: discord.Member, channel: discord.TextChannel, avatar_url: discord.Asset.url, allow_mention: bool, message, return_message: bool = False, **kwargs):
         avatar = await member.avatar.read()
         webhooks = await channel.webhooks()
 
-        if len(webhooks) == 0:
+        if len(webhooks) == 0 or len([hook for hook in webhooks if hook.name == "Tickets"]) == 0:
             send_web_hook = await channel.create_webhook(
                 name="Tickets", avatar=avatar)
         else:
-            webhook_times = [webhook.created_at for webhook in webhooks]
+            webhook_times = [
+                hook.created_at for hook in webhooks if hook.name == "Tickets"]
 
             shortest = min(webhook_times)
             for hook in webhooks:
@@ -126,7 +126,7 @@ class Others(commands.Cog):
         if allow_mention is True:
             ret_message = await webhook.send(f'{message}', username=f'{member.display_name}', avatar_url=avatar_url, wait=True, **kwargs)
         else:
-            ret_message = await webhook.send(f'{message}', username=f'{member.display_name}', avatar_url=avatar_url, allowed_mentions=discord.AllowedMentions.none(), **kwargs)
+            ret_message = await webhook.send(f'{message}', username=f'{member.display_name}', avatar_url=avatar_url, wait=True, allowed_mentions=discord.AllowedMentions.none(), **kwargs)
         if return_message:
             return channel.get_partial_message(ret_message.id)
 

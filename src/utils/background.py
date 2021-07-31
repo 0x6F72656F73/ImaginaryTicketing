@@ -23,7 +23,7 @@ import config
 log = logging.getLogger(__name__)
 
 class AutoClose(commands.Cog):
-    """Autoclose Ticket Manager"""
+    """Autoclose ticket manager"""
 
     @classmethod
     async def get_message_time(cls, channel: discord.channel.TextChannel):
@@ -64,7 +64,7 @@ class AutoClose(commands.Cog):
 
         Parameters
         ----------
-        bot : `discord.ext.commands.bot.Bot`
+        bot : `discord.commands.bot.Bot`
             the bot\n
         guild : `discord.guild.Guild`
             the guild\n
@@ -75,7 +75,7 @@ class AutoClose(commands.Cog):
         """
 
         check = db.get_check(channel.id)
-        log.info(f"check: {check}")
+        log.info(f"check: {check}- {channel}")
 
         if check == 1:
             close = CloseTicket(guild, bot, channel, background=True)
@@ -136,6 +136,7 @@ class AutoClose(commands.Cog):
                     await cls.old_ticket_actions(bot, guild, channel, message)
 
 class ScrapeChallenges():
+    """Scraps challenges"""
     @classmethod
     def _setup(cls):
         env = Env()
