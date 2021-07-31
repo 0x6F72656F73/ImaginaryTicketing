@@ -17,7 +17,7 @@ class CloseView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
         self.add_item(ActionButton(
-            label='close', style=ButtonStyle.primary, emoji='🔒', custom_id='ticketing:action_close'))
+            label='close', style=ButtonStyle.success, emoji='🔒', custom_id='ticketing:action_close'))
 
 class ReopenDeleteView(discord.ui.View):
     def __init__(self):
