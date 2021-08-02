@@ -181,7 +181,8 @@ For **help** tickets:
         message = f"If that is all we can help you with {member.mention}, please close this ticket."
         random_admin = await Others.random_admin_member(ctx.guild)
         await Others.say_in_webhook(self.bot, random_admin, channel, random_admin.avatar.url, True, message, return_message=True, view=action_views.CloseView())
-
+        await Others.delmsg(ctx)
+        
     @commands.command(name="refresh", aliases=["ref"])
     @commands.has_role(config.ADMIN_ROLE)
     async def refresh(self, ctx):
