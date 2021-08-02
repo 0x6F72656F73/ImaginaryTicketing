@@ -4,6 +4,7 @@ import discord
 from discord.ext import commands
 from discord.utils import get
 
+import cogs.helpers.views.action_views as action_views
 import cogs.helpers.actions as actions
 from utils.others import Others
 from cogs.helpers.views import command_views
@@ -111,7 +112,7 @@ For **help** tickets:
     async def close(self, ctx):
         """closes a ticket"""
         user_id = db.get_user_id(ctx.channel.id)
-        if user_id is None:
+        if not user_id:
             return
         guild = ctx.guild
         admin = get(guild.roles, name=config.ADMIN_ROLE)
@@ -168,6 +169,18 @@ For **help** tickets:
         else:
             db.update_check("0", channel.id)
             await ctx.channel.send(f"autoclose is now on for {ctx.channel.name}")
+
+    @commands.command(name="auto_message", aliases=["am"])
+    @commands.has_role(config.ADMIN_ROLE)
+    async def auto_message(self, ctx, channel: discord.TextChannel):
+        """Sends a message asking if the ticket can be closed. Does not contribute to AC checks"""
+        user_id = db.get_user_id(channel.id)
+        if not user_id:
+            return
+        member = ctx.guild.get_member(int(user_id))
+        message = f"If that is all we can help you with {member.mention}, please close this ticket."
+        random_admin = await Others.random_admin_member(ctx.guild)
+        await Others.say_in_webhook(self.bot, random_admin, channel, random_admin.avatar.url, True, message, return_message=True, view=action_views.CloseView())
 
     @commands.command(name="refresh", aliases=["ref"])
     @commands.has_role(config.ADMIN_ROLE)
