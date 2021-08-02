@@ -387,6 +387,7 @@ class CloseTicket(BaseActions):
         else:
             close_stats_embed.add_field(
                 name="transcript", value="transcript could not be sent to DMs")
+        await embed_message.edit(embed=close_stats_embed)
 
         channel_users, time_open = await self.close_stats_helper(self.channel)
 
