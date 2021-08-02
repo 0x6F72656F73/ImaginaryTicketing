@@ -26,28 +26,21 @@ class TicketCommands(commands.Cog):
         """shows a ticket message"""
         bot_commands: discord.TextChannel = get(
             ctx.guild.text_channels, name="bot-commands")
-        rules_readme: discord.TextChannel = get(
-            ctx.guild.text_channels, name="rules-readme")
-        embed = Others.Embed(title="Ticket System", description=f"""
-For server rules please go to {rules_readme.mention}
-For frequently asked questions please go to #faq
-""")
+        embed = Others.Embed(title="Ticket System")
         embed.add_field(name="How do I make a ticket?",
-                        value=f"Either react to the message below, or type `$create{{help, submit, misc}}` in {bot_commands.mention}. note $create defaults to help")
-        embed.add_field(name="Ticket Rules", value="""
-If you do not respond to a ticket within 48 hours we will close it
-Abuse of the ticket system will result in being muted
+                        value=f"Either react to the message below, or type `$create{{help, submit, misc}}` in {bot_commands.mention}. (Note `$create` defaults to help)")
+        embed.add_field(name="Rules", value="""
+If you do not respond to a ticket within 48 hours we will close the ticket.
+Abuse of the ticket system will result in getting muted.
+
 For **help** tickets:
 - **You must show** what you've done first before we help you
 - Only create one ticket for one challenge
--  No points will be deducted
+- No points will be deducted
 - This ticket cannot be created for the current challenge before either:
-   - 30 minutes have passed since the challenge was released
-   - the challenge has been blooded
-
+\b \b - 30 minutes have passed since the challenge was released
+\b \b - the challenge has been blooded
 """, inline=False)
-        embed.add_field(
-            name="_ _", value=f"If you cannot view your closed ticket online, make sure the url starts with [{config.TRANSCRIPT_DOMAIN}:{config.TRANSCRIPT_PORT}]({config.TRANSCRIPT_DOMAIN}:{config.TRANSCRIPT_PORT})")
         await ctx.channel.send(embed=embed, view=command_views.TicketView(self.bot))
         await Others.delmsg(ctx)
 
