@@ -383,7 +383,7 @@ class CloseTicket(BaseActions):
         transcript_message, transcript_file = await Others.transcript(self.channel, channel_log)
         if transcript_message:
             close_stats_embed.add_field(name="transcript",
-                                        value=f"[transcript url]({config.TRANSCRIPT_DOMAIN}:{config.TRANSCRIPT_PORT}/direct?link={transcript_message.attachments[0].url} \"oreos taste good dont they\") ")
+                                        value=f"[transcript url]({config.TRANSCRIPT_DOMAIN}/direct?link={transcript_message.attachments[0].url} \"oreos taste good dont they\") ")
         else:
             close_stats_embed.add_field(
                 name="transcript", value="transcript could not be sent to DMs")

@@ -16,4 +16,3 @@ EMOJIS_MESSAGE = ['<:rooSupport:811702778622771232>',
 BASE_API_LINK = "https://imaginaryctf.org/api"
 
 TRANSCRIPT_DOMAIN = "https://oreos.imaginaryctf.org"
-TRANSCRIPT_PORT = "1337"
