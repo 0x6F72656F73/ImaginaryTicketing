@@ -310,10 +310,7 @@ class CloseTicket(BaseActions):
         `str`: joined list of users to count reference from channel,
         `str`: time the channel was open
         """
-        users = []
-
-        async for msg in channel.history(limit=2000).filter(lambda message: not message.author.bot):
-            users.append(msg.author.name)
+        users = [msg.author.name async for msg in channel.history(limit=2000).filter(lambda message: not message.author.bot)]
 
         message_distribution = Counter(users)
         total_messages = sum(message_distribution.values())
