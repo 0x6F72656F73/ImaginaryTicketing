@@ -14,6 +14,7 @@ from utils.others import Others
 from utils.options import Options
 import utils.exceptions as exceptions
 from utils.database.db import DatabaseManager as db
+from utils.background import ScrapeChallenges
 import config
 
 log = logging.getLogger(__name__)
@@ -152,11 +153,11 @@ class CreateTicket(BaseActions):
         avail_mods = get(
             self.guild.roles, name=config.TICKET_PING_ROLE)
         if self.ticket_type == "help":
-            welcome_message = f'A new ticket has been opened {avail_mods.mention}'
+            welcome_message = f'A new ticket has been created {avail_mods.mention}'
         elif self.ticket_type == "submit":
             welcome_message = f'Welcome <@{self.user_id}>'
         else:
-            welcome_message = f'Welcome <@{self.user_id}>\nA new ticket has been opened {avail_mods.mention}\n'
+            welcome_message = f'Welcome <@{self.user_id}>\nA new ticket has been created {avail_mods.mention}\n'
         message = Options.message(self.ticket_type, avail_mods)
 
         embed = Others.Embed(description=message)
@@ -241,15 +242,20 @@ class _CreateTicketHelper(CreateTicket):
 
     async def challenge_selection(self):
         # challenges = self._fake_challenges(21)
+        user_solved_challenges = ScrapeChallenges.get_user_challenges(
+            self.user_id)
         challenges = [Others.Challenge(*list(challenge))
-                      for challenge in db.get_all_challenges()]
+                      for challenge in db.get_all_challenges() if not Others.Challenge(*list(challenge)).id_ in user_solved_challenges]
+
+        if len(challenges) < 1:
+            await self.ticket_channel.send("There are no released challenges or you have solved all the currently released challenges")
+            return
+
         member = self.guild.get_member(self.user_id)
         await self.ticket_channel.set_permissions(member, read_messages=True,
                                                   send_messages=False)
 
-        if len(challenges) < 1:
-            await self.ticket_channel.send("There are no released challenges")
-        elif len(challenges) <= 25:
+        if len(challenges) <= 25:
             selected_challenge = await self._ask_for_challenge(list(reversed(challenges)))
             await self.ticket_channel.edit(topic=f"{selected_challenge.title}")
         else:
@@ -265,7 +271,7 @@ class _CreateTicketHelper(CreateTicket):
         await self.bot.wait_for('message', check=user_message_check)
 
 class Utility:
-    @staticmethod
+    @ staticmethod
     async def add(channel: discord.TextChannel, member: discord.Member):
         """adds a member to a ticket(try adding roles(typehint optional))
 
@@ -279,7 +285,7 @@ class Utility:
         embed = Others.Embed(description=f"{member.mention} was added")
         await channel.send(embed=embed)
 
-    @staticmethod
+    @ staticmethod
     async def remove(channel: discord.TextChannel, member: discord.Member):
         """remove a member to a ticket(try adding roles(typehint optional))
 
@@ -317,7 +323,7 @@ class CloseTicket(BaseActions):
         channel_users = '\n'.join(
             [f"{self.guild.get_member_named(member).mention} ({count/total_messages:.0%})" for member, count in message_distribution.most_common()])
         if not channel_users:
-            channel_users = 'None'
+            channel_users = 'No messages'
         old = channel.created_at
 
         now = discord.utils.utcnow()

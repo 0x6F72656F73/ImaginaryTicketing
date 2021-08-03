@@ -7,6 +7,7 @@
 from itertools import chain
 from datetime import timedelta
 import logging
+from typing import Dict
 
 import discord
 from discord.ext import commands
@@ -14,7 +15,7 @@ from environs import Env
 import requests
 
 import cogs.helpers.views.action_views as action_views
-from cogs.helpers.actions import CloseTicket
+import cogs.helpers.actions as actions
 from utils.options import Options
 from utils.others import Others
 from utils.database.db import DatabaseManager as db
@@ -78,7 +79,7 @@ class AutoClose(commands.Cog):
         log.info(f"check: {check}- {channel}")
 
         if check == 1:
-            close = CloseTicket(guild, bot, channel, background=True)
+            close = actions.CloseTicket(guild, bot, channel, background=True)
             await close.main()
             db.update_check("0", channel.id)
 
@@ -139,13 +140,13 @@ class AutoClose(commands.Cog):
 class ScrapeChallenges():
     """Scraps challenges"""
     @classmethod
-    def _setup(cls):
+    def _setup(cls) -> Dict[str, str]:
         env = Env()
         env.read_env()
         return {'apikey': env.str('apikey')}
 
     @classmethod
-    def main(cls):
+    def main(cls) -> None:
         params = cls._setup()
         req = requests.get(config.BASE_API_LINK +
                            '/challenges/released', params=params)
@@ -158,3 +159,13 @@ class ScrapeChallenges():
                 challenge["id"], challenge["title"], challenge["author"], challenge["category"].split(",")[0], ignore))
 
         db.refresh_database(all_challenges)
+
+    @classmethod
+    def get_user_challenges(cls, discord_id: int):
+        params = cls._setup()
+        req = requests.get(config.BASE_API_LINK +
+                           f'/solves/bydiscordid/{discord_id}', params=params)
+        solve_challenges = req.json()
+        if not solve_challenges:
+            return []
+        return [challenge['challenge']['id'] for challenge in solve_challenges]
