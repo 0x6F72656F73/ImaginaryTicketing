@@ -188,8 +188,8 @@ For **help** tickets:
         await ctx.channel.send(embed=embed)
         await Others.delmsg(ctx)
 
-    @ commands.command(name="refresh", aliases=["ref"])
-    @ commands.has_role(config.ADMIN_ROLE)
+    @commands.command(name="refresh", aliases=["ref"])
+    @commands.has_role(config.ADMIN_ROLE)
     async def refresh(self, ctx):
         """refreshes challenges from the api"""
         ScrapeChallenges.main()

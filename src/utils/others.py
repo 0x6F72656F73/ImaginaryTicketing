@@ -78,7 +78,7 @@ class Others(commands.Cog):
                         value=f"{channel_name}")
         return embed
 
-    @ staticmethod
+    @staticmethod
     class Embed(Embed):
         """returns an embed with a random color
 
@@ -90,7 +90,7 @@ class Others(commands.Cog):
         def __new__(cls, **kwargs) -> discord.embeds.Embed:
             return discord.Embed(color=discord.Color.random(), timestamp=discord.utils.utcnow(), **kwargs)
 
-    @ staticmethod
+    @staticmethod
     async def delmsg(ctx, time: int = 1):
         """deletes a message after (time)
 
@@ -104,7 +104,7 @@ class Others(commands.Cog):
         await asyncio.sleep(time)
         await ctx.message.delete()
 
-    @ staticmethod
+    @staticmethod
     async def say_in_webhook(bot: commands.Bot, member: discord.Member, channel: discord.TextChannel, avatar_url: discord.Asset.url, allow_mention: bool, message, return_message: bool = False, **kwargs):
         avatar = await member.avatar.read()
         webhooks = await channel.webhooks()
