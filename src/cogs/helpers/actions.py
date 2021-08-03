@@ -33,7 +33,7 @@ class BaseActions:
         self.channel = channel
         self.channel_id = channel.id
 
-    async def _log_to_channel(self, msg: str) -> None:
+    async def _log_to_channel(self, msg: str, *args, **kwargs) -> None:
         """Logs a message to channel ticket-log
 
         Parameters
@@ -44,7 +44,7 @@ class BaseActions:
         channel_log = get(
             self.guild.text_channels, name="ticket-log")
         logembed = await Others.log_embed(
-            msg, self.user, self.user.avatar.url, self.channel)
+            msg, self.user, self.user.avatar.url, self.channel, *args, **kwargs)
         await channel_log.send(embed=logembed)
 
     async def _move_channel(self, category_name) -> discord.CategoryChannel:
@@ -402,7 +402,9 @@ class CloseTicket(BaseActions):
         status = "closed"
         db.update_status(status, self.channel_id,)
 
-        await self._log_to_channel("Closed ticket")
+        channel_log = get(
+            self.guild.text_channels, name="ticket-log")
+        await channel_log.send(embed=close_stats_embed)
         log.info(
             f"[CLOSED] {self.channel} by {self.user} (ID: {self.channel_id})")
 

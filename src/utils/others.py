@@ -54,7 +54,7 @@ class Others(commands.Cog):
                                      filename=f"transcript-{channel}.html")
 
     @staticmethod
-    async def log_embed(title: str, user: discord.user.User, avatar_url: discord.asset.Asset, channel_name: discord.channel.TextChannel) -> discord.Embed:
+    async def log_embed(title: str, user: discord.user.User, avatar_url: discord.asset.Asset, channel_name: discord.channel.TextChannel, *args, **kwargs) -> discord.Embed:
         """makes an embed to be logged
 
         Parameters
@@ -72,13 +72,13 @@ class Others(commands.Cog):
         -------
         `discord.embeds.Embed`: an embed
         """
-        embed = Others.Embed(title=f"{title}")
+        embed = Others.Embed(title=f"{title}", *args, **kwargs)
         embed.set_author(name=f"{user}", icon_url=f"{avatar_url}")
         embed.add_field(name="Channel",
                         value=f"{channel_name}")
         return embed
 
-    @staticmethod
+    @ staticmethod
     class Embed(Embed):
         """returns an embed with a random color
 
@@ -90,7 +90,7 @@ class Others(commands.Cog):
         def __new__(cls, **kwargs) -> discord.embeds.Embed:
             return discord.Embed(color=discord.Color.random(), timestamp=discord.utils.utcnow(), **kwargs)
 
-    @staticmethod
+    @ staticmethod
     async def delmsg(ctx, time: int = 1):
         """deletes a message after (time)
 
@@ -104,7 +104,7 @@ class Others(commands.Cog):
         await asyncio.sleep(time)
         await ctx.message.delete()
 
-    @staticmethod
+    @ staticmethod
     async def say_in_webhook(bot: commands.Bot, member: discord.Member, channel: discord.TextChannel, avatar_url: discord.Asset.url, allow_mention: bool, message, return_message: bool = False, **kwargs):
         avatar = await member.avatar.read()
         webhooks = await channel.webhooks()
