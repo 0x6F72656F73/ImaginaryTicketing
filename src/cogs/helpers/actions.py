@@ -404,6 +404,8 @@ class CloseTicket(BaseActions):
 
         channel_log = get(
             self.guild.text_channels, name="ticket-log")
+        close_stats_embed.title = "Closed ticket"
+        close_stats_embed.set_footer(text=f"{self.channel}")
         await channel_log.send(embed=close_stats_embed)
         log.info(
             f"[CLOSED] {self.channel} by {self.user} (ID: {self.channel_id})")
