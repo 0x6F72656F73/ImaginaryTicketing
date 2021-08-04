@@ -229,7 +229,7 @@ class _CreateTicketHelper(CreateTicket):
         category_options = [discord.SelectOption(
             label=cat, value=cat) for cat in categories]
         while True:
-            view = self.ChallengeView(author=self.user, custom_id="ticketing:category_request-{os.urandom(16).hex()}", options=category_options,
+            view = self.ChallengeView(author=self.user, custom_id=f"ticketing:category_request-{os.urandom(16).hex()}", options=category_options,
                                       placeholder="Please choose a category")
             select_messages = await self.ticket_channel.send("Please select which category you need help with", view=view)
             await view.wait()
@@ -239,6 +239,14 @@ class _CreateTicketHelper(CreateTicket):
         category_challenges = [
             ch for ch in challenges if ch.category == view.children[0]._selected_values[0]]
         return category_challenges
+
+    async def add_user(self, user: discord.User):  # change to member after website
+        # change to get_member after website
+        author = self.guild.get_member_named(user)
+        if author is None:
+            return
+        await self.ticket_channel.set_permissions(author, read_messages=True,
+                                                  send_messages=True)
 
     async def challenge_selection(self):
         # challenges = self._fake_challenges(21)
@@ -264,14 +272,15 @@ class _CreateTicketHelper(CreateTicket):
 
         await self.ticket_channel.set_permissions(member, read_messages=True,
                                                   send_messages=True)
-        await self.ticket_channel.send("What have your tried so far?")
+        user_message = await self.ticket_channel.send("What have your tried so far?")
 
-        def user_message_check(m):
+        def user_response_check(m):
             return m.channel == self.ticket_channel and m.author == self.user
-        await self.bot.wait_for('message', check=user_message_check)
-
+        await self.bot.wait_for('message', check=user_response_check)
+        await user_message.delete()
+        await self.add_user(selected_challenge.author)
 class Utility:
-    @ staticmethod
+    @staticmethod
     async def add(channel: discord.TextChannel, member: discord.Member):
         """adds a member to a ticket(try adding roles(typehint optional))
 
@@ -285,7 +294,7 @@ class Utility:
         embed = Others.Embed(description=f"{member.mention} was added")
         await channel.send(embed=embed)
 
-    @ staticmethod
+    @staticmethod
     async def remove(channel: discord.TextChannel, member: discord.Member):
         """remove a member to a ticket(try adding roles(typehint optional))
 
