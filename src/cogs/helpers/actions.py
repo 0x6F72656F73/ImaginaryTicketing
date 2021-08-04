@@ -265,10 +265,10 @@ class _CreateTicketHelper(CreateTicket):
 
         if len(challenges) <= 25:
             selected_challenge = await self._ask_for_challenge(list(reversed(challenges)))
-            await self.ticket_channel.edit(topic=f"{selected_challenge.title}")
         else:
             selected_challenge = await self._ask_for_challenge(await self._ask_for_category(challenges))
-            await self.ticket_channel.edit(topic=f"{selected_challenge.title}")
+
+        await self.ticket_channel.edit(topic=f"{selected_challenge.title} - {selected_challenge.author}")
 
         await self.ticket_channel.set_permissions(member, read_messages=True,
                                                   send_messages=True)
