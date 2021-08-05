@@ -154,7 +154,7 @@ class ScrapeChallenges():
         challenges = req.json()
         all_challenges = []
         for challenge in challenges:
-            ignore = challenge['author'] == 'Board'
+            ignore = challenge['author'] == config.ADMIN_ROLE
             all_challenges.append(Others.Challenge(
                 challenge["id"], challenge["title"], challenge["author"], challenge["category"].split(",")[0], ignore))
 

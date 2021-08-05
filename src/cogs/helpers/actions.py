@@ -274,8 +274,8 @@ class _CreateTicketHelper(CreateTicket):
                                                   send_messages=True)
         user_message = await self.ticket_channel.send("What have your tried so far?")
 
-        def user_response_check(m):
-            return m.channel == self.ticket_channel and m.author == self.user
+        def user_response_check(message):
+            return message.channel == self.ticket_channel and message.author == self.user
         await self.bot.wait_for('message', check=user_response_check)
         await user_message.delete()
         await self.add_user(selected_challenge.author)
@@ -330,9 +330,7 @@ class CloseTicket(BaseActions):
         message_distribution = Counter(users)
         total_messages = sum(message_distribution.values())
         channel_users = '\n'.join(
-            [f"{self.guild.get_member_named(member).mention} ({count/total_messages:.0%})" for member, count in message_distribution.most_common()])
-        if not channel_users:
-            channel_users = 'No messages'
+            [f"{self.guild.get_member_named(member).mention} ({count/total_messages:.0%})" for member, count in message_distribution.most_common()]) if len(message_distribution) > 0 else 'No messages'
         old = channel.created_at
 
         now = discord.utils.utcnow()

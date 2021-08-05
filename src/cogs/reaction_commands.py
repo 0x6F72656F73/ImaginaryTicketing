@@ -1,3 +1,4 @@
+import asyncio
 import logging
 
 import discord
@@ -88,7 +89,7 @@ For **help** tickets:
         await actions.Utility.add(ctx.channel, member)
         await Others.delmsg(ctx)
 
-    @commands.command(name="remove", aliases=["r"])
+    @commands.command(name="remove", aliases=["r", "rm"])
     @commands.has_role(config.ADMIN_ROLE)
     async def remove(self, ctx, member: discord.Member):
         """removes a user from a ticket"""
@@ -147,6 +148,48 @@ For **help** tickets:
 
         await Others.delmsg(ctx)
 
+    @commands.command(name="purge")
+    @commands.has_role(config.ADMIN_ROLE)
+    async def purge(self, ctx, limit: int):
+        """purges x amount of messages"""
+
+        await ctx.channel.purge(limit=limit + 1)
+        message = await ctx.send(f'Purged {limit} messages')
+        await asyncio.sleep(3)
+        await message.delete()
+
+    @commands.command(name="check")
+    @commands.has_role(config.ADMIN_ROLE)
+    async def check_discord(self, ctx):
+        """Checks if all configurations are valid"""
+        bot_guild = ctx.guild.get_member(self.bot.user.id)
+        checks = {"ticket ping role": bool(get(ctx.guild.roles, name=config.TICKET_PING_ROLE)),
+                  "bots role": bool(get(ctx.guild.roles, name=config.BOTS_ROLE)),
+                  "helpers role": bool(get(ctx.guild.roles, name=config.HELPER_ROLE)),
+                  "channel log category": bool(get(ctx.guild.categories, name=config.LOG_CHANNEL_CATEGORY)),
+                  "channel log name": bool(get(ctx.guild.text_channels, name=config.LOG_CHANNEL_NAME)),
+                  "is admin": bool(bot_guild.guild_permissions.administrator)}
+
+        def check_all(return_print=False):
+            if all(checks.values()):
+                return True
+
+            failures = [check for check, status
+                        in checks.items() if status is False]
+
+            if return_print:
+                return failures
+            return False
+
+        failure = check_all()
+        if not failure:
+            fails = "\n".join(check_all(return_print=True))
+            embed = Others.Embed(title="Failed Checks", description=fails)
+            await ctx.channel.send(embed=embed)
+            return
+
+        await ctx.channel.send("All checks were successful 😎")
+
     @commands.command(name="transcript", alias=["tsc"])
     @commands.has_role(config.ADMIN_ROLE)
     @commands.cooldown(rate=1, per=10, type=commands.BucketType.default)
@@ -194,6 +237,55 @@ For **help** tickets:
         """refreshes challenges from the api"""
         ScrapeChallenges.main()
         await ctx.channel.send("challenges refreshed")
+        await Others.delmsg(ctx)
+
+    @commands.group(name="helper", aliases=["h"], invoke_without_command=True)
+    @commands.has_role(config.ADMIN_ROLE)
+    async def helper(self, ctx):
+        """Base helper command. Shows stats on helpers."""
+        helper_role = get(ctx.guild.roles, name=config.HELPER_ROLE)
+        helpers = '\n'.join(
+            [member.mention for member in helper_role.members]) if len(helper_role.members) > 0 else 'No helpers'
+        embed = Others.Embed(
+            title=f"{config.HELPER_ROLE}", description=helpers)
+        await ctx.channel.send(embed=embed)
+        await Others.delmsg(ctx)
+
+    @helper.command(name="add", aliases=["a"])
+    @commands.has_role(config.ADMIN_ROLE)
+    async def helper_add(self, ctx, member: discord.Member):
+        """adds a helper"""
+        helper_role = get(member.guild.roles, name=config.HELPER_ROLE)
+        helper_ids = [helper.id for helper in helper_role.members]
+        print(helper_ids)
+        if member.id in helper_ids:
+            embed = Others.Embed(
+                description=f"Member {member.name} already has role {config.HELPER_ROLE}")
+            await ctx.channel.send(embed=embed)
+            return
+
+        await member.add_roles(helper_role)
+        embed = Others.Embed(
+            description=f"Added {member.mention} to role {config.HELPER_ROLE}")
+        await ctx.channel.send(embed=embed)
+        await Others.delmsg(ctx)
+
+    @helper.command(name="remove", aliases=["r", "rm"])
+    @commands.has_role(config.ADMIN_ROLE)
+    async def helper_remove(self, ctx, member: discord.Member):
+        """removes a helper"""
+        helper_role = get(member.guild.roles, name=config.HELPER_ROLE)
+        helper_ids = [helper.id for helper in helper_role.members]
+        print(helper_ids)
+        if member.id not in helper_ids:
+            embed = Others.Embed(
+                description=f"Member {member.name} does not have role {config.HELPER_ROLE}")
+            await ctx.channel.send(embed=embed)
+            return
+        await member.remove_roles(helper_role)
+        embed = Others.Embed(
+            description=f"Removed {member.mention} from role {config.HELPER_ROLE}")
+        await ctx.channel.send(embed=embed)
         await Others.delmsg(ctx)
 
     def cog_check(self, ctx):
