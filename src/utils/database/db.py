@@ -366,7 +366,7 @@ class DatabaseManager():
         cls._raw_delete(query)
         insert_query = "INSERT INTO challenges(id, title, author, category, ignore) VALUES($1,$2,$3,$4,$5)"
         print(challenges)
-        for id_, title, author, category, ignore, in challenges:
+        for id_, title, author, category, ignore, _ in challenges:
             values = (id_, title, author, category, ignore)
             cls._raw_insert(insert_query, values)
 
