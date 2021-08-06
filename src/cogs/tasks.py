@@ -1,8 +1,7 @@
 from discord.ext import commands
 import aiocron
 
-from utils.background import AutoClose
-from utils.background import ScrapeChallenges
+from utils.background import AutoClose, ScrapeChallenges, AddHelpers
 class Tasks(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -15,20 +14,21 @@ class Tasks(commands.Cog):
 
         @aiocron.crontab("0 9 * * *")
         async def start_scraping_challenges_9():
-            ScrapeChallenges.main()
+            await ScrapeChallenges.main()
 
         @aiocron.crontab("30 9 * * *")
         async def start_scraping_challenges_9_30():
-            ScrapeChallenges.main()
+            await ScrapeChallenges.main()
 
         @aiocron.crontab("0 */2 * * *")
         async def start_scraping_challenges_2_hours():
-            ScrapeChallenges.main()
+            await ScrapeChallenges.main()
 
-        # @aiocron.crontab("* * * * * */10")
-        # # @aiocron.crontab("* * * * 10 *")
-        # async def start_adding_users():  # better name lol
-        #     ScrapeChallenges.main()  # another class
+        # @aiocron.crontab("*/10 * * *")
+        @aiocron.crontab("* * * * * */10")
+        async def start_adding_users():
+            await AddHelpers.main(self.bot)
+
 
 def setup(bot):
     bot.add_cog(Tasks(bot))

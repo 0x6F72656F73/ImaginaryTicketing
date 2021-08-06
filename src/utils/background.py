@@ -12,7 +12,7 @@ from typing import Dict
 import discord
 from discord.ext import commands
 from environs import Env
-import requests
+import aiohttp
 
 import cogs.helpers.views.action_views as action_views
 import cogs.helpers.actions as actions
@@ -55,7 +55,7 @@ class AutoClose(commands.Cog):
         return message, now - old
 
     @classmethod
-    async def old_ticket_actions(cls, bot: discord.ext.commands.bot.Bot, guild: discord.guild.Guild,
+    async def old_ticket_actions(cls, bot: commands.bot.Bot, guild: discord.guild.Guild,
                                  channel: discord.channel.TextChannel, message: discord.message.Message):
         """Check if a channel is old
 
@@ -96,7 +96,7 @@ class AutoClose(commands.Cog):
             pass
 
     @classmethod
-    async def main(cls, bot, **kwargs):
+    async def main(cls, bot: commands.bot.Bot, **kwargs):
         """check for inactivity in a channel
 
         Parameters
@@ -106,8 +106,6 @@ class AutoClose(commands.Cog):
         """
         cat = Options.full_category_name("help")
         for guild in bot.guilds:
-            if guild.get_member(bot.user.id).guild_permissions.administrator is None:
-                return
             safe_tickets_list = list(chain(*db.get_guild_check(guild.id)))
             category = discord.utils.get(guild.categories, name=cat)
             if category is None:
@@ -138,7 +136,7 @@ class AutoClose(commands.Cog):
                     await cls.old_ticket_actions(bot, guild, channel, message)
 
 class ScrapeChallenges():
-    """Scraps challenges"""
+    """Scrapes challenges"""
     @classmethod
     def _setup(cls) -> Dict[str, str]:
         env = Env()
@@ -146,26 +144,40 @@ class ScrapeChallenges():
         return {'apikey': env.str('apikey')}
 
     @classmethod
-    def main(cls) -> None:
+    async def main(cls) -> None:
         params = cls._setup()
-        req = requests.get(config.BASE_API_LINK +
-                           '/challenges/released', params=params)
+        async with aiohttp.ClientSession() as session:
+            async with session.get(config.BASE_API_LINK +
+                                   '/challenges/released', params=params) as req:
+                challenges = await req.json()
+                all_challenges = []
+                for challenge in challenges:
+                    ignore = bool(challenge['author'] == config.ADMIN_ROLE)
+                    all_challenges.append(Others.Challenge(
+                        challenge["id"], challenge["title"], challenge["author"], challenge["category"].split(",")[0], ignore))
 
-        challenges = req.json()
-        all_challenges = []
-        for challenge in challenges:
-            ignore = bool(challenge['author'] == config.ADMIN_ROLE)
-            all_challenges.append(Others.Challenge(
-                challenge["id"], challenge["title"], challenge["author"], challenge["category"].split(",")[0], ignore))
-
-        db.refresh_database(all_challenges)
+                db.refresh_database(all_challenges)
 
     @classmethod
-    def get_user_challenges(cls, discord_id: int):
+    async def get_user_challenges(cls, discord_id: int):
         params = cls._setup()
-        req = requests.get(config.BASE_API_LINK +
-                           f'/solves/bydiscordid/{discord_id}', params=params)
-        solve_challenges = req.json()
-        if not solve_challenges:
-            return []
-        return [challenge['challenge']['id'] for challenge in solve_challenges]
+        async with aiohttp.ClientSession() as session:
+            async with session.get(config.BASE_API_LINK +
+                                   f'/solves/bydiscordid/{discord_id}', params=params) as req:
+                solve_challenges = await req.json()
+                if not solve_challenges:
+                    return []
+                return [challenge['challenge']['id'] for challenge in solve_challenges]
+
+class AddHelpers():
+    @classmethod
+    async def main(cls, bot: commands.bot.Bot):
+        for guild in bot.guilds:
+            if guild.id == 788162899515801637:
+                helper_role = discord.utils.get(
+                    guild.roles, name=config.HELPER_ROLE)
+                for helper in helper_role.members:
+                    solved_challenge_ids = await ScrapeChallenges.get_user_challenges(
+                        helper.id)
+                    log.debug(solved_challenge_ids)
+        # db.update_helpers

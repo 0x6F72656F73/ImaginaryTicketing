@@ -1,4 +1,5 @@
 import sqlite3
+import json
 from itertools import chain
 from typing import Union, List
 import logging
@@ -365,13 +366,13 @@ class DatabaseManager():
         query = "DELETE FROM challenges"
         cls._raw_delete(query)
         insert_query = "INSERT INTO challenges(id, title, author, category, ignore) VALUES($1,$2,$3,$4,$5)"
-        print(challenges)
         for id_, title, author, category, ignore, _ in challenges:
             values = (id_, title, author, category, ignore)
             cls._raw_insert(insert_query, values)
 
     @classmethod
-    def update_helpers(cls, helper_id_list: List[int], channel_id: int):
+    def update_helpers(cls, helper_id_list: List[int], challenge_id: int):
+        helpers = json.dumps(helper_id_list)
         query = "UPDATE challenges SET helper_id_list = $1 WHERE id = $2"
-        values = (helper_id_list, channel_id),
+        values = (helpers, challenge_id,)
         cls._raw_update(query, values)

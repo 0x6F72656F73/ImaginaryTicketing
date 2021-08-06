@@ -240,7 +240,7 @@ class _CreateTicketHelper(CreateTicket):
             ch for ch in challenges if ch.category == view.children[0]._selected_values[0]]
         return category_challenges
 
-    async def add_user(self, user: discord.User):  # change to member after website
+    async def _add_user(self, user: discord.User):  # change to member after website
         # change to get_member after website
         author = self.guild.get_member_named(user)
         if author is None:
@@ -248,9 +248,15 @@ class _CreateTicketHelper(CreateTicket):
         await self.ticket_channel.set_permissions(author, read_messages=True,
                                                   send_messages=True)
 
+    async def _add_author_and_helpers(self, selected_challenge: Others.Challenge):
+        await self._add_user(selected_challenge.author)
+        print(dir(selected_challenge))
+        print(selected_challenge.helper_id_list)
+        # print(*selected_challenge)
+
     async def challenge_selection(self):
         # challenges = self._fake_challenges(21)
-        user_solved_challenges = ScrapeChallenges.get_user_challenges(
+        user_solved_challenges = await ScrapeChallenges.get_user_challenges(
             self.user_id)
         challenges = [Others.Challenge(*list(challenge))
                       for challenge in db.get_all_challenges() if not Others.Challenge(*list(challenge)).id_ in user_solved_challenges]
@@ -278,7 +284,8 @@ class _CreateTicketHelper(CreateTicket):
             return message.channel == self.ticket_channel and message.author == self.user
         await self.bot.wait_for('message', check=user_response_check)
         await user_message.delete()
-        await self.add_user(selected_challenge.author)
+        await self._add_author_and_helpers(selected_challenge)
+
 class Utility:
     @staticmethod
     async def add(channel: discord.TextChannel, member: discord.Member):

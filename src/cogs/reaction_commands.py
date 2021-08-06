@@ -235,7 +235,7 @@ For **help** tickets:
     @commands.has_role(config.ADMIN_ROLE)
     async def refresh(self, ctx):
         """refreshes challenges from the api"""
-        ScrapeChallenges.main()
+        await ScrapeChallenges.main()
         await ctx.channel.send("challenges refreshed")
         await Others.delmsg(ctx)
 
