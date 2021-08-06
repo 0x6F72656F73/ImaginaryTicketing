@@ -321,8 +321,8 @@ class DatabaseManager():
         channel_id : `int`
             the channel id\n
         """
-        cls._raw_update(
-            "UPDATE requests SET checked = $1 WHERE channel_id=$2", (check, channel_id))
+        query = "UPDATE requests SET checked = $1 WHERE channel_id=$2"
+        cls._raw_update(query, (check, channel_id))
 
     @classmethod
     def get_submit_check(cls, user_id: int) -> Union[str, None]:
@@ -362,9 +362,16 @@ class DatabaseManager():
 
     @classmethod
     def refresh_database(cls, challenges: List[Others.Challenge]):
-        delete_query = "DELETE FROM challenges"
-        cls._raw_delete(delete_query)
+        query = "DELETE FROM challenges"
+        cls._raw_delete(query)
         insert_query = "INSERT INTO challenges(id, title, author, category, ignore) VALUES($1,$2,$3,$4,$5)"
-        for id_, title, author, category, ignore in challenges:
+        print(challenges)
+        for id_, title, author, category, ignore, in challenges:
             values = (id_, title, author, category, ignore)
             cls._raw_insert(insert_query, values)
+
+    @classmethod
+    def update_helpers(cls, helper_id_list: List[int], channel_id: int):
+        query = "UPDATE challenges SET helper_id_list = $1 WHERE id = $2"
+        values = (helper_id_list, channel_id),
+        cls._raw_update(query, values)

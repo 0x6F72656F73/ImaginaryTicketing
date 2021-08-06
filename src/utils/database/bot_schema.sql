@@ -28,8 +28,8 @@ CREATE TABLE challenges (
     title VARCHAR(255),
     author VARCHAR(255),
     category VARCHAR(255),
-    helper_id_list VARCHAR(255),
-    ignore BOOLEAN
+    ignore BOOLEAN,
+    helper_id_list VARCHAR(255)
 )
 
 -- CREATE TABLE admin (

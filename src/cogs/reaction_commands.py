@@ -260,7 +260,7 @@ For **help** tickets:
         print(helper_ids)
         if member.id in helper_ids:
             embed = Others.Embed(
-                description=f"Member {member.name} already has role {config.HELPER_ROLE}")
+                description=f"Member {member.mention} already has role {config.HELPER_ROLE}")
             await ctx.channel.send(embed=embed)
             return
 
@@ -279,7 +279,7 @@ For **help** tickets:
         print(helper_ids)
         if member.id not in helper_ids:
             embed = Others.Embed(
-                description=f"Member {member.name} does not have role {config.HELPER_ROLE}")
+                description=f"Member {member.mention} does not have role {config.HELPER_ROLE}")
             await ctx.channel.send(embed=embed)
             return
         await member.remove_roles(helper_role)

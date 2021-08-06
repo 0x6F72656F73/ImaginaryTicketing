@@ -143,6 +143,7 @@ class Others(commands.Cog):
         author: str
         category: str
         ignore: bool = False
+        helper_id_list: str = ''
 
         def __repr__(self):
             return f"{self.title}({self.id_}, {self.author}, {self.category}, {self.ignore})"
