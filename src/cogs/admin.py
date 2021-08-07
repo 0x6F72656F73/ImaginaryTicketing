@@ -2,8 +2,8 @@ import logging
 
 from discord.ext import commands
 
-import config
 from utils.others import Others
+import config
 
 log = logging.getLogger(__name__)
 

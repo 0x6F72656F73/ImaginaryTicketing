@@ -108,7 +108,7 @@ class Others(commands.Cog):
             pass
 
     @staticmethod
-    async def say_in_webhook(bot: commands.Bot, member: discord.Member, channel: discord.TextChannel, avatar_url: discord.Asset.url, allow_mention: bool, message, return_message: bool = False, **kwargs):
+    async def say_in_webhook(bot: commands.Bot, member: discord.Member, channel: discord.TextChannel, avatar_url: discord.Asset.url, allow_mention: bool, message: str, return_message: bool = False, **kwargs):
         avatar = await member.avatar.read()
         webhooks = await channel.webhooks()
 
@@ -141,7 +141,7 @@ class Others(commands.Cog):
 
     @staticmethod
     class Challenge(NamedTuple):
-        id_: int
+        id: int
         title: str
         author: str
         category: str
@@ -149,4 +149,4 @@ class Others(commands.Cog):
         helper_id_list: str = ''
 
         def __repr__(self):
-            return f"{self.title}({self.id_}, {self.author}, {self.category}, {self.ignore})"
+            return f"{self.title}({self.id}, {self.author}, {self.category}, {self.ignore})"

@@ -1,15 +1,20 @@
+import asyncio
+from collections import defaultdict
 import logging
 
 import discord
 from discord.ext import commands
+from discord.utils import get
 
-import config
+from utils.database.db import DatabaseManager as db
+from utils.background import ScrapeChallenges, UpdateHelpers
 from utils.others import Others
+import config
 
 log = logging.getLogger(__name__)
 
 class UtilityCommands(commands.Cog):
-    """**Unimplemented** user say and say member commands"""
+    """Misc utility commands"""
 
     def __init__(self, bot: commands.Bot):
         self.bot = bot
@@ -36,6 +41,151 @@ class UtilityCommands(commands.Cog):
                              description="This bot was proudly made by 0x6F72656F73#8221 :cookie:")
 
         await ctx.send(embed=embed)
+
+    @commands.command(name="purge")
+    @commands.has_role(config.ADMIN_ROLE)
+    async def purge(self, ctx, limit: int):
+        """purges x amount of messages"""
+
+        await ctx.channel.purge(limit=limit + 1)
+        message = await ctx.send(f'Purged {limit} messages')
+        await asyncio.sleep(3)
+        try:
+            await message.delete()
+        except discord.errors.NotFound:
+            pass
+
+    @commands.command(name="check")
+    @commands.has_role(config.ADMIN_ROLE)
+    async def check_discord(self, ctx):
+        """Checks if all configurations are valid"""
+        bot_guild = ctx.guild.get_member(self.bot.user.id)
+        checks = {"ticket ping role": bool(get(ctx.guild.roles, name=config.TICKET_PING_ROLE)),
+                  "bots role": bool(get(ctx.guild.roles, name=config.BOTS_ROLE)),
+                  "helpers role": bool(get(ctx.guild.roles, name=config.HELPER_ROLE)),
+                  "channel log category": bool(get(ctx.guild.categories, name=config.LOG_CHANNEL_CATEGORY)),
+                  "channel log name": bool(get(ctx.guild.text_channels, name=config.LOG_CHANNEL_NAME)),
+                  "is admin": bool(bot_guild.guild_permissions.administrator)}
+
+        def check_all(return_print=False):
+            if all(checks.values()):
+                return True
+
+            failures = [check for check, status
+                        in checks.items() if status is False]
+
+            if return_print:
+                return failures
+            return False
+
+        failure = check_all()
+        if not failure:
+            fails = "\n".join(check_all(return_print=True))
+            embed = Others.Embed(title="Failed Checks", description=fails)
+            await ctx.channel.send(embed=embed)
+            return
+
+        await ctx.channel.send("All checks were successful 😎")
+
+    @commands.group(name="challenge", aliases=["c", "chall"])
+    @commands.has_role(config.ADMIN_ROLE)
+    async def challenge(self, ctx):
+        """Base challenge command. Shows stats on challenges."""
+        embed = Others.Embed(title="Challenges")
+        challenges = [Others.Challenge(*list(challenge))
+                      for challenge in db.get_all_challenges()]
+        challenges_by_category = defaultdict(list)
+        for challenge in challenges:
+            challenges_by_category[challenge.category].append(challenge)
+        for category, challenge_list in challenges_by_category.items():
+            embed.add_field(name=category, value='=' *
+                            int(len(category) * .9), inline=False)
+            for challenge in challenge_list:
+                embed.add_field(
+                    name=challenge.title, value='_ _', inline=True)
+        await ctx.channel.send(embed=embed)
+
+    @challenge.command(name="refresh", aliases=["ref"])
+    @commands.has_role(config.ADMIN_ROLE)
+    async def refresh(self, ctx):
+        """refreshes challenges from the api"""
+        embed = Others.Embed(
+            description="sending requests...")
+        message = await ctx.channel.send(embed=embed)
+
+        try:
+            await ScrapeChallenges.main(self.bot)
+        except TypeError:
+            return
+
+        embed.description = "challenges refreshed"
+        await message.edit(embed=embed)
+
+    @commands.group(name="helper", aliases=["h"], invoke_without_command=True)
+    @commands.has_role(config.ADMIN_ROLE)
+    async def helper(self, ctx):
+        """Base helper command. Shows stats on helpers."""
+        helper_role = get(ctx.guild.roles, name=config.HELPER_ROLE)
+        if len(helper_role.members):
+            helpers = '\n'.join(
+                [member.mention for member in helper_role.members])
+        else:
+            helpers = 'No helpers'
+
+        embed = Others.Embed(
+            title=f"{config.HELPER_ROLE}", description=helpers)
+        await ctx.channel.send(embed=embed)
+
+    @helper.command(name="add", aliases=["a"])
+    @commands.has_role(config.ADMIN_ROLE)
+    async def helper_add(self, ctx, member: discord.Member):
+        """adds a helper"""
+        helper_role = get(member.guild.roles, name=config.HELPER_ROLE)
+        helper_ids = [helper.id for helper in helper_role.members]
+        if member.id in helper_ids:
+            embed = Others.Embed(
+                description=f"Member {member.mention} already has role {config.HELPER_ROLE}")
+            await ctx.channel.send(embed=embed)
+            return
+
+        await member.add_roles(helper_role)
+        embed = Others.Embed(
+            description=f"Added {member.mention} to role {config.HELPER_ROLE}")
+        await ctx.channel.send(embed=embed)
+
+    @helper.command(name="remove", aliases=["r", "rm"])
+    @commands.has_role(config.ADMIN_ROLE)
+    async def helper_remove(self, ctx, member: discord.Member):
+        """removes a helper"""
+        helper_role = get(member.guild.roles, name=config.HELPER_ROLE)
+        helper_ids = [helper.id for helper in helper_role.members]
+        if member.id not in helper_ids:
+            embed = Others.Embed(
+                description=f"Member {member.mention} does not have role {config.HELPER_ROLE}")
+            await ctx.channel.send(embed=embed)
+            return
+        await member.remove_roles(helper_role)
+        embed = Others.Embed(
+            description=f"Removed {member.mention} from role {config.HELPER_ROLE}")
+        await ctx.channel.send(embed=embed)
+
+    @helper.command(name="refresh", aliases=["ref"])
+    @commands.has_role(config.ADMIN_ROLE)
+    async def helper_refresh(self, ctx):
+        """refreshes helpers from the api"""
+        await UpdateHelpers.main(self.bot)
+        embed = Others.Embed(
+            description="helpers refreshed")
+        await ctx.channel.send(embed=embed)
+
+    @helper.command(name="update", aliases=["upd"])
+    @commands.has_role(config.ADMIN_ROLE)
+    async def helper_update(self, ctx):
+        """updates helpers to channels"""
+        await UpdateHelpers.add_helpers(self.bot)
+        embed = Others.Embed(
+            description="helpers updated")
+        await ctx.channel.send(embed=embed)
 
 def setup(bot: commands.Bot):
     bot.add_cog(UtilityCommands(bot))

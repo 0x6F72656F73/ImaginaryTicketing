@@ -10,12 +10,12 @@ from discord.ext import commands
 from discord.utils import get
 from humanize import precisedelta
 
+from utils.database.db import DatabaseManager as db
 import cogs.helpers.views.action_views as action_views
+from utils.background import ScrapeChallenges
 from utils.others import Others
 from utils.options import Options
-import utils.exceptions as exceptions
-from utils.database.db import DatabaseManager as db
-from utils.background import ScrapeChallenges
+from utils import exceptions
 import config
 
 log = logging.getLogger(__name__)
@@ -210,7 +210,7 @@ class _CreateTicketHelper(CreateTicket):
 
     async def _ask_for_challenge(self, challenges: List[Others.Challenge]):
         challenge_options = [discord.SelectOption(
-            label=(challenge.title[:23] + '..') if len(challenge.title) > 25 else challenge.title, value=f"{challenge.id_}") for challenge in challenges]
+            label=(challenge.title[:23] + '..') if len(challenge.title) > 25 else challenge.title, value=f"{challenge.id}") for challenge in challenges]
 
         while True:
             view = self.ChallengeView(author=self.user, custom_id=f"ticketing:challenge_request-{os.urandom(16).hex()}", options=challenge_options,
@@ -222,7 +222,7 @@ class _CreateTicketHelper(CreateTicket):
             await select_messages.delete()
 
         selected_challenge = [
-            ch for ch in challenges if ch.id_ == int(view.children[0]._selected_values[0])][0]
+            ch for ch in challenges if ch.id == int(view.children[0]._selected_values[0])][0]
         return selected_challenge
 
     async def _ask_for_category(self, challenges: List[Others.Challenge]) -> List[Others.Challenge]:
@@ -265,7 +265,7 @@ class _CreateTicketHelper(CreateTicket):
         user_solved_challenges = await ScrapeChallenges.get_user_challenges(
             self.user_id)
         challenges = [Others.Challenge(*list(challenge))
-                      for challenge in db.get_all_challenges() if not Others.Challenge(*list(challenge)).id_ in user_solved_challenges]
+                      for challenge in db.get_all_challenges() if not Others.Challenge(*list(challenge)).id in user_solved_challenges]
 
         if len(challenges) < 1:
             await self.ticket_channel.send("There are no released challenges or you have solved all the currently released challenges")
