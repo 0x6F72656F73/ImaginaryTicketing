@@ -362,9 +362,16 @@ class DatabaseManager():
         return all_challenges
 
     @classmethod
+    def get_challenge(cls, challenge_id: int):
+        query = "SELECT * FROM challenges where id = $1"
+        values = (challenge_id,)
+        challenge = cls._raw_select(query, values, fetch_one=True)
+        return challenge
+
+    @classmethod
     def refresh_database(cls, challenges: List[Others.Challenge]):
-        query = "DELETE FROM challenges"
-        cls._raw_delete(query)
+        delete_query = "DELETE FROM challenges"
+        cls._raw_delete(delete_query)
         insert_query = "INSERT INTO challenges(id, title, author, category, ignore) VALUES($1,$2,$3,$4,$5)"
         for id_, title, author, category, ignore, _ in challenges:
             values = (id_, title, author, category, ignore)
@@ -373,6 +380,18 @@ class DatabaseManager():
     @classmethod
     def update_helpers(cls, helper_id_list: List[int], challenge_id: int):
         helpers = json.dumps(helper_id_list)
+        query = "UPDATE challenges SET helper_id_list = $1 WHERE id = $2"
+        values = (helpers, challenge_id,)
+        cls._raw_update(query, values)
+
+    @classmethod
+    def update_helper(cls, helper_id: int, challenge_id: int):
+        challenge = Others.Challenge(*cls.get_challenge(challenge_id))
+        helpers = []
+        if challenge.helper_id_list:
+            helpers = json.loads(challenge.helper_id_list)
+        helpers.append(helper_id)
+        helpers = json.dumps(list(set(helpers)))
         query = "UPDATE challenges SET helper_id_list = $1 WHERE id = $2"
         values = (helpers, challenge_id,)
         cls._raw_update(query, values)

@@ -1,3 +1,4 @@
+import json
 import os
 import asyncio
 from collections import Counter
@@ -240,9 +241,13 @@ class _CreateTicketHelper(CreateTicket):
             ch for ch in challenges if ch.category == view.children[0]._selected_values[0]]
         return category_challenges
 
-    async def _add_user(self, user: discord.User):  # change to member after website
+    # change to member after website
+    async def _add_user(self, user_identifier: Union[str, int]):
         # change to get_member after website
-        author = self.guild.get_member_named(user)
+        if type(user_identifier) == str:
+            author = self.guild.get_member_named(user_identifier)
+        else:
+            author = self.guild.get_member(user_identifier)
         if author is None:
             return
         await self.ticket_channel.set_permissions(author, read_messages=True,
@@ -250,9 +255,9 @@ class _CreateTicketHelper(CreateTicket):
 
     async def _add_author_and_helpers(self, selected_challenge: Others.Challenge):
         await self._add_user(selected_challenge.author)
-        print(dir(selected_challenge))
-        print(selected_challenge.helper_id_list)
-        # print(*selected_challenge)
+        if len(helpers := json.loads(selected_challenge.helper_id_list)):
+            for helper in helpers:
+                await self._add_user(int(helper))
 
     async def challenge_selection(self):
         # challenges = self._fake_challenges(21)
@@ -336,8 +341,14 @@ class CloseTicket(BaseActions):
 
         message_distribution = Counter(users)
         total_messages = sum(message_distribution.values())
-        channel_users = '\n'.join(
-            [f"{self.guild.get_member_named(member).mention} ({count/total_messages:.0%})" for member, count in message_distribution.most_common()]) if len(message_distribution) > 0 else 'No messages'
+        if len(message_distribution) > 0:
+            channel_users = []
+            for member, count in message_distribution.most_common():
+                channel_users.append(
+                    f"{self.guild.get_member_named(member).mention} ({count/total_messages:.0%})")
+            channel_users = '\n'.join(channel_users)
+        else:
+            channel_users = 'No messages'
         old = channel.created_at
 
         now = discord.utils.utcnow()

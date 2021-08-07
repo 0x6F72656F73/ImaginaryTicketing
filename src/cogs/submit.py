@@ -32,7 +32,6 @@ class MiscCommands(commands.Cog):
     @commands.command(name="about")
     async def about(self, ctx):
         """returns about info"""
-
         embed = Others.Embed(title="about",
                              description="This bot was proudly made by 0x6F72656F73#8221 :cookie:")
 

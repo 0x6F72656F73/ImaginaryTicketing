@@ -12,7 +12,7 @@ from cogs.helpers.views import command_views
 import config
 
 from utils.database.db import DatabaseManager as db
-from utils.background import ScrapeChallenges
+from utils.background import ScrapeChallenges, UpdateHelpers
 
 log = logging.getLogger(__name__)
 
@@ -244,8 +244,12 @@ For **help** tickets:
     async def helper(self, ctx):
         """Base helper command. Shows stats on helpers."""
         helper_role = get(ctx.guild.roles, name=config.HELPER_ROLE)
-        helpers = '\n'.join(
-            [member.mention for member in helper_role.members]) if len(helper_role.members) > 0 else 'No helpers'
+        if len(helper_role.members):
+            helpers = '\n'.join(
+                [member.mention for member in helper_role.members])
+        else:
+            helpers = 'No helpers'
+
         embed = Others.Embed(
             title=f"{config.HELPER_ROLE}", description=helpers)
         await ctx.channel.send(embed=embed)
@@ -257,7 +261,6 @@ For **help** tickets:
         """adds a helper"""
         helper_role = get(member.guild.roles, name=config.HELPER_ROLE)
         helper_ids = [helper.id for helper in helper_role.members]
-        print(helper_ids)
         if member.id in helper_ids:
             embed = Others.Embed(
                 description=f"Member {member.mention} already has role {config.HELPER_ROLE}")
@@ -276,7 +279,6 @@ For **help** tickets:
         """removes a helper"""
         helper_role = get(member.guild.roles, name=config.HELPER_ROLE)
         helper_ids = [helper.id for helper in helper_role.members]
-        print(helper_ids)
         if member.id not in helper_ids:
             embed = Others.Embed(
                 description=f"Member {member.mention} does not have role {config.HELPER_ROLE}")
@@ -286,6 +288,14 @@ For **help** tickets:
         embed = Others.Embed(
             description=f"Removed {member.mention} from role {config.HELPER_ROLE}")
         await ctx.channel.send(embed=embed)
+        await Others.delmsg(ctx)
+
+    @helper.command(name="refresh", aliases=["ref"])
+    @commands.has_role(config.ADMIN_ROLE)
+    async def helper_refresh(self, ctx):
+        """refreshes helpers from the api"""
+        await UpdateHelpers.main(self.bot)
+        await ctx.channel.send("helpers refreshed")
         await Others.delmsg(ctx)
 
     def cog_check(self, ctx):

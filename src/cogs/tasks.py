@@ -1,7 +1,7 @@
 from discord.ext import commands
 import aiocron
 
-from utils.background import AutoClose, ScrapeChallenges, AddHelpers
+from utils.background import AutoClose, ScrapeChallenges, UpdateHelpers
 class Tasks(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -25,9 +25,9 @@ class Tasks(commands.Cog):
             await ScrapeChallenges.main()
 
         # @aiocron.crontab("*/10 * * *")
-        @aiocron.crontab("* * * * * */10")
+        # @aiocron.crontab("* * * * * */10")
         async def start_adding_users():
-            await AddHelpers.main(self.bot)
+            await UpdateHelpers.main(self.bot)
 
 
 def setup(bot):

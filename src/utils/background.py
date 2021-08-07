@@ -7,7 +7,7 @@
 from itertools import chain
 from datetime import timedelta
 import logging
-from typing import Dict
+from typing import Dict, List
 
 import discord
 from discord.ext import commands
@@ -159,7 +159,7 @@ class ScrapeChallenges():
                 db.refresh_database(all_challenges)
 
     @classmethod
-    async def get_user_challenges(cls, discord_id: int):
+    async def get_user_challenges(cls, discord_id: int) -> List[int]:
         params = cls._setup()
         async with aiohttp.ClientSession() as session:
             async with session.get(config.BASE_API_LINK +
@@ -169,9 +169,9 @@ class ScrapeChallenges():
                     return []
                 return [challenge['challenge']['id'] for challenge in solve_challenges]
 
-class AddHelpers():
-    @classmethod
-    async def main(cls, bot: commands.bot.Bot):
+class UpdateHelpers():
+    @staticmethod
+    async def main(bot: commands.bot.Bot):
         for guild in bot.guilds:
             if guild.id == 788162899515801637:
                 helper_role = discord.utils.get(
@@ -179,5 +179,9 @@ class AddHelpers():
                 for helper in helper_role.members:
                     solved_challenge_ids = await ScrapeChallenges.get_user_challenges(
                         helper.id)
-                    log.debug(solved_challenge_ids)
-        # db.update_helpers
+                    for ch_id in solved_challenge_ids:
+                        db.update_helper(helper.id, ch_id)
+
+    @staticmethod
+    async def add_user():
+        pass
