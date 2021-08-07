@@ -144,7 +144,7 @@ class ScrapeChallenges():
         return {'apikey': env.str('apikey')}
 
     @classmethod
-    async def main(cls) -> None:
+    async def main(cls, bot: commands.bot.Bot) -> None:
         params = cls._setup()
         async with aiohttp.ClientSession() as session:
             async with session.get(config.BASE_API_LINK +
@@ -157,6 +157,7 @@ class ScrapeChallenges():
                         challenge["id"], challenge["title"], challenge["author"], challenge["category"].split(",")[0], ignore))
 
                 db.refresh_database(all_challenges)
+                await UpdateHelpers.main(bot)
 
     @classmethod
     async def get_user_challenges(cls, discord_id: int) -> List[int]:
@@ -182,6 +183,19 @@ class UpdateHelpers():
                     for ch_id in solved_challenge_ids:
                         db.update_helper(helper.id, ch_id)
 
-    @staticmethod
-    async def add_user():
-        pass
+    @classmethod
+    async def add_helper_to_channel(cls, guild: discord.Guild, ticket_channel: discord.TextChannel, user_id):
+        author = guild.get_member(user_id)
+        if author is None:
+            return
+        await ticket_channel.set_permissions(author, read_messages=True,
+                                             send_messages=True)
+
+    @classmethod
+    async def add_helpers(cls, bot: commands.bot.Bot):
+        for guild in bot.guilds:
+            if guild.id == 788162899515801637:
+                for channel in db.get_all_help_channels(guild.id):
+                    if not (channel_ := guild.get_channel(channel)):
+                        print(channel_)
+                        print(type(channel_))

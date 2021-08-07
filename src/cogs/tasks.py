@@ -14,15 +14,15 @@ class Tasks(commands.Cog):
 
         @aiocron.crontab("0 9 * * *")
         async def start_scraping_challenges_9():
-            await ScrapeChallenges.main()
+            await ScrapeChallenges.main(self.bot)
 
         @aiocron.crontab("30 9 * * *")
         async def start_scraping_challenges_9_30():
-            await ScrapeChallenges.main()
+            await ScrapeChallenges.main(self.bot)
 
         @aiocron.crontab("0 */2 * * *")
         async def start_scraping_challenges_2_hours():
-            await ScrapeChallenges.main()
+            await ScrapeChallenges.main(self.bot)
 
         # @aiocron.crontab("*/10 * * *")
         # @aiocron.crontab("* * * * * */10")

@@ -5,7 +5,7 @@ TICKET_PING_ROLE = "Available Mods"
 HELPER_ROLE = "Helpers"
 
 STARTUP_COGS = ["cogs.admin", "cogs.reaction_commands",
-                "cogs.submit", "cogs.tasks"]
+                "cogs.utility", "cogs.tasks"]
 LOG_CHANNEL_CATEGORY = "logs"
 LOG_CHANNEL_NAME = "ticket-log"
 

@@ -235,8 +235,14 @@ For **help** tickets:
     @commands.has_role(config.ADMIN_ROLE)
     async def refresh(self, ctx):
         """refreshes challenges from the api"""
-        await ScrapeChallenges.main()
-        await ctx.channel.send("challenges refreshed")
+        embed = Others.Embed(
+            description="sending requests...")
+        message = await ctx.channel.send(embed=embed)
+
+        await ScrapeChallenges.main(self.bot)
+
+        embed.description = "challenges refreshed"
+        await message.edit(embed=embed)
         await Others.delmsg(ctx)
 
     @commands.group(name="helper", aliases=["h"], invoke_without_command=True)
@@ -295,7 +301,19 @@ For **help** tickets:
     async def helper_refresh(self, ctx):
         """refreshes helpers from the api"""
         await UpdateHelpers.main(self.bot)
-        await ctx.channel.send("helpers refreshed")
+        embed = Others.Embed(
+            description="helpers refreshed")
+        await ctx.channel.send(embed=embed)
+        await Others.delmsg(ctx)
+
+    @helper.command(name="update", aliases=["upd"])
+    @commands.has_role(config.ADMIN_ROLE)
+    async def helper_update(self, ctx):
+        """updates helpers to channels"""
+        await UpdateHelpers.add_helpers(self.bot)
+        embed = Others.Embed(
+            description="helpers updated")
+        await ctx.channel.send(embed=embed)
         await Others.delmsg(ctx)
 
     def cog_check(self, ctx):

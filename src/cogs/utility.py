@@ -8,7 +8,7 @@ from utils.others import Others
 
 log = logging.getLogger(__name__)
 
-class MiscCommands(commands.Cog):
+class UtilityCommands(commands.Cog):
     """**Unimplemented** user say and say member commands"""
 
     def __init__(self, bot: commands.Bot):
@@ -38,4 +38,4 @@ class MiscCommands(commands.Cog):
         await ctx.send(embed=embed)
 
 def setup(bot: commands.Bot):
-    bot.add_cog(MiscCommands(bot))
+    bot.add_cog(UtilityCommands(bot))

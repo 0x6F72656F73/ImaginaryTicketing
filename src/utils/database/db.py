@@ -90,19 +90,19 @@ class DatabaseManager():
             return None
 
     @classmethod
-    def get_all_ticket_channels(cls, guild_id: int) -> List[int]:
-        """gets a list of all ticket channels for a guild
+    def get_all_help_channels(cls, guild_id: int) -> List[int]:
+        """gets a list of all help ticket channels for a guild
 
         Parameters
         ----------
         guild_id : `int`
-            guild to get info from\n
+            guild to get tickets from\n
 
         Returns
         -------
-        `List[int]`: all ticket channels
+        `List[int]`: all help ticket channels
         """
-        query = "SELECT channel_id FROM requests WHERE guild_id = $1"
+        query = "SELECT channel_id FROM requests WHERE ticket_type='help' WHERE guild_id = $1"
         values = (guild_id,)
         db_ticket_channel_ids = cls._raw_select(query, values, fetch_all=True)
         ticket_channel_ids = list(chain(*db_ticket_channel_ids))
@@ -323,9 +323,9 @@ class DatabaseManager():
     def refresh_database(cls, challenges: List[Others.Challenge]):
         delete_query = "DELETE FROM challenges"
         cls._raw_delete(delete_query)
-        insert_query = "INSERT INTO challenges(id, title, author, category, ignore) VALUES($1,$2,$3,$4,$5)"
+        insert_query = "INSERT INTO challenges(id, title, author, category, ignore, helper_id_list) VALUES($1,$2,$3,$4,$5,$6)"
         for id_, title, author, category, ignore, _ in challenges:
-            values = (id_, title, author, category, ignore)
+            values = (id_, title, author, category, ignore, str([]))
             cls._raw_insert(insert_query, values)
 
     @classmethod

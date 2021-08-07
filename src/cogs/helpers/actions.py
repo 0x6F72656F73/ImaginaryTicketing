@@ -255,7 +255,8 @@ class _CreateTicketHelper(CreateTicket):
 
     async def _add_author_and_helpers(self, selected_challenge: Others.Challenge):
         await self._add_user(selected_challenge.author)
-        if len(helpers := json.loads(selected_challenge.helper_id_list)):
+        if len(selected_challenge.helper_id_list):
+            helpers = json.loads(selected_challenge.helper_id_list)
             for helper in helpers:
                 await self._add_user(int(helper))
 
