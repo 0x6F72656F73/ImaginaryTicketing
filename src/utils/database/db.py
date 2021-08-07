@@ -90,25 +90,6 @@ class DatabaseManager():
             return None
 
     @classmethod
-    def get_all_ticket_channel_messages(cls, guild_id: int) -> List[int]:
-        """gets a list of all ticket message's ids for a guild
-
-        Parameters
-        ----------
-        guild_id : `int`
-            guild to get info from\n
-
-        Returns
-        -------
-        `list[int]`: all ticket messages\n
-        """
-        query = "SELECT ticket_id FROM tickets WHERE guild_id = $1"
-        values = (guild_id,)
-        ticket_id_list = cls._raw_select(query, values, fetch_all=True)
-        ticket_id_list = list(chain(*ticket_id_list))
-        return ticket_id_list
-
-    @classmethod
     def get_all_ticket_channels(cls, guild_id: int) -> List[int]:
         """gets a list of all ticket channels for a guild
 
@@ -119,7 +100,7 @@ class DatabaseManager():
 
         Returns
         -------
-        `list[int]`: all ticket channels
+        `List[int]`: all ticket channels
         """
         query = "SELECT channel_id FROM requests WHERE guild_id = $1"
         values = (guild_id,)
@@ -324,36 +305,6 @@ class DatabaseManager():
         """
         query = "UPDATE requests SET checked = $1 WHERE channel_id=$2"
         cls._raw_update(query, (check, channel_id))
-
-    @classmethod
-    def get_submit_check(cls, user_id: int) -> Union[str, None]:
-        """checks if a user has a challenge submit ticket open
-
-        Parameters
-        ----------
-        user_id : `int`
-            the user to check for \n
-
-        Returns
-        -------
-        `Union[str, None]`: the channel id if a ticket exists, None if no ticket exists
-        """
-        query = "SELECT channel_id FROM requests WHERE user_id=$1 AND ticket_type='submit' AND status='open'"
-        values = (user_id,)
-        check = cls._raw_select(query, values, fetch_one=True)
-        try:
-            return check[0]
-        except TypeError:
-            return None
-        except Exception as exception:
-            log.exception(exception)
-            return None
-
-    @classmethod
-    def add_challenge(cls, id_: int, author: str, title: str, ignore: bool = False):
-        query = "INSERT INTO challenges(id, author, title, ignore) VALUES($1,$2,$3,$4)"
-        values = (id_, author, title, ignore)
-        cls._raw_insert(query, values)
 
     @classmethod
     def get_all_challenges(cls):
