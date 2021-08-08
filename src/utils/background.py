@@ -28,7 +28,7 @@ class AutoClose(commands.Cog):
     """Autoclose ticket manager"""
 
     @classmethod
-    async def get_message_time(cls, channel: discord.channel.TextChannel):
+    async def get_message_time(cls, channel: discord.TextChannel):
         """get the total time of the last message send
 
         Parameters
@@ -57,7 +57,7 @@ class AutoClose(commands.Cog):
 
     @classmethod
     async def old_ticket_actions(cls, bot: commands.bot.Bot, guild: discord.guild.Guild,
-                                 channel: discord.channel.TextChannel, message: discord.message.Message):
+                                 channel: discord.TextChannel, message: discord.message.Message):
         """Check if a channel is old
 
         If check is 0, send a polite message and set check to 1.
@@ -70,7 +70,7 @@ class AutoClose(commands.Cog):
             the bot\n
         guild : `discord.guild.Guild`
             the guild\n
-        channel : `discord.channel.TextChannel`
+        channel : `discord.TextChannel`
             the channel\n
         message : `discord.message.Message`
             the latest message\n
@@ -201,6 +201,8 @@ class UpdateHelpers():
                         helpers = db.get_helpers_from_title(
                             channel_.topic.split(" -")[0])
                         if helpers is None:
+                            await Others.ticket_logs(
+                                "Challenge not found", channel_)
                             continue
                         helpers = json.loads(helpers[0])
                         for helper in helpers:

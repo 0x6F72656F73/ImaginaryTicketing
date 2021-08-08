@@ -36,18 +36,14 @@ class BaseActions:
         self.channel_id = channel.id
 
     async def _log_to_channel(self, msg: str, *args, **kwargs) -> None:
-        """Logs a message to channel ticket-log
+        """Shorthand method to log messages
 
         Parameters
         ----------
         msg : `str`
             message to log
         """
-        channel_log = get(
-            self.guild.text_channels, name="ticket-log")
-        logembed = await Others.log_embed(
-            msg, self.user, self.user.avatar.url, self.channel, *args, **kwargs)
-        await channel_log.send(embed=logembed)
+        await Others.ticket_logs(msg, self.channel, self.user, *args, **kwargs)
 
     async def _move_channel(self, category_name) -> discord.CategoryChannel:
         """Fetches or creates the category
@@ -404,9 +400,9 @@ class CloseTicket(BaseActions):
             await self.channel.send("logs category does not exist")
             return
         channel_log = get(
-            self.guild.text_channels, category=channel_log_category, name="ticket-log")
+            self.guild.text_channels, category=channel_log_category, name=config.LOG_CHANNEL_NAME)
         if channel_log is None:
-            await self.channel.send("ticket-log channel does not exist in category logs")
+            await self.channel.send(f"{config.LOG_CHANNEL_NAME} channel does not exist in category logs")
             return
 
         transcript_message, transcript_file = await Others.transcript(self.channel, channel_log)
@@ -432,7 +428,7 @@ class CloseTicket(BaseActions):
         db.update_status(status, self.channel_id,)
 
         channel_log = get(
-            self.guild.text_channels, name="ticket-log")
+            self.guild.text_channels, name=config.LOG_CHANNEL_NAME)
         close_stats_embed.title = "Closed ticket"
         close_stats_embed.set_footer(text=f"{self.channel}")
         await channel_log.send(embed=close_stats_embed)

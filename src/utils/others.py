@@ -54,7 +54,7 @@ class Others(commands.Cog):
                                      filename=f"transcript-{channel}.html")
 
     @staticmethod
-    async def log_embed(title: str, user: discord.user.User, avatar_url: discord.asset.Asset, channel_name: discord.channel.TextChannel, *args, **kwargs) -> discord.Embed:
+    def log_embed(title: str, channel_name: discord.TextChannel, user: discord.user.User = None, avatar_url: discord.asset.Asset = None, **kwargs) -> discord.Embed:
         """makes an embed to be logged
 
         Parameters
@@ -65,18 +65,42 @@ class Others(commands.Cog):
             user to send embed to\n
         avatar_url : `discord.asset.Asset`
             url of the user\n
-        channel_name : `discord.channel.TextChannel`
+        channel_name : `discord.TextChannel`
             channel to send embed to\n
 
         Returns
         -------
         `discord.embeds.Embed`: an embed
         """
-        embed = Others.Embed(title=f"{title}", *args, **kwargs)
-        embed.set_author(name=f"{user}", icon_url=f"{avatar_url}")
+        embed = Others.Embed(title=f"{title}", **kwargs)
+        if user is not None:
+            embed.set_author(name=f"{user}", icon_url=f"{avatar_url}")
         embed.add_field(name="Channel",
                         value=f"{channel_name}")
         return embed
+
+    @staticmethod
+    async def ticket_logs(title: str, channel_name: discord.TextChannel, user: discord.user.User = None, **kwargs):
+        """Logs a message to ticket logs
+
+        Parameters
+        ----------
+        msg : `str`
+            message to log
+        user : `discord.user.User`
+            user that did the action
+        channel_name : `discord.TextChannel`
+            channel the action occurred in
+        """
+        if user is not None:
+            log_embed = Others.log_embed(
+                title, channel_name, user, user.avatar.url, **kwargs)
+        else:
+            log_embed = Others.log_embed(
+                title, channel_name, **kwargs)
+        log_channel = discord.utils.get(
+            channel_name.guild.text_channels, name=config.LOG_CHANNEL_NAME)
+        await log_channel.send(embed=log_embed)
 
     @staticmethod
     class Embed(Embed):
