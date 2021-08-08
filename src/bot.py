@@ -54,8 +54,8 @@ class TicketBot(commands.Bot):
         #             commands.add({command.name}) # jes add to embed directly
 
         ending_note = f"Type {BOT_PREFIX[0]}help command for more info on a command. \
-        You can also type {BOT_PREFIX[0]}help category for more info on a category. \
-        Type {BOT_PREFIX[0]}help_slash for help on slash commands"  # note: make this
+You can also type {BOT_PREFIX[0]}help category for more info on a category. \
+Type {BOT_PREFIX[0]}help_slash for help on slash commands"  # note: make this
 
         menu = DefaultMenu(page_left="👈", page_right="👉",
                            active_time=15)

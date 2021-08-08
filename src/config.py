@@ -4,8 +4,8 @@ BOTS_ROLE = "Trusted Bots"
 TICKET_PING_ROLE = "Available Mods"
 HELPER_ROLE = "Helpers"
 
-STARTUP_COGS = ["cogs.admin", "cogs.reaction_commands",
-                "cogs.utility", "cogs.tasks"]
+STARTUP_COGS = ["cogs.admin_commands", "cogs.core_commands",
+                "cogs.utility_commands", "cogs.tasks"]
 LOG_CHANNEL_CATEGORY = "logs"
 LOG_CHANNEL_NAME = "ticket-log"
 
