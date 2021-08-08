@@ -6,8 +6,9 @@
 
 from itertools import chain
 from datetime import timedelta
-import logging
+import json
 from typing import Dict, List
+import logging
 
 import discord
 from discord.ext import commands
@@ -184,9 +185,9 @@ class UpdateHelpers():
                         db.update_helper(helper.id, ch_id)
 
     @classmethod
-    async def add_helper_to_channel(cls, guild: discord.Guild, ticket_channel: discord.TextChannel, user_id):
-        author = guild.get_member(user_id)
-        if author is None:
+    async def add_helper_to_channel(cls, ticket_channel: discord.TextChannel, user_id: int):
+        author = ticket_channel.guild.get_member(user_id)
+        if author is None or author in ticket_channel.members:
             return
         await ticket_channel.set_permissions(author, read_messages=True,
                                              send_messages=True)
@@ -196,6 +197,11 @@ class UpdateHelpers():
         for guild in bot.guilds:
             if guild.id == 788162899515801637:
                 for channel in db.get_all_help_channels(guild.id):
-                    if not (channel_ := guild.get_channel(channel)):
-                        print(channel_)
-                        print(type(channel_))
+                    if (channel_ := guild.get_channel(channel)):
+                        helpers = db.get_helpers_from_title(
+                            channel_.topic.split(" -")[0])
+                        if helpers is None:
+                            continue
+                        helpers = json.loads(helpers[0])
+                        for helper in helpers:
+                            await cls.add_helper_to_channel(channel_, helper)

@@ -9,6 +9,7 @@ from discord.utils import get
 from utils.database.db import DatabaseManager as db
 from utils.background import ScrapeChallenges, UpdateHelpers
 from utils.others import Others
+from utils import exceptions
 import config
 
 log = logging.getLogger(__name__)
@@ -87,7 +88,7 @@ class UtilityCommands(commands.Cog):
 
         await ctx.channel.send("All checks were successful 😎")
 
-    @commands.group(name="challenge", aliases=["c", "chall"])
+    @commands.group(name="challenge", aliases=["c", "chall"], invoke_without_command=True)
     @commands.has_role(config.ADMIN_ROLE)
     async def challenge(self, ctx):
         """Base challenge command. Shows stats on challenges."""
@@ -113,10 +114,7 @@ class UtilityCommands(commands.Cog):
             description="sending requests...")
         message = await ctx.channel.send(embed=embed)
 
-        try:
-            await ScrapeChallenges.main(self.bot)
-        except TypeError:
-            return
+        await ScrapeChallenges.main(self.bot)
 
         embed.description = "challenges refreshed"
         await message.edit(embed=embed)
@@ -173,10 +171,17 @@ class UtilityCommands(commands.Cog):
     @commands.has_role(config.ADMIN_ROLE)
     async def helper_refresh(self, ctx):
         """refreshes helpers from the api"""
-        await UpdateHelpers.main(self.bot)
         embed = Others.Embed(
-            description="helpers refreshed")
-        await ctx.channel.send(embed=embed)
+            description="sending requests...")
+        message = await ctx.channel.send(embed=embed)
+        try:
+            await UpdateHelpers.main(self.bot)
+        except exceptions.ChallengeDoesNotExist as e:
+            embed.description = f"challenge id {e.args[0]} does not exist. getting new challenges..."
+            await message.edit(embed=embed)
+            await ScrapeChallenges.main(self.bot)
+        embed.description = "helpers refreshed"
+        await message.edit(embed=embed)
 
     @helper.command(name="update", aliases=["upd"])
     @commands.has_role(config.ADMIN_ROLE)

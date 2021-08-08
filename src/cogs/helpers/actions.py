@@ -179,7 +179,7 @@ class _CreateTicketHelper(CreateTicket):
     def _fake_challenges(self, num):
         category_list = ["Crypto", "Web", "Pwn", "Rev", "Misc"]
         categories = {}
-        for idx, category in enumerate(category_list):
+        for idx, category in enumerate(category_list):  # whats this for..
             categories[idx] = category
         list_categories = list(categories.values())
         return [Others.Challenge(

@@ -4,7 +4,10 @@ from itertools import chain
 from typing import Union, List
 import logging
 
+import discord
+
 from utils.others import Others
+from utils import exceptions
 
 log = logging.getLogger(__name__)
 
@@ -76,7 +79,7 @@ class DatabaseManager():
         """
 
         query = """
-                SELECT user_id FROM requests 
+                SELECT user_id FROM requests
                 WHERE channel_id=$1
                 """
         values = (channel_id,)
@@ -102,7 +105,7 @@ class DatabaseManager():
         -------
         `List[int]`: all help ticket channels
         """
-        query = "SELECT channel_id FROM requests WHERE ticket_type='help' WHERE guild_id = $1"
+        query = "SELECT channel_id FROM requests WHERE ticket_type='help' AND guild_id = $1"
         values = (guild_id,)
         db_ticket_channel_ids = cls._raw_select(query, values, fetch_all=True)
         ticket_channel_ids = list(chain(*db_ticket_channel_ids))
@@ -149,7 +152,7 @@ class DatabaseManager():
         `str`: new number
         """
         query = """SELECT count(1) FROM
-        (SELECT * FROM requests WHERE ticket_type=$1 
+        (SELECT * FROM requests WHERE ticket_type=$1
         union SELECT * FROM archive WHERE ticket_type=$1)
                 """
         values = (ticket_type,)
@@ -313,11 +316,17 @@ class DatabaseManager():
         return all_challenges
 
     @classmethod
-    def get_challenge(cls, challenge_id: int):
+    def get_challenge_from_id(cls, challenge_id: int):
         query = "SELECT * FROM challenges where id = $1"
         values = (challenge_id,)
         challenge = cls._raw_select(query, values, fetch_one=True)
         return challenge
+
+    @classmethod
+    def get_helpers_from_title(cls, title: str):
+        query = "SELECT helper_id_list from challenges WHERE title = $1"
+        values = (title, )
+        return cls._raw_select(query, values, fetch_one=True)
 
     @classmethod
     def refresh_database(cls, challenges: List[Others.Challenge]):
@@ -337,7 +346,10 @@ class DatabaseManager():
 
     @classmethod
     def update_helper(cls, helper_id: int, challenge_id: int):
-        challenge = Others.Challenge(*cls.get_challenge(challenge_id))
+        challenge = cls.get_challenge_from_id(challenge_id)
+        if challenge is None:
+            raise exceptions.ChallengeDoesNotExist(challenge_id)
+        challenge = Others.Challenge(*challenge)
         helpers = []
         if challenge.helper_id_list:
             helpers = json.loads(challenge.helper_id_list)

@@ -184,6 +184,11 @@ For **help** tickets:
         await ctx.channel.send(embed=embed)
         await Others.delmsg(ctx)
 
+    @auto_message.error
+    async def auto_message_error(self, ctx, error):
+        if isinstance(error, commands.errors.ChannelNotFound):
+            await ctx.channel.send(f"channel {error.argument} not found")
+
     def cog_check(self, ctx):
         if not ctx.message.guild:
             raise commands.errors.NoPrivateMessage(
