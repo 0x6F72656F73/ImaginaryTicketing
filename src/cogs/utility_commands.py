@@ -28,12 +28,11 @@ class UtilityCommands(commands.Cog):
         await Utility.say_in_webhook(self.bot, ctx.author, ctx.channel, ctx.author.avatar.url, False, message)
         await ctx.message.delete()
 
-    @commands.command(name="saymember", aliases=["saym"])
+    @commands.command(name="sayuser", aliases=["sayu"])
     @commands.has_role(config.ADMIN_ROLE)
-    async def saymember(self, ctx, member: discord.User, *, message):
+    async def saymember(self, ctx, user: discord.User, *, message):
         """says a message through a webhook through the specified user"""
-        #todo catch invalid users
-        await Utility.say_in_webhook(self.bot, member, ctx.channel, member.avatar.url, False, message)
+        await Utility.say_in_webhook(self.bot, user, ctx.channel, user.avatar.url, False, message)
         await ctx.message.delete()
 
     @commands.command(name="about")

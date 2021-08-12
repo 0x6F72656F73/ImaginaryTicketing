@@ -127,7 +127,7 @@ Type {BOT_PREFIX[0]}help_slash for help on slash commands"  # note: make this
             return await ctx.channel.send("Please provide all required arguments")
         if isinstance(error, commands.CommandOnCooldown):
             return await ctx.channel.send("Command is on cooldown")
-        if isinstance(error, commands.MemberNotFound):
+        if isinstance(error, (commands.MemberNotFound, commands.UserNotFound)):
             return await ctx.channel.send("member not found")
         if isinstance(error, commands.CommandNotFound):
             return
