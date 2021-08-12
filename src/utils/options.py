@@ -4,7 +4,7 @@ class Options:
     """all options for different types of tickets"""
 
     @staticmethod
-    def message(ticket_type, moderator=None):
+    def message(ticket_type, moderator=None) -> str:
         """get the message from the corresponding category
 
         Parameters

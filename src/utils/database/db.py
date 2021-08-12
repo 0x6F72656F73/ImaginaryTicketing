@@ -1,15 +1,15 @@
 import sqlite3
 import json
 from itertools import chain
-from typing import Union, List
+from typing import Union, Literal, List, TypeVar
 import logging
 
-import discord
-
-from utils.others import Others
+from utils.others import Others, Challenge
 from utils import exceptions
 
 log = logging.getLogger(__name__)
+
+A = TypeVar('A', str, bytes)
 
 class DatabaseManager():
     """Database Actions"""
@@ -277,7 +277,7 @@ class DatabaseManager():
             return None
 
     @classmethod
-    def get_guild_check(cls, guild_id: int) -> str:
+    def get_guild_check(cls, guild_id: int) -> Union[sqlite3.Row, List[str]]:
         """gets the check(status) if a channel has checked or not
         for every channel in the guild
 
@@ -329,7 +329,7 @@ class DatabaseManager():
         return cls._raw_select(query, values, fetch_one=True)
 
     @classmethod
-    def refresh_database(cls, challenges: List[Others.Challenge]):
+    def refresh_database_ch(cls, challenges: List[Challenge]):
         delete_query = "DELETE FROM challenges"
         cls._raw_delete(delete_query)
         insert_query = "INSERT INTO challenges(id, title, author, category, ignore, helper_id_list) VALUES($1,$2,$3,$4,$5,$6)"
@@ -337,24 +337,31 @@ class DatabaseManager():
             values = (id_, title, author, category, ignore, str([]))
             cls._raw_insert(insert_query, values)
 
+        all_helpers = challenges
+
     @classmethod
-    def update_helpers(cls, helper_id_list: List[int], challenge_id: int):
+    def update_helpers_ch(cls, helper_id_list: List[int], challenge_id: int):
         helpers = json.dumps(helper_id_list)
         query = "UPDATE challenges SET helper_id_list = $1 WHERE id = $2"
         values = (helpers, challenge_id,)
         cls._raw_update(query, values)
 
     @classmethod
-    def update_helper(cls, helper_id: int, challenge_id: int):
+    def update_helper_ch(cls, helper_id: int, challenge_id: int):
         challenge = cls.get_challenge_from_id(challenge_id)
         if challenge is None:
             raise exceptions.ChallengeDoesNotExist(challenge_id)
-        challenge = Others.Challenge(*challenge)
-        helpers = []
-        if challenge.helper_id_list:
-            helpers = json.loads(challenge.helper_id_list)
+        challenge = Challenge(*challenge)
+
+        helpers = json.loads(challenge.helper_id_list)
         helpers.append(helper_id)
         helpers = json.dumps(list(set(helpers)))
         query = "UPDATE challenges SET helper_id_list = $1 WHERE id = $2"
         values = (helpers, challenge_id,)
+        cls._raw_update(query, values)
+
+    @classmethod
+    def update_helper_status(cls, status: Literal["0", "1"], discord_id: int):
+        query = "UPDATE helpers SET is_available = $1 WHERE id = $2"
+        values = (status, discord_id,)
         cls._raw_update(query, values)

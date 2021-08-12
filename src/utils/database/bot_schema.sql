@@ -30,11 +30,9 @@ CREATE TABLE challenges (
     category VARCHAR(255),
     ignore BOOLEAN,
     helper_id_list VARCHAR(255)
-)
+);
 
--- CREATE TABLE admin (
---   guild_id bigint,
---   message1 VARCHAR(255),
---   message2 VARCHAR(255),
---   message3 VARCHAR(255)
--- );
+CREATE TABLE helpers (
+  discord_id INTEGER UNIQUE,
+  is_available BOOLEAN
+);

@@ -32,7 +32,6 @@ class Tasks(commands.Cog):
             try:
                 await UpdateHelpers.main(self.bot)
             except exceptions.ChallengeDoesNotExist:
-
                 await ScrapeChallenges.main(self.bot)
 
 

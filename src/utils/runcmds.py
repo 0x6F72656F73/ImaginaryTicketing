@@ -10,13 +10,13 @@ class RemoveNoise(logging.Filter):
         super().__init__(name=message_type)
         self.messages = messages
 
-    def filter(self, record):
+    def filter(self, record) -> bool:
         for msg in self.messages:
             if msg in record.msg:
                 return False
         return True
 
-def find_level():
+def find_level() -> int:
     """defines the verbosity of logging"""
 
     if len(sys.argv) == 1 or sys.argv[1] == "1" or sys.argv[1] == "debug":

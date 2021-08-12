@@ -13,7 +13,7 @@ from humanize import precisedelta
 from utils.database.db import DatabaseManager as db
 import cogs.helpers.views.action_views as action_views
 from utils.background import ScrapeChallenges
-from utils.others import Others
+from utils.others import Others, Challenge
 from utils.options import Options
 from utils import exceptions
 import config
@@ -43,7 +43,7 @@ class BaseActions:
         msg : `str`
             message to log
         """
-        await Others.ticket_logs(msg, self.channel, self.user, *args, **kwargs)
+        await Others.log_to_logs(msg, self.channel, self.user, *args, **kwargs)
 
     async def _move_channel(self, category_name) -> discord.CategoryChannel:
         """Fetches or creates the category
@@ -178,7 +178,7 @@ class _CreateTicketHelper(CreateTicket):
         for idx, category in enumerate(category_list):  # whats this for..
             categories[idx] = category
         list_categories = list(categories.values())
-        return [Others.Challenge(
+        return [Challenge(
             i, f"chall{i}", f"author{i}", list_categories[i % len(categories)], i % 3 == 0) for i in range(num)]
 
     class ChallengeSelect(discord.ui.Select['ChallengeView']):
@@ -204,7 +204,7 @@ class _CreateTicketHelper(CreateTicket):
             await interaction.response.send_message("You're not allowed to choose", ephemeral=True)
             return False
 
-    async def _ask_for_challenge(self, challenges: List[Others.Challenge]):
+    async def _ask_for_challenge(self, challenges: List[Challenge]):
         challenge_options = [discord.SelectOption(
             label=(challenge.title[:23] + '..') if len(challenge.title) > 25 else challenge.title, value=f"{challenge.id}") for challenge in challenges]
 
@@ -221,7 +221,7 @@ class _CreateTicketHelper(CreateTicket):
             ch for ch in challenges if ch.id == int(view.children[0]._selected_values[0])][0]
         return selected_challenge
 
-    async def _ask_for_category(self, challenges: List[Others.Challenge]) -> List[Others.Challenge]:
+    async def _ask_for_category(self, challenges: List[Challenge]) -> List[Challenge]:
         categories = {ch.category for ch in challenges}
         category_options = [discord.SelectOption(
             label=cat, value=cat) for cat in categories]
@@ -249,7 +249,7 @@ class _CreateTicketHelper(CreateTicket):
         await self.ticket_channel.set_permissions(author, read_messages=True,
                                                   send_messages=True)
 
-    async def _add_author_and_helpers(self, selected_challenge: Others.Challenge):
+    async def _add_author_and_helpers(self, selected_challenge: Challenge):
         await self._add_user(selected_challenge.author)
         if len(selected_challenge.helper_id_list):
             helpers = json.loads(selected_challenge.helper_id_list)
@@ -260,8 +260,8 @@ class _CreateTicketHelper(CreateTicket):
         # challenges = self._fake_challenges(21)
         user_solved_challenges = await ScrapeChallenges.get_user_challenges(
             self.user_id)
-        challenges = [Others.Challenge(*list(challenge))
-                      for challenge in db.get_all_challenges() if not Others.Challenge(*list(challenge)).id in user_solved_challenges]
+        challenges = [Challenge(*list(challenge))
+                      for challenge in db.get_all_challenges() if not Challenge(*list(challenge)).id in user_solved_challenges]
 
         if len(challenges) < 1:
             await self.ticket_channel.send("There are no released challenges or you have solved all the currently released challenges")

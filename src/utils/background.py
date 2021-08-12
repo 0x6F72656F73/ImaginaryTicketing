@@ -18,7 +18,7 @@ import aiohttp
 import cogs.helpers.views.action_views as action_views
 import cogs.helpers.actions as actions
 from utils.options import Options
-from utils.others import Others
+from utils.others import Others, Challenge
 from utils.database.db import DatabaseManager as db
 import config
 
@@ -154,10 +154,10 @@ class ScrapeChallenges():
                 all_challenges = []
                 for challenge in challenges:
                     ignore = bool(challenge['author'] == config.ADMIN_ROLE)
-                    all_challenges.append(Others.Challenge(
+                    all_challenges.append(Challenge(
                         challenge["id"], challenge["title"], challenge["author"], challenge["category"].split(",")[0], ignore))
 
-                db.refresh_database(all_challenges)
+                db.refresh_database_ch(all_challenges)
                 await UpdateHelpers.main(bot)
 
     @classmethod
@@ -182,7 +182,7 @@ class UpdateHelpers():
                     solved_challenge_ids = await ScrapeChallenges.get_user_challenges(
                         helper.id)
                     for ch_id in solved_challenge_ids:
-                        db.update_helper(helper.id, ch_id)
+                        db.update_helper_ch(helper.id, ch_id)
 
     @classmethod
     async def add_helper_to_channel(cls, ticket_channel: discord.TextChannel, user_id: int):
@@ -201,7 +201,7 @@ class UpdateHelpers():
                         helpers = db.get_helpers_from_title(
                             channel_.topic.split(" -")[0])
                         if helpers is None:
-                            await Others.ticket_logs(
+                            await Others.log_to_logs(
                                 "Challenge not found", channel_)
                             continue
                         helpers = json.loads(helpers[0])
