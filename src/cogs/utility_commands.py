@@ -9,7 +9,7 @@ from discord.utils import get
 
 from utils.database.db import DatabaseManager as db
 from utils.background import ScrapeChallenges, UpdateHelpers
-from utils.others import Others, Challenge
+from utils.utility import Utility, UI, Challenge
 from utils import exceptions
 import config
 
@@ -25,7 +25,7 @@ class UtilityCommands(commands.Cog):
     async def say(self, ctx, *, message):
         """says a message through a webhook"""
 
-        await Others.say_in_webhook(self.bot, ctx.author, ctx.channel, ctx.author.avatar.url, False, message)
+        await Utility.say_in_webhook(self.bot, ctx.author, ctx.channel, ctx.author.avatar.url, False, message)
         await ctx.message.delete()
 
     @commands.command(name="saymember", aliases=["saym"])
@@ -33,14 +33,14 @@ class UtilityCommands(commands.Cog):
     async def saymember(self, ctx, member: discord.User, *, message):
         """says a message through a webhook through the specified user"""
         #todo catch invalid users
-        await Others.say_in_webhook(self.bot, member, ctx.channel, member.avatar.url, False, message)
+        await Utility.say_in_webhook(self.bot, member, ctx.channel, member.avatar.url, False, message)
         await ctx.message.delete()
 
     @commands.command(name="about")
     async def about(self, ctx):
         """returns about info"""
-        embed = Others.Embed(title="about",
-                             description="This bot was proudly made by 0x6F72656F73#8221 :cookie:")
+        embed = UI.Embed(title="about",
+                         description="This bot was proudly made by 0x6F72656F73#8221 :cookie:")
 
         await ctx.send(embed=embed)
 
@@ -83,7 +83,7 @@ class UtilityCommands(commands.Cog):
         failure = check_all()
         if not failure:
             fails = "\n".join(check_all(return_print=True))
-            embed = Others.Embed(title="Failed Checks", description=fails)
+            embed = UI.Embed(title="Failed Checks", description=fails)
             await ctx.channel.send(embed=embed)
             return
 
@@ -93,7 +93,8 @@ class UtilityCommands(commands.Cog):
     @commands.has_role(config.ADMIN_ROLE)
     async def challenge(self, ctx):
         """Base challenge command. Shows stats on challenges."""
-        embed = Others.Embed(title="Challenges")
+        embed = UI.Embed(title="Challenges")
+        print(type(db.get_all_challenges()))
         challenges = [Challenge(*list(challenge))
                       for challenge in db.get_all_challenges()]
         challenges_by_category = defaultdict(list)
@@ -111,7 +112,7 @@ class UtilityCommands(commands.Cog):
     @commands.has_role(config.ADMIN_ROLE)
     async def refresh(self, ctx):
         """refreshes challenges from the api"""
-        embed = Others.Embed(
+        embed = UI.Embed(
             description="sending requests...")
         message = await ctx.channel.send(embed=embed)
 
@@ -131,7 +132,7 @@ class UtilityCommands(commands.Cog):
         else:
             helpers = 'No helpers'
 
-        embed = Others.Embed(
+        embed = UI.Embed(
             title=f"{config.HELPER_ROLE}", description=helpers)
         await ctx.channel.send(embed=embed)
 
@@ -142,13 +143,13 @@ class UtilityCommands(commands.Cog):
         helper_role = get(member.guild.roles, name=config.HELPER_ROLE)
         helper_ids = [helper.id for helper in helper_role.members]
         if member.id in helper_ids:
-            embed = Others.Embed(
+            embed = UI.Embed(
                 description=f"Member {member.mention} already has role {config.HELPER_ROLE}")
             await ctx.channel.send(embed=embed)
             return
 
         await member.add_roles(helper_role)
-        embed = Others.Embed(
+        embed = UI.Embed(
             description=f"Added {member.mention} to role {config.HELPER_ROLE}")
         await ctx.channel.send(embed=embed)
 
@@ -159,12 +160,12 @@ class UtilityCommands(commands.Cog):
         helper_role = get(member.guild.roles, name=config.HELPER_ROLE)
         helper_ids = [helper.id for helper in helper_role.members]
         if member.id not in helper_ids:
-            embed = Others.Embed(
+            embed = UI.Embed(
                 description=f"Member {member.mention} does not have role {config.HELPER_ROLE}")
             await ctx.channel.send(embed=embed)
             return
         await member.remove_roles(helper_role)
-        embed = Others.Embed(
+        embed = UI.Embed(
             description=f"Removed {member.mention} from role {config.HELPER_ROLE}")
         await ctx.channel.send(embed=embed)
 
@@ -172,7 +173,7 @@ class UtilityCommands(commands.Cog):
     @commands.has_role(config.ADMIN_ROLE)
     async def helper_refresh(self, ctx):
         """refreshes helpers from the api"""
-        embed = Others.Embed(
+        embed = UI.Embed(
             description="sending requests...")
         message = await ctx.channel.send(embed=embed)
         try:
@@ -189,7 +190,7 @@ class UtilityCommands(commands.Cog):
     async def helper_update(self, ctx):
         """updates helpers to channels"""
         await UpdateHelpers.add_helpers(self.bot)
-        embed = Others.Embed(
+        embed = UI.Embed(
             description="helpers updated")
         await ctx.channel.send(embed=embed)
 
@@ -203,7 +204,7 @@ class UtilityCommands(commands.Cog):
     #     else:
     #         helpers = 'No helpers'
 
-    #     embed = Others.Embed(
+    #     embed = UI.Embed(
     #         title=f"{config.HELPER_ROLE}", description=helpers)
     #     await ctx.channel.send(embed=embed)
 
@@ -213,7 +214,7 @@ class UtilityCommands(commands.Cog):
     #     """changes a helper to on or off """
     #     if not choice
     #     await UpdateHelpers.add_helpers(self.bot)
-    #     embed = Others.Embed(
+    #     embed = UI.Embed(
     #         description="helpers updated")
     #     await ctx.channel.send(embed=embed)
 

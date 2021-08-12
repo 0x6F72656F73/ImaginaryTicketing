@@ -5,7 +5,6 @@ from typing import NamedTuple
 import logging
 
 import discord
-from discord import Embed
 from discord.ext import commands
 import chat_exporter
 
@@ -14,8 +13,8 @@ import config
 log = logging.getLogger(__name__)
 
 class UI:
-    @staticmethod
-    def log_embed(title: str, channel_name: discord.TextChannel, user: discord.user.User = None, avatar_url: discord.asset.Asset = None, **kwargs) -> discord.Embed:
+    @classmethod
+    def log_embed(cls, title: str, channel_name: discord.TextChannel, user: discord.user.User = None, avatar_url: discord.asset.Asset = None, **kwargs) -> discord.Embed:
         """makes an embed to be logged
 
         Parameters
@@ -33,15 +32,15 @@ class UI:
         -------
         `discord.embeds.Embed`: an embed
         """
-        embed = Others.Embed(title=f"{title}", **kwargs)
+        embed = cls.Embed(title=f"{title}", **kwargs)
         if user is not None:
             embed.set_author(name=f"{user}", icon_url=f"{avatar_url}")
         embed.add_field(name="Channel",
                         value=f"{channel_name}")
         return embed
 
-    @staticmethod
-    async def log_to_logs(title: str, channel_name: discord.TextChannel, user: discord.user.User = None, **kwargs):
+    @classmethod
+    async def log_to_logs(cls, title: str, channel_name: discord.TextChannel, user: discord.user.User = None, **kwargs):
         """Logs a message to ticket logs
 
         Parameters
@@ -54,17 +53,17 @@ class UI:
             channel the action occurred in
         """
         if user is not None:
-            log_embed = Others.log_embed(
+            log_embed = cls.log_embed(
                 title, channel_name, user, user.avatar.url, **kwargs)
         else:
-            log_embed = Others.log_embed(
+            log_embed = cls.log_embed(
                 title, channel_name, **kwargs)
         log_channel = discord.utils.get(
             channel_name.guild.text_channels, name=config.LOG_CHANNEL_NAME)
         await log_channel.send(embed=log_embed)
 
     @staticmethod
-    class Embed(Embed):
+    class Embed(discord.Embed):
         """returns an embed with a random color
 
         Returns
@@ -75,7 +74,7 @@ class UI:
         def __new__(cls, **kwargs) -> discord.embeds.Embed:
             return discord.Embed(color=discord.Color.random(), timestamp=discord.utils.utcnow(), **kwargs)
 
-class Others(commands.Cog):
+class Utility:
     """Abstract helper methods"""
 
     @staticmethod

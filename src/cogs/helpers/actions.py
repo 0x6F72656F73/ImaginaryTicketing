@@ -13,7 +13,7 @@ from humanize import precisedelta
 from utils.database.db import DatabaseManager as db
 import cogs.helpers.views.action_views as action_views
 from utils.background import ScrapeChallenges
-from utils.others import Others, Challenge
+from utils.utility import Utility, UI, Challenge
 from utils.options import Options
 from utils import exceptions
 import config
@@ -43,7 +43,7 @@ class BaseActions:
         msg : `str`
             message to log
         """
-        await Others.log_to_logs(msg, self.channel, self.user, *args, **kwargs)
+        await UI.log_to_logs(msg, self.channel, self.user, *args, **kwargs)
 
     async def _move_channel(self, category_name) -> discord.CategoryChannel:
         """Fetches or creates the category
@@ -157,7 +157,7 @@ class CreateTicket(BaseActions):
             welcome_message = f'Welcome <@{self.user_id}>\nA new ticket has been created {avail_mods.mention}\n'
         message = Options.message(self.ticket_type, avail_mods)
 
-        embed = Others.Embed(description=message)
+        embed = UI.Embed(description=message)
         ticket_channel_message = await self.ticket_channel.send(welcome_message, embed=embed, view=action_views.CloseView())
 
         await ticket_channel_message.pin()
@@ -300,7 +300,7 @@ class Utility:
         """
         await channel.set_permissions(member, read_messages=True, send_messages=True)
 
-        embed = Others.Embed(description=f"{member.mention} was added")
+        embed = UI.Embed(description=f"{member.mention} was added")
         await channel.send(embed=embed)
 
     @staticmethod
@@ -313,7 +313,7 @@ class Utility:
             member to be removed\n
         """
         await channel.set_permissions(member, read_messages=False, send_messages=False)
-        embed = Others.Embed(description=f"{member.mention} was removed")
+        embed = UI.Embed(description=f"{member.mention} was removed")
         await channel.send(embed=embed)
 
 
@@ -365,7 +365,7 @@ class CloseTicket(BaseActions):
             await self.channel.send("Channel is already closed")
             return
 
-        close_stats_embed = Others.Embed()
+        close_stats_embed = UI.Embed()
         close_stats_embed.set_author(
             name=f"{self.user}", icon_url=f"{self.user.avatar.url}")
         embed_message = await self.channel.send(embed=close_stats_embed)
@@ -405,7 +405,7 @@ class CloseTicket(BaseActions):
             await self.channel.send(f"{config.LOG_CHANNEL_NAME} channel does not exist in category logs")
             return
 
-        transcript_message, transcript_file = await Others.transcript(self.channel, channel_log)
+        transcript_message, transcript_file = await Utility.transcript(self.channel, channel_log)
         if transcript_message:
             close_stats_embed.add_field(name="transcript",
                                         value=f"[transcript url]({config.TRANSCRIPT_DOMAIN}/direct?link={transcript_message.attachments[0].url} \"oreos taste good dont they\") ")
@@ -473,7 +473,7 @@ class ReopenTicket(BaseActions):
 
         status = "open"
         db.update_status(status, self.channel_id)
-        reopened_embed = Others.Embed(
+        reopened_embed = UI.Embed(
             description="Ticket was re-opened")
         reopened_embed.set_author(
             name=f"{self.user}", icon_url=f"{self.user.avatar.url}")
@@ -500,7 +500,7 @@ class DeleteTicket(BaseActions):
             await self.channel.send("Channel is not a ticket")
             return
 
-        embed = Others.Embed(
+        embed = UI.Embed(
             title="Deleting ticket",
             description="5 seconds left")
         await self.channel.send(embed=embed)

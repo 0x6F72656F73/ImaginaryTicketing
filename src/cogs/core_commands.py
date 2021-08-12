@@ -8,7 +8,7 @@ from utils.database.db import DatabaseManager as db
 import cogs.helpers.views.action_views as action_views
 from cogs.helpers.views import command_views
 import cogs.helpers.actions as actions
-from utils.others import Others
+from utils.utility import Utility, UI
 import config
 
 log = logging.getLogger(__name__)
@@ -25,7 +25,7 @@ class TicketCommands(commands.Cog):
         """shows a ticket message"""
         bot_commands: discord.TextChannel = get(
             ctx.guild.text_channels, name="bot-commands")
-        embed = Others.Embed(title="Ticket System")
+        embed = UI.Embed(title="Ticket System")
         embed.add_field(name="How do I make a ticket?",
                         value=f"Either react to the message below, or type `$create{{help, submit, misc}}` in {bot_commands.mention}. (Note `$create` defaults to help)")
         embed.add_field(name="Rules", value="""
@@ -41,7 +41,7 @@ For **help** tickets:
 \b \b - the challenge has been blooded
 """, inline=False)
         await ctx.channel.send(embed=embed, view=command_views.TicketView(self.bot))
-        await Others.delmsg(ctx)
+        await Utility.delmsg(ctx)
 
     @commands.command(name="create", aliases=["new", "cr"])
     @commands.cooldown(rate=5, per=10, type=commands.BucketType.default)
@@ -63,7 +63,7 @@ For **help** tickets:
             create_ticket = actions.CreateTicket(self.bot,
                                                  ticket_type, None, ctx.guild, member, ctx.channel)
         await create_ticket.main()
-        await Others.delmsg(ctx)
+        await Utility.delmsg(ctx)
 
     @commands.command(name="add", aliases=["a"], help="add a user to a ticket")
     @commands.has_role(config.ADMIN_ROLE)
@@ -72,14 +72,14 @@ For **help** tickets:
 
         memids = [member.id for member in ctx.channel.members]
         if member.id in memids:
-            embed = Others.Embed(
+            embed = UI.Embed(
                 description=f"User {member.name} already in channel")
             await ctx.channel.send(embed=embed)
             return
 
         admin = get(ctx.guild.roles, name=config.ADMIN_ROLE)
         if admin in member.roles:
-            embed = Others.Embed(description=f"User {member.name} is an admin")
+            embed = UI.Embed(description=f"User {member.name} is an admin")
             await ctx.channel.send(embed=embed)
             return
 
@@ -92,13 +92,13 @@ For **help** tickets:
 
         memids = [member.id for member in ctx.channel.members]
         if member.id not in memids:
-            embed = Others.Embed(
+            embed = UI.Embed(
                 description=f"User {member.name} not in channel")
             await ctx.channel.send(embed=embed)
             return
         admin = get(ctx.guild.roles, name=config.ADMIN_ROLE)
         if admin in member.roles:
-            embed = Others.Embed(description=f"User {member.name} is an admin")
+            embed = UI.Embed(description=f"User {member.name} is an admin")
             await ctx.channel.send(embed=embed)
             return
 
@@ -116,7 +116,7 @@ For **help** tickets:
 
             epicreactions = actions.CloseTicket(ctx.guild, ctx.author,
                                                 ctx.channel)
-            await Others.delmsg(ctx)
+            await Utility.delmsg(ctx)
             await epicreactions.main()
         else:
             await ctx.channel.send("You do not have enough permissions to run this command")
@@ -141,7 +141,7 @@ For **help** tickets:
                                              ctx.channel)
         await reopen_ticket.main()
 
-        await Others.delmsg(ctx)
+        await Utility.delmsg(ctx)
 
     @commands.command(name="transcript", alias=["tsc"])
     @commands.has_role(config.ADMIN_ROLE)
@@ -149,7 +149,7 @@ For **help** tickets:
     async def transcript(self, ctx, user: discord.User):
         """sends a transcript to a user via DM"""
 
-        await Others.transcript(ctx.channel, user)
+        await Utility.transcript(ctx.channel, user)
         await ctx.channel.send("transcript sent to dms")
 
     @commands.command(name="autoclose", aliases=["ac"])
@@ -175,14 +175,14 @@ For **help** tickets:
             return
         member = ctx.guild.get_member(int(user_id))
         message = f"If that is all we can help you with {member.mention}, please close this ticket."
-        random_admin = await Others.random_admin_member(ctx.guild)
-        await Others.say_in_webhook(self.bot, random_admin, channel, random_admin.avatar.url, True, message, return_message=True, view=action_views.CloseView())
-        embed = Others.Embed(
+        random_admin = await Utility.random_admin_member(ctx.guild)
+        await Utility.say_in_webhook(self.bot, random_admin, channel, random_admin.avatar.url, True, message, return_message=True, view=action_views.CloseView())
+        embed = UI.Embed(
             title="Auto Message", description=f"{random_admin.mention} said the auto close message in {channel.mention}")
         embed.set_author(name=f"{ctx.author}",
                          icon_url=f"{ctx.author.avatar.url}")
         await ctx.channel.send(embed=embed)
-        await Others.delmsg(ctx)
+        await Utility.delmsg(ctx)
 
     @auto_message.error
     async def auto_message_error(self, ctx, error):

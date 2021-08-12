@@ -4,7 +4,7 @@ from itertools import chain
 from typing import Union, Literal, List, TypeVar
 import logging
 
-from utils.others import Others, Challenge
+from utils.utility import Utility, Challenge
 from utils import exceptions
 
 log = logging.getLogger(__name__)
@@ -15,7 +15,7 @@ class DatabaseManager():
     """Database Actions"""
 
     @classmethod
-    def _db_connect(cls) -> sqlite3.Connection:
+    def _db_connect(cls) -> Union[sqlite3.Connection, None]:
         try:
             conn = sqlite3.connect('utils/database/bot.db')
             conn.row_factory = sqlite3.Row
@@ -310,7 +310,7 @@ class DatabaseManager():
         cls._raw_update(query, (check, channel_id))
 
     @classmethod
-    def get_all_challenges(cls):
+    def get_all_challenges(cls) -> List[sqlite3.Row]:
         query = "SELECT * FROM challenges"
         all_challenges = cls._raw_select(query)
         return all_challenges

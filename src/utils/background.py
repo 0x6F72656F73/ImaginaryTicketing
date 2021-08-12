@@ -18,7 +18,7 @@ import aiohttp
 import cogs.helpers.views.action_views as action_views
 import cogs.helpers.actions as actions
 from utils.options import Options
-from utils.others import Others, Challenge
+from utils.utility import Utility, UI, Challenge
 from utils.database.db import DatabaseManager as db
 import config
 
@@ -88,8 +88,8 @@ class AutoClose(commands.Cog):
             user_id = db.get_user_id(channel.id)
             member = guild.get_member(int(user_id))
             message = f"If that is all we can help you with {member.mention}, please close this ticket."
-            random_admin = await Others.random_admin_member(guild)
-            await Others.say_in_webhook(bot, random_admin, channel, random_admin.avatar.url, True, message, return_message=True, view=action_views.CloseView())
+            random_admin = await Utility.random_admin_member(guild)
+            await Utility.say_in_webhook(bot, random_admin, channel, random_admin.avatar.url, True, message, return_message=True, view=action_views.CloseView())
             log.info(
                 f"{random_admin.name} said the auto close message in {channel.name}")
             db.update_check("1", channel.id)
@@ -201,7 +201,7 @@ class UpdateHelpers():
                         helpers = db.get_helpers_from_title(
                             channel_.topic.split(" -")[0])
                         if helpers is None:
-                            await Others.log_to_logs(
+                            await UI.log_to_logs(
                                 "Challenge not found", channel_)
                             continue
                         helpers = json.loads(helpers[0])

@@ -2,7 +2,7 @@ import logging
 
 from discord.ext import commands
 
-from utils.others import Others
+from utils.utility import Utility, UI
 import config
 
 log = logging.getLogger(__name__)
@@ -24,7 +24,7 @@ class Admin(commands.Cog):
     async def shutdown(self, ctx):
         """shuts the bot down"""
 
-        embed = Others.Embed(
+        embed = UI.Embed(
             description="Shutting down. Bye! :wave:")
         await ctx.send(embed=embed)
         log.warning(f"{ctx.author} is closing the bot")
