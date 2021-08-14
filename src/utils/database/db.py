@@ -1,15 +1,14 @@
 import sqlite3
 import json
 from itertools import chain
-from typing import Union, Literal, List, TypeVar
+from typing import Union, Literal, List
 import logging
 
-from utils.utility import Utility, Challenge
+from utils.database import types
+from utils.utility import Challenge
 from utils import exceptions
 
 log = logging.getLogger(__name__)
-
-A = TypeVar('A', str, bytes)
 
 class DatabaseManager():
     """Database Actions"""
@@ -65,6 +64,84 @@ class DatabaseManager():
         return ret
 
     @classmethod
+    def create_ticket(cls, channel_id: int, channel_name: str, guild_id: int, user_id: int, ticket_type, status, checked):
+        """create a ticket
+
+        Parameters
+        ----------
+        channel_id : `int`
+            the channel id\n
+        channel_name : `str`
+            the channel name\n
+        guild_id : `int`
+            the guild id\n
+        user_id : `int`
+            the user's id who created the ticket channel\n
+        ticket_type : `[type]`
+            type of ticket\n
+        status : `[type]`
+            status of ticket\n
+        checked : `[type]`
+            whether the ticket is checked or not\n
+        """
+        query = """
+        INSERT INTO requests(channel_id, channel_name, guild_id, user_id, ticket_type, status, checked) 
+        VALUES ($1,$2,$3,$4,$5,$6,$8 )"""
+        values = (channel_id, channel_name, guild_id,
+                  user_id, ticket_type, status, checked,)
+        cls._raw_insert(query, values)
+
+    @classmethod
+    def update_ticket_name(cls, channel_name: str, channel_id: int):
+        """updates the name of a ticket
+
+        Parameters
+        ----------
+        channel_name : `str`
+            the channel's name\n
+        channel_id : `int`
+            the channel's id\n
+        """
+        query = """
+        UPDATE requests 
+        SET channel_name = $1 WHERE channel_id = $2"""
+        values = (channel_name, channel_id,)
+        cls._raw_update(query, values)
+
+    @classmethod
+    def delete_ticket(cls, channel_id: int):
+        """deletes a ticket
+
+        Parameters
+        ----------
+        channel_id : `int`
+            the channel's id_\n
+        """
+        query = """
+        DELETE FROM requests
+        WHERE channel_id = $1
+        """
+        values = (channel_id,)
+        cls._raw_delete(query, values)
+
+    @classmethod
+    def move_ticket_to_archive(cls, channel_id: int):
+        """moves the ticket from requests to archive table
+
+        Parameters
+        ----------
+        channel_id : `int`
+            the channel's id_\n
+        """
+        query = """
+        INSERT INTO archive
+        SELECT * FROM requests
+        WHERE channel_id= $1
+        """
+        values = (channel_id,)
+        cls._raw_insert(query, values)
+
+    @classmethod
     def get_user_id(cls, channel_id: int) -> Union[int, None]:
         """gets the id of a user
 
@@ -79,9 +156,8 @@ class DatabaseManager():
         """
 
         query = """
-                SELECT user_id FROM requests
-                WHERE channel_id=$1
-                """
+        SELECT user_id FROM requests
+        WHERE channel_id=$1"""
         values = (channel_id,)
         user_id = cls._raw_select(query, values, fetch_one=True)
         try:
@@ -105,11 +181,12 @@ class DatabaseManager():
         -------
         `List[int]`: all help ticket channels
         """
-        query = "SELECT channel_id FROM requests WHERE ticket_type='help' AND guild_id = $1"
+        query = """
+        SELECT channel_id FROM requests 
+        WHERE ticket_type='help' AND guild_id = $1"""
         values = (guild_id,)
         db_ticket_channel_ids = cls._raw_select(query, values, fetch_all=True)
-        ticket_channel_ids = list(chain(*db_ticket_channel_ids))
-        return ticket_channel_ids
+        return list(chain(*db_ticket_channel_ids))
 
     @classmethod
     def get_status(cls, channel_id: int) -> str:
@@ -125,13 +202,41 @@ class DatabaseManager():
         `str`: the channel's status
         """
         query = """
-                SELECT status FROM requests
-                WHERE channel_id = $1
-                """
+        SELECT status FROM requests
+        WHERE channel_id = $1"""
         values = (channel_id,)
         status = cls._raw_select(query, values, fetch_one=True)
         try:
             return status[0]
+        except TypeError:
+            return None
+        except Exception as exception:
+            log.exception(exception)
+            return None
+
+    @classmethod
+    def get_tickets_per_user(cls, ticket_type: str, user_id: int):
+        """gets the total number of open tickets for a user
+
+        Parameters
+        ----------
+        ticket_type : `str`
+            the type of ticket\n
+        user_id : `int`
+            the user's id\n
+
+        Returns
+        -------
+        `str`: the number of undeleted tickets
+        """
+        query = """
+        SELECT count(1) FROM 
+        (SELECT * FROM requests 
+        WHERE ticket_type=$1 and user_id=$2)"""
+        values = (ticket_type, user_id,)
+        n_tickets = cls._raw_select(query, values, fetch_one=True)
+        try:
+            return n_tickets[0]
         except TypeError:
             return None
         except Exception as exception:
@@ -151,10 +256,10 @@ class DatabaseManager():
         -------
         `str`: new number
         """
-        query = """SELECT count(1) FROM
+        query = """
+        SELECT count(1) FROM
         (SELECT * FROM requests WHERE ticket_type=$1
-        union SELECT * FROM archive WHERE ticket_type=$1)
-                """
+        union SELECT * FROM archive WHERE ticket_type=$1)"""
         values = (ticket_type,)
         ret = cls._raw_select(query, values, fetch_one=True)
         try:
@@ -178,7 +283,9 @@ class DatabaseManager():
         -------
         `str`: previous number
         """
-        query = "SELECT channel_name FROM requests WHERE channel_id = $1"
+        query = """
+        SELECT channel_name FROM requests 
+        WHERE channel_id = $1"""
         values = (channel_id,)
         db_channel_name_str = cls._raw_select(query, values, fetch_one=True)
         try:
@@ -203,7 +310,9 @@ class DatabaseManager():
         -------
         `str`: ticket type
         """
-        query = "SELECT ticket_type FROM requests WHERE channel_id = $1"
+        query = """
+        SELECT ticket_type FROM requests 
+        WHERE channel_id = $1"""
         values = (channel_id,)
         ticket_type = cls._raw_select(query, values, fetch_one=True)
         try:
@@ -226,7 +335,9 @@ class DatabaseManager():
         -------
         `str`: the channel name
         """
-        query = "SELECT channel_name FROM requests WHERE channel_id = $1"
+        query = """
+        SELECT channel_name FROM requests 
+        WHERE channel_id = $1"""
         values = (channel_id,)
         db_channel_name_str = cls._raw_select(query, values, fetch_one=True)
         try:
@@ -248,7 +359,8 @@ class DatabaseManager():
         channel_id : `int`
             the channel id\n
         """
-        query = "UPDATE requests set status = $1 WHERE channel_id = $2"
+        query = """UPDATE requests
+        SET status = $1 WHERE channel_id = $2"""
         values = (status, channel_id,)
         cls._raw_update(query, values)
 
@@ -265,7 +377,9 @@ class DatabaseManager():
         -------
         `str`: the check
         """
-        query = "SELECT checked FROM requests WHERE channel_id=$1"
+        query = """
+        SELECT checked FROM requests 
+        WHERE channel_id=$1"""
         values = (channel_id,)
         check = cls._raw_select(query, values, fetch_one=True)
         try:
@@ -275,25 +389,6 @@ class DatabaseManager():
         except Exception as exception:
             log.exception(exception)
             return None
-
-    @classmethod
-    def get_guild_check(cls, guild_id: int) -> Union[sqlite3.Row, List[str]]:
-        """gets the check(status) if a channel has checked or not
-        for every channel in the guild
-
-        Parameters
-        ----------
-        guild_id : `int`
-            the guild id\n
-
-        Returns
-        -------
-        `str`: the check
-        """
-        query = "SELECT channel_id FROM requests WHERE guild_id=$1 and checked=2"
-        values = (guild_id,)
-        safe_tickets = cls._raw_select(query, values, fetch_all=True)
-        return safe_tickets
 
     @classmethod
     def update_check(cls, check: str, channel_id: int):
@@ -306,8 +401,30 @@ class DatabaseManager():
         channel_id : `int`
             the channel id\n
         """
-        query = "UPDATE requests SET checked = $1 WHERE channel_id=$2"
+        query = """UPDATE requests
+        SET checked = $1 WHERE channel_id=$2"""
         cls._raw_update(query, (check, channel_id))
+
+    @classmethod
+    def get_guild_check(cls, guild_id: int) -> List[str]:
+        """gets the check(status) if a channel has checked or not
+        for every channel in the guild
+
+        Parameters
+        ----------
+        guild_id : `int`
+            the guild id\n
+
+        Returns
+        -------
+        `str`: the check
+        """
+        query = """
+        SELECT channel_id FROM requests 
+        WHERE guild_id=$1 and checked =2"""
+        values = (guild_id,)
+        safe_tickets = cls._raw_select(query, values, fetch_all=True)
+        return list(chain(*safe_tickets))
 
     @classmethod
     def get_all_challenges(cls) -> List[sqlite3.Row]:
@@ -317,14 +434,18 @@ class DatabaseManager():
 
     @classmethod
     def get_challenge_from_id(cls, challenge_id: int):
-        query = "SELECT * FROM challenges where id = $1"
+        query = """
+        SELECT * FROM challenges 
+        WHERE id = $1"""
         values = (challenge_id,)
         challenge = cls._raw_select(query, values, fetch_one=True)
         return challenge
 
     @classmethod
     def get_helpers_from_title(cls, title: str):
-        query = "SELECT helper_id_list from challenges WHERE title = $1"
+        query = """
+        SELECT helper_id_list FROM challenges 
+        WHERE title = $1"""
         values = (title, )
         return cls._raw_select(query, values, fetch_one=True)
 
@@ -332,17 +453,21 @@ class DatabaseManager():
     def refresh_database_ch(cls, challenges: List[Challenge]):
         delete_query = "DELETE FROM challenges"
         cls._raw_delete(delete_query)
-        insert_query = "INSERT INTO challenges(id, title, author, category, ignore, helper_id_list) VALUES($1,$2,$3,$4,$5,$6)"
+        insert_query = """
+        INSERT INTO challenges(id, title, author, category, ignore, helper_id_list)
+        VALUES($1,$2,$3,$4,$5,$6)"""
         for id_, title, author, category, ignore, _ in challenges:
             values = (id_, title, author, category, ignore, str([]))
             cls._raw_insert(insert_query, values)
 
-        all_helpers = challenges
+        # all_helpers = {guild.get_member_named(ch.author) for ch in challenges}
 
     @classmethod
     def update_helpers_ch(cls, helper_id_list: List[int], challenge_id: int):
         helpers = json.dumps(helper_id_list)
-        query = "UPDATE challenges SET helper_id_list = $1 WHERE id = $2"
+        query = """
+        UPDATE challenges
+        SET helper_id_list = $1 WHERE id = $2"""
         values = (helpers, challenge_id,)
         cls._raw_update(query, values)
 
@@ -356,12 +481,16 @@ class DatabaseManager():
         helpers = json.loads(challenge.helper_id_list)
         helpers.append(helper_id)
         helpers = json.dumps(list(set(helpers)))
-        query = "UPDATE challenges SET helper_id_list = $1 WHERE id = $2"
+        query = """
+        UPDATE challenges
+        SET helper_id_list = $1 WHERE id = $2"""
         values = (helpers, challenge_id,)
         cls._raw_update(query, values)
 
     @classmethod
     def update_helper_status(cls, status: Literal["0", "1"], discord_id: int):
-        query = "UPDATE helpers SET is_available = $1 WHERE id = $2"
+        query = """
+        UPDATE helpers
+        SET is_available = $1 WHERE id = $2"""
         values = (status, discord_id,)
         cls._raw_update(query, values)

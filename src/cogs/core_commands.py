@@ -4,11 +4,14 @@ import discord
 from discord.ext import commands
 from discord.utils import get
 
-from utils.database.db import DatabaseManager as db
 import cogs.helpers.views.action_views as action_views
 from cogs.helpers.views import command_views
 import cogs.helpers.actions as actions
+
+from utils.database.db import DatabaseManager as db
 from utils.utility import Utility, UI
+from utils import exceptions
+
 import config
 
 log = logging.getLogger(__name__)
@@ -63,7 +66,10 @@ For **help** tickets:
             create_ticket = actions.CreateTicket(self.bot,
                                                  ticket_type, None, ctx.guild, member, ctx.channel)
         await Utility.delmsg(ctx)
-        await create_ticket.main()
+        try:
+            await create_ticket.main()
+        except (exceptions.MaxUserTicketError, exceptions.MaxChannelTicketError, discord.errors.NotFound):
+            pass
 
     @commands.command(name="add", aliases=["a"], help="add a user to a ticket")
     @commands.has_role(config.ADMIN_ROLE)

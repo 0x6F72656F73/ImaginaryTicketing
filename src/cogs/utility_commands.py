@@ -7,11 +7,12 @@ import discord
 from discord.ext import commands
 from discord.utils import get
 
+import config
+
 from utils.database.db import DatabaseManager as db
 from utils.background import ScrapeChallenges, UpdateHelpers
 from utils.utility import Utility, UI, Challenge
 from utils import exceptions
-import config
 
 log = logging.getLogger(__name__)
 

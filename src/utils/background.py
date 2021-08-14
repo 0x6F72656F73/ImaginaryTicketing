@@ -4,7 +4,6 @@
 2 = channel will be ignored
 """
 
-from itertools import chain
 from datetime import timedelta
 import json
 from typing import Dict, List
@@ -107,7 +106,7 @@ class AutoClose(commands.Cog):
         """
         cat = Options.full_category_name("help")
         for guild in bot.guilds:
-            safe_tickets_list = list(chain(*db.get_guild_check(guild.id)))
+            safe_tickets_list = db.get_guild_check(guild.id)
             category = discord.utils.get(guild.categories, name=cat)
             if category is None:
                 return

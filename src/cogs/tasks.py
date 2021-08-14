@@ -8,7 +8,7 @@ class Tasks(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-        # @aiocron.crontab("* * * * * */10")
+        # @aiocron.crontab("* * * * * */5")
         @aiocron.crontab("0 * * * *")
         async def start_auto_close():
             await AutoClose.main(self.bot, hours=48)
