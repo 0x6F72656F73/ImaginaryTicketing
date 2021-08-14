@@ -162,6 +162,11 @@ For **help** tickets:
             await Utility.transcript(ctx.channel, user=None, to_channel=destination)
             await ctx.channel.send("transcript sent to channel")
 
+    @transcript.error
+    async def transcript_error(self, ctx, error):
+        if isinstance(error, commands.errors.BadUnionArgument):
+            await ctx.channel.send('Destination is neither a valid user nor a valid TextChannel')
+
     @commands.command(name="autoclose", aliases=["ac"])
     @commands.has_role(config.ADMIN_ROLE)
     async def autoclose(self, ctx, option: str = "off", channel: discord.TextChannel = None):

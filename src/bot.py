@@ -82,6 +82,7 @@ Type {BOT_PREFIX[0]}help_slash for help on slash commands"  # note: make this
                 f"great stuff | {BOT_PREFIX[0]}help")),
             command_prefix=commands.when_mentioned_or(*BOT_PREFIX),
             case_insensitive=True,
+            strip_after_prefix=True,
             allowed_mentions=discord.AllowedMentions(everyone=False),
             intents=discord.Intents().all(),
         )
@@ -126,11 +127,11 @@ Type {BOT_PREFIX[0]}help_slash for help on slash commands"  # note: make this
         if isinstance(error, commands.errors.NoPrivateMessage):
             return await ctx.channel.send("Command cannot be used in DMs.")
         if isinstance(error, commands.errors.ChannelNotFound):
-            return await ctx.channel.send(f"channel {error.argument} not found")
+            return await ctx.channel.send(f"Channel {error.argument} not found")
         if isinstance(error, commands.CommandOnCooldown):
             return await ctx.channel.send("Command is on cooldown")
         if isinstance(error, (commands.MemberNotFound, commands.UserNotFound)):
-            return await ctx.channel.send("user not found")
+            return await ctx.channel.send("User not found")
         if isinstance(error, commands.MissingRole):
             return await ctx.channel.send("You do not have enough permissions to run this command")
         if isinstance(error, commands.MissingRequiredArgument):
