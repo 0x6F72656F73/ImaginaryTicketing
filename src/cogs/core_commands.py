@@ -62,8 +62,8 @@ For **help** tickets:
             member = member or ctx.author
             create_ticket = actions.CreateTicket(self.bot,
                                                  ticket_type, None, ctx.guild, member, ctx.channel)
-        await create_ticket.main()
         await Utility.delmsg(ctx)
+        await create_ticket.main()
 
     @commands.command(name="add", aliases=["a"], help="add a user to a ticket")
     @commands.has_role(config.ADMIN_ROLE)
@@ -83,7 +83,7 @@ For **help** tickets:
             await ctx.channel.send(embed=embed)
             return
 
-        await actions.Utility.add(ctx.channel, member)
+        await actions.UtilityActions.add(ctx.channel, member)
 
     @commands.command(name="remove", aliases=["r", "rm"])
     @commands.has_role(config.ADMIN_ROLE)
@@ -102,7 +102,7 @@ For **help** tickets:
             await ctx.channel.send(embed=embed)
             return
 
-        await actions.Utility.remove(ctx.channel, member)
+        await actions.UtilityActions.remove(ctx.channel, member)
 
     @commands.command(name="close", aliases=["cl"])
     async def close(self, ctx):
@@ -183,11 +183,6 @@ For **help** tickets:
                          icon_url=f"{ctx.author.avatar.url}")
         await ctx.channel.send(embed=embed)
         await Utility.delmsg(ctx)
-
-    @auto_message.error
-    async def auto_message_error(self, ctx, error):
-        if isinstance(error, commands.errors.ChannelNotFound):
-            await ctx.channel.send(f"channel {error.argument} not found")
 
     def cog_check(self, ctx):
         if not ctx.message.guild:
