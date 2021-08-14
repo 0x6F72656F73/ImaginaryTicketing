@@ -78,7 +78,7 @@ class Utility:
     """Abstract helper methods"""
 
     @staticmethod
-    async def transcript(channel, user: discord.User = None, to_channel: discord.TextChannel = None) -> discord.Message:
+    async def transcript(channel: discord.TextChannel, user: discord.User = None, to_channel: discord.TextChannel = None) -> discord.Message:
         """send a transcript of a channel to a user or a channel
 
         Parameters

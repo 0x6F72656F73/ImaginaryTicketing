@@ -1,3 +1,4 @@
+from typing import Union
 import logging
 
 import discord
@@ -152,11 +153,14 @@ For **help** tickets:
     @commands.command(name="transcript", alias=["tsc"])
     @commands.has_role(config.ADMIN_ROLE)
     @commands.cooldown(rate=1, per=10, type=commands.BucketType.default)
-    async def transcript(self, ctx, user: discord.User):
+    async def transcript(self, ctx, destination: Union[discord.User, discord.TextChannel]):
         """sends a transcript to a user via DM"""
-
-        await Utility.transcript(ctx.channel, user)
-        await ctx.channel.send("transcript sent to dms")
+        if isinstance(destination, discord.User):
+            await Utility.transcript(ctx.channel, user=destination)
+            await ctx.channel.send("transcript sent to user")
+        else:
+            await Utility.transcript(ctx.channel, user=None, to_channel=destination)
+            await ctx.channel.send("transcript sent to channel")
 
     @commands.command(name="autoclose", aliases=["ac"])
     @commands.has_role(config.ADMIN_ROLE)
