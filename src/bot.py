@@ -121,25 +121,27 @@ Type {BOT_PREFIX[0]}help_slash for help on slash commands"  # note: make this
         cog = ctx.cog
         if cog and cog._get_overridden_method(cog.cog_command_error) is not None:
             return
+        if isinstance(error, commands.CommandNotFound):
+            return
         if isinstance(error, commands.errors.NoPrivateMessage):
             return await ctx.channel.send("Command cannot be used in DMs.")
-        if isinstance(error, commands.MissingRequiredArgument):
-            return await ctx.channel.send("Please provide all required arguments")
+        if isinstance(error, commands.errors.ChannelNotFound):
+            return await ctx.channel.send(f"channel {error.argument} not found")
         if isinstance(error, commands.CommandOnCooldown):
             return await ctx.channel.send("Command is on cooldown")
         if isinstance(error, (commands.MemberNotFound, commands.UserNotFound)):
-            return await ctx.channel.send("member not found")
-        if isinstance(error, commands.CommandNotFound):
-            return
+            return await ctx.channel.send("user not found")
         if isinstance(error, commands.MissingRole):
             return await ctx.channel.send("You do not have enough permissions to run this command")
+        if isinstance(error, commands.MissingRequiredArgument):
+            return await ctx.channel.send("Please provide all required arguments")
         if isinstance(error, commands.CheckFailure):
             return await ctx.send('Bot does not have administrator permissions.')
 
         exc = getattr(error, 'original', error)
-        lines = ''.join(traceback.format_exception(
+        exception_traceback = ''.join(traceback.format_exception(
             exc.__class__, exc, exc.__traceback__))
-        lines = f'Ignoring exception in command {ctx.command}:\n{lines}'
+        lines = f'Ignoring exception in command {ctx.command}:\n{exception_traceback}'
         log.info(lines)
         await ctx.channel.send(f"{ctx.command.name} was invoked incorrectly.")
 
