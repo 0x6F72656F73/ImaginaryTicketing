@@ -71,7 +71,7 @@ class UI:
         `discord.embeds.Embed`: the embed
         """
 
-        def __new__(cls, **kwargs) -> discord.embeds.Embed:
+        def __new__(cls, **kwargs) -> discord.Embed:
             return discord.Embed(color=discord.Color.random(), timestamp=discord.utils.utcnow(), **kwargs)
 
 class Utility:

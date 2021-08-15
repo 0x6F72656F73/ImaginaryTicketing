@@ -8,9 +8,9 @@ CREATE TABLE requests (
   channel_name VARCHAR(255),
   guild_id bigint,
   user_id VARCHAR(255),
-  ticket_type varchar(255),
+  t_type varchar(255),
   status VARCHAR(255),
-  checked BOOLEAN
+  bg_check BOOLEAN
 );
 
 CREATE TABLE archive (
@@ -18,9 +18,9 @@ CREATE TABLE archive (
   channel_name VARCHAR(255),
   guild_id bigint,
   user_id VARCHAR(255),
-  ticket_type varchar(255),
+  t_type varchar(255),
   status VARCHAR(255),
-  checked BOOLEAN
+  bg_check BOOLEAN
 );
 
 CREATE TABLE challenges (

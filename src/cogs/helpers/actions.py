@@ -139,9 +139,9 @@ class CreateTicket(BaseActions):
             await self.ticket_channel.send(welcome_message)
 
         status = "open"
-        checked = "2"
+        check = "2"
         db.create_ticket(self.ticket_channel.id, str(
-            self.ticket_channel), self.guild.id, self.user_id, self.ticket_type, status, checked)
+            self.ticket_channel), self.guild.id, self.user_id, self.ticket_type, status, check)
         if self.ticket_type == "help":
             helper = _CreateTicketHelper(
                 self.ticket_channel, self.bot, self.ticket_type, self._args[0], *self._args[1], **self._args[2])

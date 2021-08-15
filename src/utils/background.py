@@ -106,7 +106,7 @@ class AutoClose(commands.Cog):
         """
         cat = Options.full_category_name("help")
         for guild in bot.guilds:
-            safe_tickets_list = db.get_guild_check(guild.id)
+            safe_tickets_list = db.get_guild_safe_tickets(guild.id)
             category = discord.utils.get(guild.categories, name=cat)
             if category is None:
                 return

@@ -4,7 +4,7 @@ from itertools import chain
 from typing import Union, Literal, List
 import logging
 
-from utils.database import types
+from utils import types
 from utils.utility import Challenge
 from utils import exceptions
 
@@ -64,7 +64,7 @@ class DatabaseManager():
         return ret
 
     @classmethod
-    def create_ticket(cls, channel_id: int, channel_name: str, guild_id: int, user_id: int, ticket_type, status, checked):
+    def create_ticket(cls, channel_id: int, channel_name: str, guild_id: int, user_id: int, t_type: types.TicketType, status: types.TicketStatus, bg_check: types.TicketCheck):
         """create a ticket
 
         Parameters
@@ -77,18 +77,18 @@ class DatabaseManager():
             the guild id\n
         user_id : `int`
             the user's id who created the ticket channel\n
-        ticket_type : `[type]`
+        t_type : `[type]`
             type of ticket\n
         status : `[type]`
             status of ticket\n
-        checked : `[type]`
+        bg_check : `[type]`
             whether the ticket is checked or not\n
         """
         query = """
-        INSERT INTO requests(channel_id, channel_name, guild_id, user_id, ticket_type, status, checked) 
+        INSERT INTO requests(channel_id, channel_name, guild_id, user_id, t_type, status, bg_check) 
         VALUES ($1,$2,$3,$4,$5,$6,$8 )"""
         values = (channel_id, channel_name, guild_id,
-                  user_id, ticket_type, status, checked,)
+                  user_id, t_type, status, bg_check,)
         cls._raw_insert(query, values)
 
     @classmethod
@@ -162,11 +162,9 @@ class DatabaseManager():
         user_id = cls._raw_select(query, values, fetch_one=True)
         try:
             return int(user_id[0])
-        except TypeError:
-            return None
-        except Exception as exception:
-            log.exception(exception)
-            return None
+        except TypeError as e:
+            raise ValueError(
+                f"No channel exists with the id '{channel_id}'") from e
 
     @classmethod
     def get_all_help_channels(cls, guild_id: int) -> List[int]:
@@ -183,7 +181,7 @@ class DatabaseManager():
         """
         query = """
         SELECT channel_id FROM requests 
-        WHERE ticket_type='help' AND guild_id = $1"""
+        WHERE t_type='help' AND guild_id = $1"""
         values = (guild_id,)
         db_ticket_channel_ids = cls._raw_select(query, values, fetch_all=True)
         return list(chain(*db_ticket_channel_ids))
@@ -215,12 +213,12 @@ class DatabaseManager():
             return None
 
     @classmethod
-    def get_tickets_per_user(cls, ticket_type: str, user_id: int):
+    def get_tickets_per_user(cls, t_type: str, user_id: int):
         """gets the total number of open tickets for a user
 
         Parameters
         ----------
-        ticket_type : `str`
+        t_type : `str`
             the type of ticket\n
         user_id : `int`
             the user's id\n
@@ -232,8 +230,8 @@ class DatabaseManager():
         query = """
         SELECT count(1) FROM 
         (SELECT * FROM requests 
-        WHERE ticket_type=$1 and user_id=$2)"""
-        values = (ticket_type, user_id,)
+        WHERE t_type=$1 and user_id=$2)"""
+        values = (t_type, user_id,)
         n_tickets = cls._raw_select(query, values, fetch_one=True)
         try:
             return n_tickets[0]
@@ -244,12 +242,12 @@ class DatabaseManager():
             return None
 
     @classmethod
-    def get_number_new(cls, ticket_type: int) -> str:
+    def get_number_new(cls, t_type: int) -> str:
         """gets the number of tickets of that ticket type
 
         Parameters
         ----------
-        ticket_type : `str`
+        t_type : `str`
             type of ticket\n
 
         Returns
@@ -258,9 +256,9 @@ class DatabaseManager():
         """
         query = """
         SELECT count(1) FROM
-        (SELECT * FROM requests WHERE ticket_type=$1
-        union SELECT * FROM archive WHERE ticket_type=$1)"""
-        values = (ticket_type,)
+        (SELECT * FROM requests WHERE t_type=$1
+        union SELECT * FROM archive WHERE t_type=$1)"""
+        values = (t_type,)
         ret = cls._raw_select(query, values, fetch_one=True)
         try:
             return ret[0]
@@ -311,12 +309,12 @@ class DatabaseManager():
         `str`: ticket type
         """
         query = """
-        SELECT ticket_type FROM requests 
+        SELECT t_type FROM requests 
         WHERE channel_id = $1"""
         values = (channel_id,)
-        ticket_type = cls._raw_select(query, values, fetch_one=True)
+        t_type = cls._raw_select(query, values, fetch_one=True)
         try:
-            return ticket_type[0]
+            return t_type[0]
         except TypeError:
             return None
         except Exception as exception:
@@ -366,7 +364,7 @@ class DatabaseManager():
 
     @classmethod
     def get_check(cls, channel_id: int) -> int:
-        """gets the check(status) if a channel has checked or not
+        """gets the bg_check for autoclose
 
         Parameters
         ----------
@@ -375,15 +373,15 @@ class DatabaseManager():
 
         Returns
         -------
-        `str`: the check
+        `str`: the bg_check
         """
         query = """
-        SELECT checked FROM requests 
+        SELECT bg_check FROM requests 
         WHERE channel_id=$1"""
         values = (channel_id,)
-        check = cls._raw_select(query, values, fetch_one=True)
+        bg_check = cls._raw_select(query, values, fetch_one=True)
         try:
-            return int(check[0])
+            return int(bg_check[0])
         except TypeError:
             return None
         except Exception as exception:
@@ -391,23 +389,24 @@ class DatabaseManager():
             return None
 
     @classmethod
-    def update_check(cls, check: str, channel_id: int):
-        """gets the check(status) if a channel has checked or not
+    def update_check(cls, bg_check: str, channel_id: int):
+        """gets the bg_check for a channel
 
         Parameters
         ----------
-        check : `str`
-            the new check value\n
+        bg_check : `str`
+            the new bg_check value\n
         channel_id : `int`
             the channel id\n
         """
-        query = """UPDATE requests
-        SET checked = $1 WHERE channel_id=$2"""
-        cls._raw_update(query, (check, channel_id))
+        query = """
+        UPDATE requests
+        SET bg_check = $1 WHERE channel_id=$2"""
+        cls._raw_update(query, (bg_check, channel_id))
 
     @classmethod
-    def get_guild_check(cls, guild_id: int) -> List[str]:
-        """gets the check(status) if a channel has checked or not
+    def get_guild_safe_tickets(cls, guild_id: int) -> List[str]:
+        """if a channel's bg_check is 2, returns the channel_id
         for every channel in the guild
 
         Parameters
@@ -417,11 +416,11 @@ class DatabaseManager():
 
         Returns
         -------
-        `str`: the check
+        `List[str]`: list of safe tickets
         """
         query = """
         SELECT channel_id FROM requests 
-        WHERE guild_id=$1 and checked =2"""
+        WHERE guild_id=$1 and bg_check =2"""
         values = (guild_id,)
         safe_tickets = cls._raw_select(query, values, fetch_all=True)
         return list(chain(*safe_tickets))
