@@ -1,14 +1,14 @@
 import json
 import os
 import asyncio
-from collections import Counter
+import collections
 import logging
 from typing import List, Tuple, Union, Optional
 
 import discord
 from discord.ext import commands
 from discord.utils import get
-from humanize import precisedelta
+import humanize
 
 import cogs.helpers.views.action_views as action_views
 import config
@@ -338,13 +338,14 @@ class CloseTicket(BaseActions):
         """
         users = [msg.author.name async for msg in channel.history(limit=2000).filter(lambda message: not message.author.bot)]
 
-        message_distribution = Counter(users)
+        message_distribution = collections.Counter(users)
         total_messages = sum(message_distribution.values())
         if len(message_distribution) > 0:
             channel_users = []
             for member, count in message_distribution.most_common():
                 channel_users.append(
                     f"{self.guild.get_member_named(member).mention} ({count/total_messages:.0%})")
+            channel_users.append(f'total: {len(users)}')
             channel_users = '\n'.join(channel_users)
         else:
             channel_users = 'No messages'
@@ -352,7 +353,7 @@ class CloseTicket(BaseActions):
 
         now = discord.utils.utcnow()
         duration = now - old
-        time_open = precisedelta(
+        time_open = humanize.precisedelta(
             duration, format="%0.0f", minimum_unit="minutes"
             if duration.total_seconds() > 60 else "seconds")
 
