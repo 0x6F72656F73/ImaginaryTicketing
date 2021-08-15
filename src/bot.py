@@ -11,7 +11,7 @@ import pretty_help
 import chat_exporter
 
 from cogs.helpers import views
-from utils.runcmds import start_logging
+from utils.logging_setup import start_logging
 
 start_logging('tickets.log')
 

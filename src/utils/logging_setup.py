@@ -3,18 +3,6 @@ from logging.handlers import RotatingFileHandler
 import logging
 
 log = logging.getLogger(__name__)
-class RemoveNoise(logging.Filter):
-    """removes random messages from logs"""
-
-    def __init__(self, message_type: str, messages: list):
-        super().__init__(name=message_type)
-        self.messages = messages
-
-    def filter(self, record) -> bool:
-        for msg in self.messages:
-            if msg in record.msg:
-                return False
-        return True
 
 def find_level() -> int:
     """defines the verbosity of logging"""
@@ -33,6 +21,19 @@ def find_level() -> int:
         log.CRITICAL("no log level found")
         raise RuntimeError("please have a valid log level")
     return level
+
+class RemoveNoise(logging.Filter):
+    """removes random messages from logs"""
+
+    def __init__(self, message_type: str, messages: list):
+        super().__init__(name=message_type)
+        self.messages = messages
+
+    def filter(self, record) -> bool:
+        for msg in self.messages:
+            if msg in record.msg:
+                return False
+        return True
 
 def start_logging(filename: str):
     """start root logger
@@ -58,7 +59,6 @@ def start_logging(filename: str):
 
     logging.getLogger('discord.http').setLevel(logging.WARNING)
 
-    logging.getLogger("discord_slash").setLevel(level)
     root_logger = logging.getLogger()
     root_logger.setLevel(level)
     handler = RotatingFileHandler(
