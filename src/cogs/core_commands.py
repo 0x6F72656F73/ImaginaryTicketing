@@ -132,7 +132,6 @@ For **help** tickets:
     @commands.has_role(config.ADMIN_ROLE)
     async def delete(self, ctx):
         """deletes a ticket"""
-
         delete_ticket = actions.DeleteTicket(ctx.guild, ctx.author,
                                              ctx.channel)
         try:
@@ -150,22 +149,13 @@ For **help** tickets:
 
         await Utility.delete_message(ctx)
 
-    @commands.command(name="transcript", alias=["tsc"])
+    @commands.command(name="transcript", aliases=["tsc"])
     @commands.has_role(config.ADMIN_ROLE)
     @commands.cooldown(rate=1, per=10, type=commands.BucketType.default)
     async def transcript(self, ctx, destination: Union[discord.User, discord.TextChannel]):
         """sends a transcript to a user via DM"""
-        if isinstance(destination, discord.User):
-            await Utility.transcript(ctx.channel, to_user=destination)
-            await ctx.channel.send("transcript sent to user")
-        else:
-            await Utility.transcript(ctx.channel, to_user=None, to_channel=destination)
-            await ctx.channel.send("transcript sent to channel")
-
-    @transcript.error
-    async def transcript_error(self, ctx, error):
-        if isinstance(error, commands.errors.BadUnionArgument):
-            await ctx.channel.send('Destination is neither a valid user nor a valid TextChannel')
+        await Utility.transcript(ctx.channel, destination)
+        await ctx.channel.send("transcript sent to channel")
 
     @commands.command(name="autoclose", aliases=["ac"])
     @commands.has_role(config.ADMIN_ROLE)

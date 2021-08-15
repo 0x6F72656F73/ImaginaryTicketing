@@ -1,7 +1,7 @@
 import io
 import asyncio
 import random
-from typing import NamedTuple
+from typing import NamedTuple, Tuple, Union
 import logging
 
 import discord
@@ -14,7 +14,7 @@ log = logging.getLogger(__name__)
 
 class UI:
     @classmethod
-    def log_embed(cls, title: str, channel_name: discord.TextChannel, user: discord.user.User = None, avatar_url: discord.asset.Asset = None, **kwargs) -> discord.Embed:
+    def log_embed(cls, title: str, channel: discord.TextChannel, user: discord.user.User = None, avatar_url: discord.asset.Asset = None, **kwargs) -> discord.Embed:
         """makes an embed to be logged
 
         Parameters
@@ -36,7 +36,7 @@ class UI:
         if user is not None:
             embed.set_author(name=f"{user}", icon_url=f"{avatar_url}")
         embed.add_field(name="Channel",
-                        value=f"{channel_name}")
+                        value=f"{channel.name}- {channel.id}")
         return embed
 
     @classmethod
@@ -78,44 +78,37 @@ class Utility:
     """Abstract helper methods"""
 
     @staticmethod
-    async def transcript(channel: discord.TextChannel, user: discord.User = None, to_channel: discord.TextChannel = None) -> discord.Message:
+    async def transcript(channel: discord.TextChannel, destination: Union[discord.User, discord.TextChannel]) -> Tuple[discord.Message, discord.File]:
         """send a transcript of a channel to a user or a channel
 
         Parameters
         ----------
-        channel : `type`
+        channel : `discord.TextChannel`
             channel to get transcirpt of\n
-        user : `discord.Member`, `optional`
-            user to send transcript to, by default None\n
-        to_channel : `discord.TextChannel`, `optional`\n
-            channel to send transcript to, by default None
-        """
-        if not user and not to_channel:
-            await channel.send("log could not be sent anywhere")
-            return
+        destination : `Union[discord.User, discord.TextChannel]`
+            place to send transcript to\n
 
+        Returns
+        -------
+        `Tuple[discord.Message, discord.File]`: The message with the transcript sent as reference to the transcript
+        """
         transcript = await chat_exporter.export(channel, None, "America/Los_Angeles")
         if transcript is None:
             return
 
-        if to_channel:
-            transcript_file = discord.File(io.BytesIO(transcript.encode()),
-                                           filename=f"transcript-{channel}.html")
-            message = await to_channel.send(file=transcript_file)
+        filename = f"transcript-{channel}-{channel.id}.html"
+        transcript_file = discord.File(io.BytesIO(transcript.encode()),
+                                       filename=filename)
+        message = await destination.send(file=transcript_file)
 
-        if user:
-            transcript_file = discord.File(io.BytesIO(transcript.encode()),
-                                           filename=f"transcript-{channel}.html")
-            message = await user.send(file=transcript_file)
-
-        with open(f"transcripts/transcript-{channel}.html", "w+") as file:
+        with open('transcripts/' + '-'.join(filename.split('-')[1:]), "w+") as file:
             file.write(transcript)
 
         return message, discord.File(io.BytesIO(transcript.encode()),
-                                     filename=f"transcript-{channel}.html")
+                                     filename=filename)
 
     @staticmethod
-    async def delmsg(ctx, time: int = 1):
+    async def delete_message(ctx, time: int = 1):
         """deletes a message after (time)
 
         Parameters
