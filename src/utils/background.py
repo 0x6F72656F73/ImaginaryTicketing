@@ -110,7 +110,7 @@ class AutoClose(commands.Cog):
             category = discord.utils.get(guild.categories, name=cat)
             if category is None:
                 return
-            channels = category.channels
+            channels = category.text_channels
             for channel in channels:
                 log.debug(channel.name)
                 status = db.get_status(channel.id)
