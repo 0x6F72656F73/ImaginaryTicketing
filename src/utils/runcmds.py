@@ -34,7 +34,7 @@ def find_level() -> int:
         raise RuntimeError("please have a valid log level")
     return level
 
-def startlogging(filename: str):
+def start_logging(filename: str):
     """start root logger
 
     Parameters

@@ -45,7 +45,7 @@ For **help** tickets:
 \b \b - the challenge has been blooded
 """, inline=False)
         await ctx.channel.send(embed=embed, view=command_views.TicketView(self.bot))
-        await Utility.delmsg(ctx)
+        await Utility.delete_message(ctx)
 
     @commands.command(name="create", aliases=["new", "cr"])
     @commands.cooldown(rate=5, per=10, type=commands.BucketType.default)
@@ -66,7 +66,7 @@ For **help** tickets:
             member = member or ctx.author
             create_ticket = actions.CreateTicket(self.bot,
                                                  ticket_type, None, ctx.guild, member, ctx.channel)
-        await Utility.delmsg(ctx)
+        await Utility.delete_message(ctx)
         try:
             await create_ticket.main()
         except (exceptions.MaxUserTicketError, exceptions.MaxChannelTicketError, discord.errors.NotFound):
@@ -123,7 +123,7 @@ For **help** tickets:
 
             epicreactions = actions.CloseTicket(ctx.guild, ctx.author,
                                                 ctx.channel)
-            await Utility.delmsg(ctx)
+            await Utility.delete_message(ctx)
             await epicreactions.main()
         else:
             await ctx.channel.send("You do not have enough permissions to run this command")
@@ -148,7 +148,7 @@ For **help** tickets:
                                              ctx.channel)
         await reopen_ticket.main()
 
-        await Utility.delmsg(ctx)
+        await Utility.delete_message(ctx)
 
     @commands.command(name="transcript", alias=["tsc"])
     @commands.has_role(config.ADMIN_ROLE)
@@ -156,10 +156,10 @@ For **help** tickets:
     async def transcript(self, ctx, destination: Union[discord.User, discord.TextChannel]):
         """sends a transcript to a user via DM"""
         if isinstance(destination, discord.User):
-            await Utility.transcript(ctx.channel, user=destination)
+            await Utility.transcript(ctx.channel, to_user=destination)
             await ctx.channel.send("transcript sent to user")
         else:
-            await Utility.transcript(ctx.channel, user=None, to_channel=destination)
+            await Utility.transcript(ctx.channel, to_user=None, to_channel=destination)
             await ctx.channel.send("transcript sent to channel")
 
     @transcript.error
@@ -197,7 +197,7 @@ For **help** tickets:
         embed.set_author(name=f"{ctx.author}",
                          icon_url=f"{ctx.author.avatar.url}")
         await ctx.channel.send(embed=embed)
-        await Utility.delmsg(ctx)
+        await Utility.delete_message(ctx)
 
     def cog_check(self, ctx):
         if not ctx.message.guild:

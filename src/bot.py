@@ -136,6 +136,8 @@ Type {BOT_PREFIX[0]}help_slash for help on slash commands"  # note: make this
             return await ctx.channel.send("You do not have enough permissions to run this command")
         if isinstance(error, commands.MissingRequiredArgument):
             return await ctx.channel.send("Please provide all required arguments")
+        if isinstance(error, commands.errors.BadUnionArgument):
+            return await ctx.channel.send('Destination is neither a valid user nor a valid TextChannel')
         if isinstance(error, commands.CheckFailure):
             return await ctx.send('Bot does not have administrator permissions.')
 
