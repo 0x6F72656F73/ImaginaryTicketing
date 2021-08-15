@@ -121,10 +121,10 @@ For **help** tickets:
         admin = get(guild.roles, name=config.ADMIN_ROLE)
         if admin in ctx.author.roles or user_id == ctx.author.id:
 
-            epicreactions = actions.CloseTicket(ctx.guild, ctx.author,
-                                                ctx.channel)
+            close_ticket = actions.CloseTicket(ctx.guild, ctx.author,
+                                               ctx.channel)
             await Utility.delete_message(ctx)
-            await epicreactions.main()
+            await close_ticket.main()
         else:
             await ctx.channel.send("You do not have enough permissions to run this command")
 
