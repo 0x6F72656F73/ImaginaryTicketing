@@ -173,7 +173,8 @@ class _CreateTicketHelper(CreateTicket):
         super().__init__(*args, **kwargs)
         self.ticket_channel = ticket_channel
 
-    def fake_challenges(self, num):
+    @staticmethod
+    def fake_challenges(num):
         category_list = ["Crypto", "Web", "Pwn", "Rev", "Misc"]
         categories = {}
         for idx, category in enumerate(category_list):  # whats this for..
@@ -258,7 +259,7 @@ class _CreateTicketHelper(CreateTicket):
                 await self._add_user(int(helper))
 
     async def challenge_selection(self):
-        # challenges = self.fake_challenges(21)
+        # challenges = _CreateTicketHelper.fake_challenges(21)
         user_solved_challenges = await ScrapeChallenges.get_user_challenges(
             self.user_id)
         challenges = [Challenge(*list(challenge))
@@ -406,7 +407,7 @@ class CloseTicket(BaseActions):
         transcript_message, transcript_file = await Utility.transcript(self.channel, channel_log)
         if transcript_message:
             close_stats_embed.add_field(name="transcript",
-                                        value=f"[transcript url]({config.TRANSCRIPT_DOMAIN}/direct?link={transcript_message.attachments[0].url} \"oreos taste good dont they\") ")
+                                        value=f"[transcript url]({config.TRANSCRIPT_DOMAIN}/transcript?link={transcript_message.attachments[0].url} \"oreos taste good dont they\") ")
         else:
             close_stats_embed.add_field(
                 name="transcript", value="transcript could not be sent to DMs")
@@ -480,7 +481,7 @@ class ReopenTicket(BaseActions):
         reopened = Options.name_open(
             t_current_type, count=t_number, user=t_user)
         await self.channel.edit(name=reopened)
-        db.update_channel_name(reopened, self.channel_id)
+        db.update_ticket_name(reopened, self.channel_id)
 
         await self._log_to_channel("Re-Opened ticket")
         log.info(

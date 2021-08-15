@@ -3,17 +3,17 @@ import platform
 import asyncio
 import traceback
 import logging
-from environs import Env
+import environs
 
 import discord
 from discord.ext import commands
-from pretty_help import PrettyHelp, DefaultMenu
+import pretty_help
 import chat_exporter
 
 from cogs.helpers import views
-from utils.runcmds import startlogging
+from utils.runcmds import start_logging
 
-startlogging('tickets.log')
+start_logging('tickets.log')
 
 
 if not os.path.isfile("config.py"):
@@ -21,7 +21,7 @@ if not os.path.isfile("config.py"):
 else:
     import config
 
-env = Env()
+env = environs.Env()
 env.read_env()
 
 log = logging.getLogger()
@@ -30,7 +30,7 @@ log.info('logging has started')
 try:
     import uvloop
 except ImportError:
-    log.warning("uvloop could not be imported")
+    log.warning("'uvloop' could not be imported")
 else:
     asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 finally:
@@ -45,21 +45,14 @@ class TicketBot(commands.Bot):
         self.loop = loop
         self.persistent_views_added = False
         self.add_check(self.check_bot_perms)
-        # aa = await slash.to_dict()
-        # log.debug(aa)
-        # commands = []
-        # for guild in parsed["guild"]:
-        #     for command in parsed["guild"][guild]:
-        #         if command not in commands:
-        #             commands.add({command.name}) # jes add to embed directly
 
         ending_note = f"Type {BOT_PREFIX[0]}help command for more info on a command. \
 You can also type {BOT_PREFIX[0]}help category for more info on a category. \
 Type {BOT_PREFIX[0]}help_slash for help on slash commands"  # note: make this
 
-        menu = DefaultMenu(page_left="👈", page_right="👉",
-                           active_time=15)
-        self.help_command = PrettyHelp(
+        menu = pretty_help.DefaultMenu(page_left="👈", page_right="👉",
+                                       active_time=15)
+        self.help_command = pretty_help.PrettyHelp(
             menu=menu, ending_note=ending_note, sort_commands=True)
 
         for extension in config.STARTUP_COGS:
