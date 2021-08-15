@@ -1,7 +1,7 @@
 import sqlite3
 import json
 from itertools import chain
-from typing import Union, Literal, List
+from typing import Union, List
 import logging
 
 from utils import types
@@ -136,7 +136,7 @@ class DatabaseManager():
         query = """
         INSERT INTO archive
         SELECT * FROM requests
-        WHERE channel_id= $1
+        WHERE channel_id = $1
         """
         values = (channel_id,)
         cls._raw_insert(query, values)
@@ -157,7 +157,7 @@ class DatabaseManager():
 
         query = """
         SELECT user_id FROM requests
-        WHERE channel_id=$1"""
+        WHERE channel_id = $1"""
         values = (channel_id,)
         user_id = cls._raw_select(query, values, fetch_one=True)
         try:
@@ -206,11 +206,9 @@ class DatabaseManager():
         status = cls._raw_select(query, values, fetch_one=True)
         try:
             return status[0]
-        except TypeError:
-            return None
-        except Exception as exception:
-            log.exception(exception)
-            return None
+        except TypeError as e:
+            raise ValueError(
+                f"No channel exists with the id '{channel_id}'") from e
 
     @classmethod
     def get_tickets_per_user(cls, t_type: types.TicketType, user_id: int):
@@ -235,11 +233,9 @@ class DatabaseManager():
         n_tickets = cls._raw_select(query, values, fetch_one=True)
         try:
             return n_tickets[0]
-        except TypeError:
-            return None
-        except Exception as exception:
-            log.exception(exception)
-            return None
+        except TypeError as e:
+            raise ValueError(
+                f"No tickets exists with ticket_type '{t_type}' and user_id '{user_id}'") from e
 
     @classmethod
     def get_number_new(cls, t_type: types.TicketType) -> int:
@@ -260,13 +256,7 @@ class DatabaseManager():
         union SELECT * FROM archive WHERE t_type=$1)"""
         values = (t_type,)
         ret = cls._raw_select(query, values, fetch_one=True)
-        try:
-            return int(ret[0])
-        except TypeError:
-            return None
-        except Exception as exception:
-            log.exception(exception)
-            return None
+        return int(ret[0])
 
     @classmethod
     def get_number_previous(cls, channel_id: int) -> str:
@@ -288,11 +278,9 @@ class DatabaseManager():
         db_channel_name_str = cls._raw_select(query, values, fetch_one=True)
         try:
             db_channel_name = db_channel_name_str[0].lower()
-        except TypeError:
-            return None
-        except Exception as exception:
-            log.exception(exception)
-            return None
+        except TypeError as e:
+            raise ValueError(
+                f"No channel exists with the id '{channel_id}'") from e
         number = db_channel_name.split("-")[-1]
         return number
 
@@ -315,11 +303,9 @@ class DatabaseManager():
         t_type = cls._raw_select(query, values, fetch_one=True)
         try:
             return t_type[0]
-        except TypeError:
-            return None
-        except Exception as exception:
-            log.exception(exception)
-            return None
+        except TypeError as e:
+            raise ValueError(
+                f"No channel exists with the id '{channel_id}'") from e
 
     @classmethod
     def get_channel_name(cls, channel_id: int) -> str:
@@ -340,11 +326,9 @@ class DatabaseManager():
         db_channel_name_str = cls._raw_select(query, values, fetch_one=True)
         try:
             return db_channel_name_str[0].lower()
-        except TypeError:
-            return None
-        except Exception as exception:
-            log.exception(exception)
-            return None
+        except TypeError as e:
+            raise ValueError(
+                f"No channel exists with the id '{channel_id}'") from e
 
     @classmethod
     def update_status(cls, status: types.TicketStatus, channel_id: int):
@@ -363,7 +347,7 @@ class DatabaseManager():
         cls._raw_update(query, values)
 
     @classmethod
-    def get_check(cls, channel_id: int) -> int(types.TicketCheck):
+    def get_check(cls, channel_id: int) -> types.TicketCheck:
         """gets the bg_check for autoclose
 
         Parameters
@@ -377,16 +361,14 @@ class DatabaseManager():
         """
         query = """
         SELECT bg_check FROM requests 
-        WHERE channel_id=$1"""
+        WHERE channel_id = $1"""
         values = (channel_id,)
         bg_check = cls._raw_select(query, values, fetch_one=True)
         try:
-            return int(bg_check[0])
-        except TypeError:
-            return None
-        except Exception as exception:
-            log.exception(exception)
-            return None
+            return bg_check[0]
+        except TypeError as e:
+            raise ValueError(
+                f"No channel exists with the id '{channel_id}'") from e
 
     @classmethod
     def update_check(cls, bg_check: types.TicketCheck, channel_id: int):
@@ -401,7 +383,7 @@ class DatabaseManager():
         """
         query = """
         UPDATE requests
-        SET bg_check = $1 WHERE channel_id=$2"""
+        SET bg_check = $1 WHERE channel_id = $2"""
         cls._raw_update(query, (bg_check, channel_id))
 
     @classmethod

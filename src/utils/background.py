@@ -75,7 +75,7 @@ class AutoClose(commands.Cog):
             the latest message\n
         """
 
-        check = db.get_check(channel.id)
+        check = int(db.get_check(channel.id))
         log.info(f"check: {check}- {channel}")
 
         if check == 1:
@@ -123,7 +123,7 @@ class AutoClose(commands.Cog):
                     continue
 
                 if duration < timedelta(**kwargs):
-                    check = db.get_check(channel.id)
+                    check = int(db.get_check(channel.id))
 
                     role = discord.utils.get(
                         guild.roles, name=config.ADMIN_ROLE)
