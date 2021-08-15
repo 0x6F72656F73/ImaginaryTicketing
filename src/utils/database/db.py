@@ -77,11 +77,11 @@ class DatabaseManager():
             the guild id\n
         user_id : `int`
             the user's id who created the ticket channel\n
-        t_type : `[type]`
+        t_type : `types.TicketType`
             type of ticket\n
-        status : `[type]`
+        status : `types.TicketStatus`
             status of ticket\n
-        bg_check : `[type]`
+        bg_check : `types.TicketCheck`
             whether the ticket is checked or not\n
         """
         query = """
@@ -187,7 +187,7 @@ class DatabaseManager():
         return list(chain(*db_ticket_channel_ids))
 
     @classmethod
-    def get_status(cls, channel_id: int) -> str:
+    def get_status(cls, channel_id: int) -> types.TicketStatus:
         """gets the current status of a channel
 
         Parameters
@@ -213,12 +213,12 @@ class DatabaseManager():
             return None
 
     @classmethod
-    def get_tickets_per_user(cls, t_type: str, user_id: int):
+    def get_tickets_per_user(cls, t_type: types.TicketType, user_id: int):
         """gets the total number of open tickets for a user
 
         Parameters
         ----------
-        t_type : `str`
+        t_type : `types.TicketType`
             the type of ticket\n
         user_id : `int`
             the user's id\n
@@ -242,17 +242,17 @@ class DatabaseManager():
             return None
 
     @classmethod
-    def get_number_new(cls, t_type: int) -> str:
+    def get_number_new(cls, t_type: types.TicketType) -> int:
         """gets the number of tickets of that ticket type
 
         Parameters
         ----------
-        t_type : `str`
+        t_type : `types.TicketType`
             type of ticket\n
 
         Returns
         -------
-        `str`: new number
+        `int`: new number
         """
         query = """
         SELECT count(1) FROM
@@ -261,7 +261,7 @@ class DatabaseManager():
         values = (t_type,)
         ret = cls._raw_select(query, values, fetch_one=True)
         try:
-            return ret[0]
+            return int(ret[0])
         except TypeError:
             return None
         except Exception as exception:
@@ -297,7 +297,7 @@ class DatabaseManager():
         return number
 
     @classmethod
-    def get_ticket_type(cls, channel_id: int) -> str:
+    def get_ticket_type(cls, channel_id: int) -> types.TicketType:
         """get the ticket type from the channel_id
 
         Parameters
@@ -306,7 +306,7 @@ class DatabaseManager():
             the channel id\n
         Returns
         -------
-        `str`: ticket type
+        `types.TicketType`: ticket type
         """
         query = """
         SELECT t_type FROM requests 
@@ -347,12 +347,12 @@ class DatabaseManager():
             return None
 
     @classmethod
-    def update_status(cls, status: str, channel_id: int):
+    def update_status(cls, status: types.TicketStatus, channel_id: int):
         """updates the status of a channel
 
         Parameters
         ----------
-        status : `str`
+        status : `types.TicketStatus`
             the new status\n
         channel_id : `int`
             the channel id\n
@@ -363,7 +363,7 @@ class DatabaseManager():
         cls._raw_update(query, values)
 
     @classmethod
-    def get_check(cls, channel_id: int) -> int:
+    def get_check(cls, channel_id: int) -> int(types.TicketCheck):
         """gets the bg_check for autoclose
 
         Parameters
@@ -373,7 +373,7 @@ class DatabaseManager():
 
         Returns
         -------
-        `str`: the bg_check
+        `int(types.TicketCheck)`: the bg_check
         """
         query = """
         SELECT bg_check FROM requests 
@@ -389,12 +389,12 @@ class DatabaseManager():
             return None
 
     @classmethod
-    def update_check(cls, bg_check: str, channel_id: int):
+    def update_check(cls, bg_check: types.TicketCheck, channel_id: int):
         """gets the bg_check for a channel
 
         Parameters
         ----------
-        bg_check : `str`
+        bg_check : `types.TicketCheck`
             the new bg_check value\n
         channel_id : `int`
             the channel id\n
@@ -487,7 +487,7 @@ class DatabaseManager():
         cls._raw_update(query, values)
 
     @classmethod
-    def update_helper_status(cls, status: Literal["0", "1"], discord_id: int):
+    def update_helper_status(cls, status: types.HelperAvailable, discord_id: int):
         query = """
         UPDATE helpers
         SET is_available = $1 WHERE id = $2"""

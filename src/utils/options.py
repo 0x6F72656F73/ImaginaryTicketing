@@ -1,15 +1,16 @@
 import discord
 
+from utils import types
 class Options:
     """all options for different types of tickets"""
 
     @staticmethod
-    def message(ticket_type, moderator=None) -> str:
-        """get the message from the corresponding category
+    def message(ticket_type: types.TicketType, moderator=None) -> str:
+        """get the welcome message from the corresponding category
 
         Parameters
         ----------
-        ticket_type : `str`
+        ticket_type : `types.TicketType`
             type of ticket\n
         moderator : `discord.role.Role`, `optional`
             moderator role, by default None\n
@@ -43,12 +44,12 @@ If you want to close this ticket, click on the :lock:""",
         return msg[ticket_type]
 
     @staticmethod
-    def limit(ticket_type: str) -> int:
+    def limit(ticket_type: types.TicketType) -> int:
         """max number of tickets for someone
 
         Parameters
         ----------
-        ticket_type : `str`
+        ticket_type : `types.TicketType`
             ticket type\n
 
         Returns
@@ -61,12 +62,12 @@ If you want to close this ticket, click on the :lock:""",
         return msg[ticket_type]
 
     @staticmethod
-    def full_category_name(ticket_type: str) -> str:
+    def full_category_name(ticket_type: types.TicketType) -> str:
         """get the category name of a ticket
 
         Parameters
         ----------
-        ticket_type : `str`
+        ticket_type : `types.TicketType`
             Ticket type\n
 
         Returns
@@ -79,12 +80,12 @@ If you want to close this ticket, click on the :lock:""",
         return msg[ticket_type]
 
     @staticmethod
-    def name_open(ticket_type: str, count: int = None, user: discord.user.User = None) -> str:
+    def name_open(ticket_type: types.TicketType, count: int = None, user: discord.user.User = None) -> str:
         """gets the name of an opened ticket
 
         Parameters
         ----------
-        ticket_type : `str`
+        ticket_type : `types.TicketType`
             Ticket Type\n
         count : `int`, `optional`
             ticket number, by default None\n
@@ -102,12 +103,12 @@ If you want to close this ticket, click on the :lock:""",
         return msg[ticket_type]
 
     @staticmethod
-    def name_close(ticket_type: str, count: int = None, user: discord.user.User = None) -> str:
+    def name_close(ticket_type: types.TicketType, count: int = None, user: discord.user.User = None) -> str:
         """gets the name of an closed ticket
 
         Parameters
         ----------
-        ticket_type : `str`
+        ticket_type : `types.TicketType`
             Ticket Type\n
         count : `int`, `optional`
             ticket number, by default None\n
