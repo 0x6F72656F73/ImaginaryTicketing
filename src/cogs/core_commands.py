@@ -156,6 +156,7 @@ For **help** tickets:
         """sends a transcript to a user via DM"""
         await Utility.transcript(ctx.channel, destination)
         await ctx.channel.send("transcript sent to channel")
+        await Utility.delete_message(ctx)
 
     @commands.command(name="autoclose", aliases=["ac"])
     @commands.has_role(config.ADMIN_ROLE)
