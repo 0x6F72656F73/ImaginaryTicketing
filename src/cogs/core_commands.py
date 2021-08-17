@@ -11,7 +11,7 @@ import cogs.helpers.actions as actions
 
 from utils.database.db import DatabaseManager as db
 from utils.utility import Utility, UI
-from utils import exceptions
+from utils import exceptions, types
 
 import config
 
@@ -49,7 +49,7 @@ For **help** tickets:
 
     @commands.command(name="create", aliases=["new", "cr"])
     @commands.cooldown(rate=5, per=10, type=commands.BucketType.default)
-    async def create(self, ctx: commands.Context, ticket_type: str = "help", member: discord.Member = None):
+    async def create(self, ctx: commands.Context, ticket_type: types.TicketType = "help", member: discord.Member = None):
         """create a new ticket for the user if non-admin, or with the user specified if admin"""
         if ticket_type not in {'help', 'submit', 'misc'}:
             await ctx.channel.send("possible ticket types are help, submit, and misc")
@@ -114,9 +114,10 @@ For **help** tickets:
     @commands.command(name="close", aliases=["cl"])
     async def close(self, ctx):
         """closes a ticket"""
-        user_id = db.get_user_id(ctx.channel.id)
-        if not user_id:
-            return
+        try:
+            user_id = db.get_user_id(ctx.channel.id)
+        except ValueError as e:
+            return await ctx.channel.send(e.args[0])
         guild = ctx.guild
         admin = get(guild.roles, name=config.ADMIN_ROLE)
         if admin in ctx.author.roles or user_id == ctx.author.id:
@@ -176,17 +177,21 @@ For **help** tickets:
     @commands.has_role(config.ADMIN_ROLE)
     async def auto_message(self, ctx, channel: discord.TextChannel):
         """Sends a message asking if the ticket can be closed. Does not contribute to AC checks"""
-        user_id = db.get_user_id(channel.id)
-        if not user_id:
-            return
+        try:
+            user_id = db.get_user_id(channel.id)
+        except ValueError as e:
+            return await ctx.channel.send(e.args[0])
+
         member = ctx.guild.get_member(int(user_id))
         message = f"If that is all we can help you with {member.mention}, please close this ticket."
         random_admin = await Utility.random_admin_member(ctx.guild)
         await Utility.say_in_webhook(self.bot, random_admin, channel, random_admin.avatar.url, True, message, return_message=True, view=action_views.CloseView())
+
         embed = UI.Embed(
             title="Auto Message", description=f"{random_admin.mention} said the auto close message in {channel.mention}")
         embed.set_author(name=f"{ctx.author}",
                          icon_url=f"{ctx.author.avatar.url}")
+
         await ctx.channel.send(embed=embed)
         await Utility.delete_message(ctx)
 

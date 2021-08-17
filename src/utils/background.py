@@ -55,8 +55,8 @@ class AutoClose(commands.Cog):
         return message, now - old
 
     @classmethod
-    async def old_ticket_actions(cls, bot: commands.bot.Bot, guild: discord.guild.Guild,
-                                 channel: discord.TextChannel, message: discord.message.Message):
+    async def old_ticket_actions(cls, bot: commands.Bot, guild: discord.Guild,
+                                 channel: discord.TextChannel, message: discord.Message):
         """Check if a channel is old
 
         If check is 0, send a polite message and set check to 1.
@@ -65,7 +65,7 @@ class AutoClose(commands.Cog):
 
         Parameters
         ----------
-        bot : `discord.commands.bot.Bot`
+        bot : `discord.commands.Bot`
             the bot\n
         guild : `discord.guild.Guild`
             the guild\n
@@ -74,8 +74,11 @@ class AutoClose(commands.Cog):
         message : `discord.message.Message`
             the latest message\n
         """
-
-        check = int(db.get_check(channel.id))
+        try:
+            check = int(db.get_check(channel.id))
+        except ValueError as e:
+            log.info(e.args[0])
+            return
         log.info(f"check: {check}- {channel}")
 
         if check == 1:
@@ -84,7 +87,10 @@ class AutoClose(commands.Cog):
             db.update_check("0", channel.id)
 
         elif check == 0:
-            user_id = db.get_user_id(channel.id)
+            try:
+                user_id = db.get_user_id(channel.id)
+            except ValueError as e:
+                return log.info(e.args[0])
             member = guild.get_member(int(user_id))
             message = f"If that is all we can help you with {member.mention}, please close this ticket."
             random_admin = await Utility.random_admin_member(guild)
@@ -96,12 +102,12 @@ class AutoClose(commands.Cog):
             pass
 
     @classmethod
-    async def main(cls, bot: commands.bot.Bot, **kwargs):
+    async def main(cls, bot: commands.Bot, **kwargs):
         """check for inactivity in a channel
 
         Parameters
         ----------
-        bot : `[type]`
+        bot : `discord.commands.Bot`
             [description]\n
         """
         cat = Options.full_category_name("help")
@@ -113,7 +119,12 @@ class AutoClose(commands.Cog):
             channels = category.text_channels
             for channel in channels:
                 log.debug(channel.name)
-                status = db.get_status(channel.id)
+                try:
+                    status = db.get_status(channel.id)
+                except ValueError as e:
+                    log.info(e.args[0])
+                    continue
+
                 if channel.id in safe_tickets_list or status == "closed" or status is None:
                     continue
 
@@ -123,7 +134,11 @@ class AutoClose(commands.Cog):
                     continue
 
                 if duration < timedelta(**kwargs):
-                    check = int(db.get_check(channel.id))
+                    try:
+                        check = int(db.get_check(channel.id))
+                    except ValueError as e:
+                        log.info(e.args[0])
+                        continue
 
                     role = discord.utils.get(
                         guild.roles, name=config.ADMIN_ROLE)
@@ -144,7 +159,7 @@ class ScrapeChallenges():
         return {'apikey': env.str('apikey')}
 
     @classmethod
-    async def main(cls, bot: commands.bot.Bot) -> None:
+    async def main(cls, bot: commands.Bot) -> None:
         params = cls._setup()
         async with aiohttp.ClientSession() as session:
             async with session.get(config.BASE_API_LINK +
@@ -172,7 +187,7 @@ class ScrapeChallenges():
 
 class UpdateHelpers():
     @staticmethod
-    async def main(bot: commands.bot.Bot):
+    async def main(bot: commands.Bot):
         for guild in bot.guilds:
             if guild.id == 788162899515801637:
                 helper_role = discord.utils.get(
@@ -192,7 +207,7 @@ class UpdateHelpers():
                                              send_messages=True)
 
     @classmethod
-    async def add_helpers(cls, bot: commands.bot.Bot):
+    async def add_helpers(cls, bot: commands.Bot):
         for guild in bot.guilds:
             if guild.id == 788162899515801637:
                 for channel in db.get_all_help_channels(guild.id):

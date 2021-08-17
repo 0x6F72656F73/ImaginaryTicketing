@@ -17,8 +17,7 @@ from utils.database.db import DatabaseManager as db
 from utils.utility import Utility, UI, Challenge
 from utils.options import Options
 from utils.background import ScrapeChallenges
-from utils import exceptions
-
+from utils import exceptions, types
 
 log = logging.getLogger(__name__)
 
@@ -65,15 +64,18 @@ class BaseActions:
             category = self.guild.get_channel(new_category.id)
         return category
 
-    def _ticket_information(self):
+    async def _ticket_information(self):
         number = db.get_number_previous(self.channel_id)
         current_type = db.get_ticket_type(self.channel_id)
-        user_id = db.get_user_id(self.channel_id)
+        try:
+            user_id = db.get_user_id(self.channel_id)
+        except ValueError as e:
+            return await self.channel.send(e.args[0])
         user = self.guild.get_member(user_id)
 
         return number, current_type, user_id, user
 class CreateTicket(BaseActions):
-    def __init__(self, bot: commands.Bot, ticket_type: str, interaction: Optional[discord.Interaction], *args, **kwargs):
+    def __init__(self, bot: commands.Bot, ticket_type: types.TicketType, interaction: Optional[discord.Interaction], *args, **kwargs):
         self.bot = bot
         self.ticket_type = ticket_type
         if interaction:
@@ -97,7 +99,10 @@ class CreateTicket(BaseActions):
         await self.send_pm(f'You can view your ticket at {self.ticket_channel.mention}')
 
     async def _maximum_tickets(self):
-        n_tickets = db.get_tickets_per_user(self.ticket_type, self.user_id)
+        try:
+            n_tickets = db.get_tickets_per_user(self.ticket_type, self.user_id)
+        except ValueError as e:
+            return await self.channel.send(e.args[0])
         limit = Options.limit(self.ticket_type)
         if n_tickets >= limit:
             await self.send_pm(f"You have reached the maximum limit ({n_tickets}/{limit}) for this ticket type")
@@ -242,27 +247,29 @@ class _CreateTicketHelper(CreateTicket):
         return category_challenges
 
     # change to member after website
-    async def _add_user(self, user_identifier: Union[str, int]):
+    async def _add_member(self, member_identifier: Union[str, int], challenge_title: str):
         # change to get_member after website
-        if isinstance(user_identifier, str):
-            author = self.guild.get_member_named(user_identifier)
+        if isinstance(member_identifier, str):
+            author = self.guild.get_member_named(member_identifier)
         else:
-            author = self.guild.get_member(user_identifier)
-        if author is None:
-            return
-        await self.ticket_channel.set_permissions(author, read_messages=True,
-                                                  send_messages=True)
+            author = self.guild.get_member(member_identifier)
+        try:
+            await self.ticket_channel.set_permissions(author, read_messages=True,
+                                                      send_messages=True)
+        except discord.InvalidArgument:
+            log.info(
+                f"Author {member_identifier} for challenge {challenge_title} does not exist.")
 
     async def _add_author_and_helpers(self, selected_challenge: Challenge):
         if len(authors := selected_challenge.author.split('/')) > 1:
             for author in authors:
-                await self._add_user(author)
+                await self._add_member(author, selected_challenge.title)
         else:
-            await self._add_user(selected_challenge.author)
+            await self._add_member(selected_challenge.author, selected_challenge.title)
 
         if len(helpers := json.loads(selected_challenge.helper_id_list)):
             for helper in helpers:
-                await self._add_user(int(helper))
+                await self._add_member(int(helper), selected_challenge.title)
 
     async def challenge_selection(self):
         # challenges = _CreateTicketHelper.fake_challenges(21)
@@ -367,7 +374,11 @@ class CloseTicket(BaseActions):
 
     async def main(self):
         """closes a ticket"""
-        current_status = db.get_status(self.channel_id)
+        try:
+            current_status = db.get_status(self.channel_id)
+        except ValueError as e:
+            return await self.channel.send(e.args[0])
+
         if current_status == "closed":
             await self.channel.send("Channel is already closed")
             return
@@ -392,7 +403,10 @@ class CloseTicket(BaseActions):
         except AttributeError:
             pass
 
-        t_number, t_current_type, _, t_user = self._ticket_information()
+        try:
+            t_number, t_current_type, _, t_user = await self._ticket_information()
+        except ValueError as e:
+            return await self.channel.send(e.args[0])
 
         closed_name = Options.name_close(
             t_current_type, count=t_number, user=t_user)
@@ -449,17 +463,17 @@ class ReopenTicket(BaseActions):
         """reopens a ticket"""
         try:
             test_status = db.get_status(self.channel_id)
-            if test_status == "open":
-                await self.channel.send("Channel is already open")
-                return
-        except:
+        except ValueError as e:
+            return await self.channel.send(e.args[0])
+
+        if test_status == "open":
+            await self.channel.send("Channel is already open")
             return
 
-        t_number, t_current_type, t_user_id, t_user = self._ticket_information()
-
-        if None in (t_number, t_current_type, t_user_id, t_user):
-            await self.channel.send("Channel is not a ticket")
-            return
+        try:
+            t_number, t_current_type, t_user_id, t_user = await self._ticket_information()
+        except ValueError as e:
+            return await self.channel.send(e.args[0])
 
         cat = Options.full_category_name(t_current_type)
         category = get(self.guild.categories, name=cat)
@@ -500,10 +514,10 @@ class DeleteTicket(BaseActions):
 
     async def main(self):
         """deletes a ticket"""
-        db_channel_name = db.get_channel_name(self.channel_id)
-        if db_channel_name is None:
-            await self.channel.send("Channel is not a ticket")
-            return
+        try:
+            db.get_channel_name(self.channel_id)
+        except ValueError as e:
+            return await self.channel.send(e.args[0])
 
         embed = UI.Embed(
             title="Deleting ticket",

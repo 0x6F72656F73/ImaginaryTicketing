@@ -164,7 +164,7 @@ class DatabaseManager():
             return int(user_id[0])
         except TypeError as e:
             raise ValueError(
-                f"No channel exists with the id '{channel_id}'") from e
+                f"No channel exists with id {channel_id}") from e
 
     @classmethod
     def get_all_help_channels(cls, guild_id: int) -> List[int]:
@@ -208,7 +208,7 @@ class DatabaseManager():
             return status[0]
         except TypeError as e:
             raise ValueError(
-                f"No channel exists with the id '{channel_id}'") from e
+                f"No channel exists with id {channel_id}") from e
 
     @classmethod
     def get_tickets_per_user(cls, t_type: types.TicketType, user_id: int):
@@ -231,11 +231,7 @@ class DatabaseManager():
         WHERE t_type=$1 and user_id=$2)"""
         values = (t_type, user_id,)
         n_tickets = cls._raw_select(query, values, fetch_one=True)
-        try:
-            return n_tickets[0]
-        except TypeError as e:
-            raise ValueError(
-                f"No tickets exists with ticket_type '{t_type}' and user_id '{user_id}'") from e
+        return n_tickets[0]
 
     @classmethod
     def get_number_new(cls, t_type: types.TicketType) -> int:
@@ -280,7 +276,7 @@ class DatabaseManager():
             db_channel_name = db_channel_name_str[0].lower()
         except TypeError as e:
             raise ValueError(
-                f"No channel exists with the id '{channel_id}'") from e
+                f"No channel exists with id {channel_id}") from e
         number = db_channel_name.split("-")[-1]
         return number
 
@@ -305,7 +301,7 @@ class DatabaseManager():
             return t_type[0]
         except TypeError as e:
             raise ValueError(
-                f"No channel exists with the id '{channel_id}'") from e
+                f"No channel exists with id {channel_id}") from e
 
     @classmethod
     def get_channel_name(cls, channel_id: int) -> str:
@@ -328,7 +324,7 @@ class DatabaseManager():
             return db_channel_name_str[0].lower()
         except TypeError as e:
             raise ValueError(
-                f"No channel exists with the id '{channel_id}'") from e
+                f"No channel exists with id {channel_id}") from e
 
     @classmethod
     def update_status(cls, status: types.TicketStatus, channel_id: int):
@@ -368,7 +364,7 @@ class DatabaseManager():
             return bg_check[0]
         except TypeError as e:
             raise ValueError(
-                f"No channel exists with the id '{channel_id}'") from e
+                f"No channel exists with id {channel_id}") from e
 
     @classmethod
     def update_check(cls, bg_check: types.TicketCheck, channel_id: int):
