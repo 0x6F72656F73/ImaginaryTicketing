@@ -1,8 +1,9 @@
 OWNERS = [650187980606275589, 720055120137552042, 572630612469481492]
 ADMIN_ROLE = "Board"
-BOTS_ROLE = "Trusted Bots"
+BOT_ROLE = "Trusted Bots"
 TICKET_PING_ROLE = "Available Mods"
 HELPER_ROLE = "Helpers"
+TESTER_ROLE = "Challenge Testers"
 
 STARTUP_COGS = ["cogs.admin_commands", "cogs.core_commands",
                 "cogs.utility_commands", "cogs.tasks"]

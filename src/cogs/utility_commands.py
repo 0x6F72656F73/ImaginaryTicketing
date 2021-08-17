@@ -63,8 +63,9 @@ class UtilityCommands(commands.Cog):
         """Checks if all configurations are valid"""
         bot_guild = ctx.guild.get_member(self.bot.user.id)
         checks = {"ticket ping role": bool(get(ctx.guild.roles, name=config.TICKET_PING_ROLE)),
-                  "bots role": bool(get(ctx.guild.roles, name=config.BOTS_ROLE)),
-                  "helpers role": bool(get(ctx.guild.roles, name=config.HELPER_ROLE)),
+                  "bot role": bool(get(ctx.guild.roles, name=config.BOT_ROLE)),
+                  "helper role": bool(get(ctx.guild.roles, name=config.HELPER_ROLE)),
+                  "tester role": bool(get(ctx.guild.roles, name=config.TESTER_ROLE)),
                   "channel log category": bool(get(ctx.guild.categories, name=config.LOG_CHANNEL_CATEGORY)),
                   "channel log name": bool(get(ctx.guild.text_channels, name=config.LOG_CHANNEL_NAME)),
                   "is admin": bool(bot_guild.guild_permissions.administrator)}

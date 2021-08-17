@@ -117,12 +117,14 @@ class CreateTicket(BaseActions):
             raise exceptions.MaxChannelTicketError
 
         admin = get(self.guild.roles, name=config.ADMIN_ROLE)
-        bots = get(self.guild.roles, name=config.BOTS_ROLE)
+        bots = get(self.guild.roles, name=config.BOT_ROLE)
+        testers = get(self.guild.roles, name=config.TESTER_ROLE)
         member = self.guild.get_member(self.user_id)
         overwrites = {
             self.guild.default_role: discord.PermissionOverwrite(read_messages=False),
             member: discord.PermissionOverwrite(read_messages=True, send_messages=True),
             bots: discord.PermissionOverwrite(read_messages=True, send_messages=True),
+            testers: discord.PermissionOverwrite(read_messages=True, send_messages=True),
             admin: discord.PermissionOverwrite(
                 read_messages=True, send_messages=True)
         }
