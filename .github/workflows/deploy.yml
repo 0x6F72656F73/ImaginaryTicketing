@@ -18,6 +18,6 @@ jobs:
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         port: ${{ secrets.PORT }}
         script: |
-          cd $HOME/${{ github.event.repository.name }}
+          cd $HOME/Bots/${{ github.event.repository.name }}
           git pull
           pm2 startOrRestart process.json --env production --silent
