@@ -33,7 +33,7 @@ class Tasks(commands.Cog):
             await ScrapeChallenges.main(self.bot)
             log.info("Finished Task ScrapeChallenges for every 2 hours")
 
-        @aiocron.crontab("*/10 * * *")
+        @aiocron.crontab("*/10 * * * *")
         async def start_adding_users():
             try:
                 await UpdateHelpers.main(self.bot)
