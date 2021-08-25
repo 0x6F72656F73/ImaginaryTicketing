@@ -89,7 +89,7 @@ class CreateTicket(BaseActions):
         super().__init__(*args, **kwargs)
 
     async def _setup(self):
-        admin = get(self.guild.roles, name=config.ADMIN_ROLE)
+        admin = get(self.guild.roles, name=config.roles['admin'])
         member = self.guild.get_member(self.user_id)
         if admin not in member.roles:
             await self._maximum_tickets()
@@ -121,9 +121,9 @@ class CreateTicket(BaseActions):
             await self.send_pm("There are over 50 channels in the selected category. Please contact a server admin.")
             raise exceptions.MaxChannelTicketError
 
-        admin = get(self.guild.roles, name=config.ADMIN_ROLE)
-        bots = get(self.guild.roles, name=config.BOT_ROLE)
-        testers = get(self.guild.roles, name=config.TESTER_ROLE)
+        admin = get(self.guild.roles, name=config.roles['admin'])
+        bots = get(self.guild.roles, name=config.roles['bot'])
+        testers = get(self.guild.roles, name=config.roles['tester'])
         member = self.guild.get_member(self.user_id)
         overwrites = {
             self.guild.default_role: discord.PermissionOverwrite(read_messages=False),
@@ -156,7 +156,7 @@ class CreateTicket(BaseActions):
         db.update_check("0", self.ticket_channel.id)
 
         avail_mods = get(
-            self.guild.roles, name=config.TICKET_PING_ROLE)
+            self.guild.roles, name=config.roles['ticket_ping'])
         if self.ticket_type == "help":
             welcome_message = f'A new ticket has been created {avail_mods.mention}'
         elif self.ticket_type == "submit":
@@ -389,7 +389,7 @@ class CloseTicket(BaseActions):
         embed_message = await self.channel.send(embed=close_stats_embed)
 
         member = self.guild.get_member(self.user_id)
-        admin = get(self.guild.roles, name=config.ADMIN_ROLE)
+        admin = get(self.guild.roles, name=config.roles['admin'])
         overwrites = {
             self.guild.default_role: discord.PermissionOverwrite(read_messages=False),
             member: discord.PermissionOverwrite(read_messages=None, send_messages=None),
@@ -415,20 +415,20 @@ class CloseTicket(BaseActions):
         db.update_ticket_name(closed_name, self.channel_id)
 
         channel_log_category = get(
-            self.guild.categories, name=config.LOG_CHANNEL_CATEGORY)
+            self.guild.categories, name=config.logs["category"])
         if channel_log_category is None:
             await self.channel.send("logs category does not exist")
             return
         channel_log = get(
-            self.guild.text_channels, category=channel_log_category, name=config.LOG_CHANNEL_NAME)
+            self.guild.text_channels, category=channel_log_category, name=config.logs[""])
         if channel_log is None:
-            await self.channel.send(f"{config.LOG_CHANNEL_NAME} channel does not exist in category logs")
+            await self.channel.send(f"{config.logs['name']} channel does not exist in category logs")
             return
 
         transcript_message, transcript_file = await Utility.transcript(self.channel, channel_log)
         if transcript_message:
             close_stats_embed.add_field(name="transcript",
-                                        value=f"[transcript url]({config.TRANSCRIPT_DOMAIN}/transcript?link={transcript_message.attachments[0].url} \"oreos taste good dont they\") ")
+                                        value=f"[transcript url]({config.transcript['domain']}/transcript?link={transcript_message.attachments[0].url} \"oreos taste good dont they\") ")
         else:
             close_stats_embed.add_field(
                 name="transcript", value="transcript could not be sent to DMs")
@@ -448,7 +448,7 @@ class CloseTicket(BaseActions):
         db.update_status(status, self.channel_id,)
 
         channel_log = get(
-            self.guild.text_channels, name=config.LOG_CHANNEL_NAME)
+            self.guild.text_channels, name=config.logs['name'])
         close_stats_embed.title = "Closed ticket"
         close_stats_embed.set_footer(text=f"{self.channel}")
         await channel_log.send(embed=close_stats_embed)
@@ -482,7 +482,7 @@ class ReopenTicket(BaseActions):
             category = self.guild.get_channel(new_category.id)
 
         member = self.guild.get_member(t_user_id)
-        admin = get(self.guild.roles, name=config.ADMIN_ROLE)
+        admin = get(self.guild.roles, name=config.roles['admin'])
         overwrites = {
             self.guild.default_role: discord.PermissionOverwrite(read_messages=False),
             member: discord.PermissionOverwrite(read_messages=True, send_messages=True),

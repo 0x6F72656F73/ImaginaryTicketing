@@ -60,7 +60,7 @@ class UI:
             log_embed = cls.log_embed(
                 title, channel_name, **kwargs)
         log_channel = discord.utils.get(
-            channel_name.guild.text_channels, name=config.LOG_CHANNEL_NAME)
+            channel_name.guild.text_channels, name=config.logs['name'])
         await log_channel.send(embed=log_embed)
 
     @staticmethod
@@ -160,19 +160,19 @@ class Utility:
 
     @staticmethod
     async def random_admin_member(guild) -> discord.Member:
-        role = discord.utils.get(guild.roles, name=config.ADMIN_ROLE)
+        role = discord.utils.get(guild.roles, name=config.roles['admin'])
         person = random.choice(role.members)
         return person
 
     @staticmethod
     def check_discord(bot_in_guild: discord.User, guild: discord.Guild) -> Dict[str, List[str]]:
         ret = {'pass': [], 'fail': []}
-        checks = {"ticket ping role": bool(get(guild.roles, name=config.TICKET_PING_ROLE)),
-                  "bot role": bool(get(guild.roles, name=config.BOT_ROLE)),
-                  "helper role": bool(get(guild.roles, name=config.HELPER_ROLE)),
-                  "tester role": bool(get(guild.roles, name=config.TESTER_ROLE)),
-                  "channel log category": bool(get(guild.categories, name=config.LOG_CHANNEL_CATEGORY)),
-                  "channel log name": bool(get(guild.text_channels, name=config.LOG_CHANNEL_NAME)),
+        checks = {"ticket ping role": bool(get(guild.roles, name=config.roles['ticket_ping'])),
+                  "bot role": bool(get(guild.roles, name=config.roles['bot'])),
+                  "helper role": bool(get(guild.roles, name=config.roles['helper'])),
+                  "tester role": bool(get(guild.roles, name=config.roles['tester'])),
+                  "channel log category": bool(get(guild.categories, name=config.logs["category"])),
+                  "channel log name": bool(get(guild.text_channels, name=config.logs["name"])),
                   "is admin": bool(bot_in_guild.guild_permissions.administrator)}
 
         ret['pass'] = [check for check, status in checks.items() if status is True]

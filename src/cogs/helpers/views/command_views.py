@@ -23,7 +23,7 @@ class CreateHelpButton(discord.ui.Button['TicketView']):  # add emoji
 class TicketView(discord.ui.View):
     def __init__(self, bot: commands.Bot):
         super().__init__(timeout=None)
-        emoji_list = config.EMOJIS_MESSAGE
+        emoji_list = config.tickets["emojis"]
         self.add_item(CreateHelpButton(bot,
                                        label='help', style=ButtonStyle.primary, emoji=emoji_list[0], custom_id='ticketing:request_help'))
         self.add_item(CreateHelpButton(bot,

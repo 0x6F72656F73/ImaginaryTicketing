@@ -10,7 +10,7 @@ log = logging.getLogger(__name__)
 def is_owner():
     "helper function to check if author is admin"
     async def predicate(ctx):
-        return ctx.author.id in config.OWNERS
+        return ctx.author.id in config.admin['owners']
     return commands.check(predicate)
 
 class Admin(commands.Cog):

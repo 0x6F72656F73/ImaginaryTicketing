@@ -141,7 +141,7 @@ class AutoClose(commands.Cog):
                         continue
 
                     role = discord.utils.get(
-                        guild.roles, name=config.ADMIN_ROLE)
+                        guild.roles, name=config.roles['admin'])
                     people = [member.id for member in role.members]
 
                     if message.author.id in people and check == 1:
@@ -162,12 +162,12 @@ class ScrapeChallenges():
     async def main(cls, bot: commands.Bot) -> None:
         params = cls._setup()
         async with aiohttp.ClientSession() as session:
-            async with session.get(config.BASE_API_LINK +
+            async with session.get(config.api["base_link"] +
                                    '/challenges/released', params=params) as req:
                 challenges = await req.json()
                 all_challenges = []
                 for challenge in challenges:
-                    ignore = bool(challenge['author'] == config.ADMIN_ROLE)
+                    ignore = bool(challenge['author'] == config.roles['admin'])
                     all_challenges.append(Challenge(
                         challenge["id"], challenge["title"], challenge["author"], challenge["category"].split(",")[0], ignore))
 
@@ -178,7 +178,7 @@ class ScrapeChallenges():
     async def get_user_challenges(cls, discord_id: int) -> List[int]:
         params = cls._setup()
         async with aiohttp.ClientSession() as session:
-            async with session.get(config.BASE_API_LINK +
+            async with session.get(config.api["base_link"] +
                                    f'/solves/bydiscordid/{discord_id}', params=params) as req:
                 solve_challenges = await req.json()
                 if not solve_challenges:
@@ -191,7 +191,7 @@ class UpdateHelpers():
         for guild in bot.guilds:
             if guild.id == 788162899515801637:
                 helper_role = discord.utils.get(
-                    guild.roles, name=config.HELPER_ROLE)
+                    guild.roles, name=config.roles['helper'])
                 for helper in helper_role.members:
                     solved_challenge_ids = await ScrapeChallenges.get_user_challenges(
                         helper.id)

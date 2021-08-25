@@ -24,7 +24,7 @@ class TicketCommands(commands.Cog):
         self.bot = bot
 
     @commands.command(name="ticket")
-    @commands.has_role(config.ADMIN_ROLE)
+    @commands.has_role(config.roles['admin'])
     async def ticket(self, ctx: commands.Context):
         """shows a ticket message"""
         bot_commands: discord.TextChannel = get(
@@ -54,7 +54,7 @@ For **help** tickets:
         if ticket_type not in {'help', 'submit', 'misc'}:
             await ctx.channel.send("possible ticket types are help, submit, and misc")
             return
-        admin = get(ctx.guild.roles, name=config.ADMIN_ROLE)
+        admin = get(ctx.guild.roles, name=config.roles['admin'])
         if admin not in ctx.author.roles:
             member = ctx.author
             create_ticket = actions.CreateTicket(self.bot,
@@ -73,7 +73,7 @@ For **help** tickets:
             pass
 
     @commands.command(name="add", aliases=["a"], help="add a user to a ticket")
-    @commands.has_role(config.ADMIN_ROLE)
+    @commands.has_role(config.roles['admin'])
     async def add(self, ctx, member: discord.Member):
         """adds a user from a ticket"""
 
@@ -84,7 +84,7 @@ For **help** tickets:
             await ctx.channel.send(embed=embed)
             return
 
-        admin = get(ctx.guild.roles, name=config.ADMIN_ROLE)
+        admin = get(ctx.guild.roles, name=config.roles['admin'])
         if admin in member.roles:
             embed = UI.Embed(description=f"User {member.name} is an admin")
             await ctx.channel.send(embed=embed)
@@ -93,7 +93,7 @@ For **help** tickets:
         await actions.UtilityActions.add(ctx.channel, member)
 
     @commands.command(name="remove", aliases=["r", "rm"])
-    @commands.has_role(config.ADMIN_ROLE)
+    @commands.has_role(config.roles['admin'])
     async def remove(self, ctx, member: discord.Member):
         """removes a user from a ticket"""
 
@@ -103,7 +103,7 @@ For **help** tickets:
                 description=f"User {member.name} not in channel")
             await ctx.channel.send(embed=embed)
             return
-        admin = get(ctx.guild.roles, name=config.ADMIN_ROLE)
+        admin = get(ctx.guild.roles, name=config.roles['admin'])
         if admin in member.roles:
             embed = UI.Embed(description=f"User {member.name} is an admin")
             await ctx.channel.send(embed=embed)
@@ -119,7 +119,7 @@ For **help** tickets:
         except ValueError as e:
             return await ctx.channel.send(e.args[0])
         guild = ctx.guild
-        admin = get(guild.roles, name=config.ADMIN_ROLE)
+        admin = get(guild.roles, name=config.roles['admin'])
         if admin in ctx.author.roles or user_id == ctx.author.id:
 
             close_ticket = actions.CloseTicket(ctx.guild, ctx.author,
@@ -130,7 +130,7 @@ For **help** tickets:
             await ctx.channel.send("You do not have enough permissions to run this command")
 
     @commands.command(name="delete", aliases=["del"])
-    @commands.has_role(config.ADMIN_ROLE)
+    @commands.has_role(config.roles['admin'])
     async def delete(self, ctx):
         """deletes a ticket"""
         delete_ticket = actions.DeleteTicket(ctx.guild, ctx.author,
@@ -141,7 +141,7 @@ For **help** tickets:
             pass
 
     @commands.command(name="reopen", aliases=["re", "reo", "re-open"])
-    @commands.has_role(config.ADMIN_ROLE)
+    @commands.has_role(config.roles['admin'])
     async def reopen(self, ctx):
         """reopens a ticket"""
         reopen_ticket = actions.ReopenTicket(ctx.guild, ctx.author,
@@ -151,7 +151,7 @@ For **help** tickets:
         await Utility.delete_message(ctx)
 
     @commands.command(name="transcript", aliases=["tsc"])
-    @commands.has_role(config.ADMIN_ROLE)
+    @commands.has_role(config.roles['admin'])
     @commands.cooldown(rate=1, per=10, type=commands.BucketType.default)
     async def transcript(self, ctx, destination: Union[discord.User, discord.TextChannel]):
         """sends a transcript to a user via DM"""
@@ -160,7 +160,7 @@ For **help** tickets:
         await Utility.delete_message(ctx)
 
     @commands.command(name="autoclose", aliases=["ac"])
-    @commands.has_role(config.ADMIN_ROLE)
+    @commands.has_role(config.roles['admin'])
     async def autoclose(self, ctx, option: str = "off", channel: discord.TextChannel = None):
         """turns the autoclose feature on or off for a give channel"""
 
@@ -174,7 +174,7 @@ For **help** tickets:
             await ctx.channel.send(f"autoclose is now on for {ctx.channel.name}")
 
     @commands.command(name="auto_message", aliases=["am"])
-    @commands.has_role(config.ADMIN_ROLE)
+    @commands.has_role(config.roles['admin'])
     async def auto_message(self, ctx, channel: discord.TextChannel):
         """Sends a message asking if the ticket can be closed. Does not contribute to AC checks"""
         try:

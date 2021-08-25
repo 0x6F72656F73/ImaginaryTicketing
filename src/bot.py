@@ -55,7 +55,7 @@ Type {BOT_PREFIX[0]}help_slash for help on slash commands"  # note: make this
         self.help_command = pretty_help.PrettyHelp(
             menu=menu, ending_note=ending_note, sort_commands=True)
 
-        for extension in config.STARTUP_COGS:
+        for extension in config.admin['startup_cogs']:
             try:
                 self.load_extension(extension)
                 extension = extension.replace("cogs.", "")
