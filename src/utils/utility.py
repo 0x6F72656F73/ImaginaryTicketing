@@ -1,10 +1,11 @@
 import io
 import asyncio
 import random
-from typing import NamedTuple, Tuple, Union
+from typing import NamedTuple, Tuple, Union, Dict, List
 import logging
 
 import discord
+from discord.utils import get
 from discord.ext import commands
 import chat_exporter
 
@@ -73,6 +74,13 @@ class UI:
 
         def __new__(cls, **kwargs) -> discord.Embed:
             return discord.Embed(color=discord.Color.random(), timestamp=discord.utils.utcnow(), **kwargs)
+
+    @staticmethod
+    def add_to_description(embed: discord.Embed, text):
+        if len(embed.description) == 0:
+            embed.description = f"{text}\n"
+        else:
+            embed.description += f"{text}\n"
 
 class Utility:
     """Abstract helper methods"""
@@ -155,6 +163,29 @@ class Utility:
         role = discord.utils.get(guild.roles, name=config.ADMIN_ROLE)
         person = random.choice(role.members)
         return person
+
+    @staticmethod
+    def check_discord(bot_in_guild: discord.User, guild: discord.Guild) -> Dict[str, List[str]]:
+        ret = {'pass': [], 'fail': []}
+        checks = {"ticket ping role": bool(get(guild.roles, name=config.TICKET_PING_ROLE)),
+                  "bot role": bool(get(guild.roles, name=config.BOT_ROLE)),
+                  "helper role": bool(get(guild.roles, name=config.HELPER_ROLE)),
+                  "tester role": bool(get(guild.roles, name=config.TESTER_ROLE)),
+                  "channel log category": bool(get(guild.categories, name=config.LOG_CHANNEL_CATEGORY)),
+                  "channel log name": bool(get(guild.text_channels, name=config.LOG_CHANNEL_NAME)),
+                  "is admin": bool(bot_in_guild.guild_permissions.administrator)}
+
+        ret['pass'] = [check for check, status in checks.items() if status is True]
+        ret['fail'] = [check for check, status in checks.items() if status is False]
+        # if all(checks.values()):
+        #     ret['pass'] = True
+
+        # failures = [check for check, status
+        #             in checks.items() if status is False]
+
+        # if not ret['pass']:
+        #     ret['failures'] = failures
+        return ret
 
 class Challenge(NamedTuple):
     id: int

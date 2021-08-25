@@ -61,34 +61,20 @@ class UtilityCommands(commands.Cog):
     @commands.has_role(config.ADMIN_ROLE)
     async def check_discord(self, ctx):
         """Checks if all configurations are valid"""
-        bot_guild = ctx.guild.get_member(self.bot.user.id)
-        checks = {"ticket ping role": bool(get(ctx.guild.roles, name=config.TICKET_PING_ROLE)),
-                  "bot role": bool(get(ctx.guild.roles, name=config.BOT_ROLE)),
-                  "helper role": bool(get(ctx.guild.roles, name=config.HELPER_ROLE)),
-                  "tester role": bool(get(ctx.guild.roles, name=config.TESTER_ROLE)),
-                  "channel log category": bool(get(ctx.guild.categories, name=config.LOG_CHANNEL_CATEGORY)),
-                  "channel log name": bool(get(ctx.guild.text_channels, name=config.LOG_CHANNEL_NAME)),
-                  "is admin": bool(bot_guild.guild_permissions.administrator)}
+        bot_in_guild = ctx.guild.get_member(self.bot.user.id)
+        checks = Utility.check_discord(bot_in_guild, ctx.guild)
+        print(checks)
 
-        def check_all(return_print=False):
-            if all(checks.values()):
-                return True
+        embed = UI.Embed(title="Checks")
+        UI.add_to_description(embed, "**Successful checks:**")
+        for check in checks['pass']:
+            UI.add_to_description(embed, check)
 
-            failures = [check for check, status
-                        in checks.items() if status is False]
+        UI.add_to_description(embed, "**Failed checks:**")
+        for check in checks['fail']:
+            UI.add_to_description(embed, check)
 
-            if return_print:
-                return failures
-            return False
-
-        failure = check_all()
-        if not failure:
-            fails = "\n".join(check_all(return_print=True))
-            embed = UI.Embed(title="Failed Checks", description=fails)
-            await ctx.channel.send(embed=embed)
-            return
-
-        await ctx.channel.send("All checks were successful 😎")
+        await ctx.channel.send(embed=embed)
 
     @commands.group(name="challenge", aliases=["c", "chall"], invoke_without_command=True)
     @commands.has_role(config.ADMIN_ROLE)
