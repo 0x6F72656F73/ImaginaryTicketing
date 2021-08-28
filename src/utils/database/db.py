@@ -465,9 +465,40 @@ class DatabaseManager():
         cls._raw_update(query, values)
 
     @classmethod
+    def create_helper(cls, discord_id: int):
+        query = """
+        INSERT INTO helpers(discord_id, is_available) 
+        VALUES($1,$2)"""
+        values = (discord_id, "1",)
+        cls._raw_update(query, values)
+
+    @classmethod
+    def delete_helper(cls, discord_id: int):
+        query = """
+        DELETE FROM helpers
+        WHERE discord_id = $1"""
+        values = (str(discord_id),)
+        cls._raw_delete(query, values)
+
+    @classmethod
     def update_helper_status(cls, status: types.HelperAvailable, discord_id: int):
         query = """
         UPDATE helpers
-        SET is_available = $1 WHERE id = $2"""
+        SET is_available = $1 WHERE discord_id = $2"""
         values = (status, discord_id,)
         cls._raw_update(query, values)
+
+    @classmethod
+    def get_helper_status(cls, discord_id: int):
+        query = """
+        SELECT is_available FROM helpers
+        WHERE discord_id = $1"""
+        values = (discord_id,)
+        status = cls._raw_select(query, values, fetch_one=True)
+        try:
+            if status[0] == 1:
+                return True
+            return False
+        except TypeError as e:
+            raise ValueError(
+                f"No helper exists with id {discord_id}") from e

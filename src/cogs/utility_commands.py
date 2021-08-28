@@ -1,7 +1,7 @@
 import asyncio
 from collections import defaultdict
 import json
-from typing import Optional
+import typing
 import logging
 
 import discord
@@ -13,7 +13,7 @@ import config
 from utils.database.db import DatabaseManager as db
 from utils.background import ScrapeChallenges, UpdateHelpers
 from utils.utility import Utility, UI, Challenge
-from utils import exceptions
+from utils import exceptions, types
 
 log = logging.getLogger(__name__)
 
@@ -107,7 +107,6 @@ class UtilityCommands(commands.Cog):
     async def challenge(self, ctx):
         """Base challenge command. Shows stats on challenges."""
         embed = UI.Embed(title="Challenges")
-        print(type(db.get_all_challenges()))
         challenges = [Challenge(*list(challenge))
                       for challenge in db.get_all_challenges()]
         challenges_by_category = defaultdict(list)
@@ -134,9 +133,9 @@ class UtilityCommands(commands.Cog):
         embed.description = "challenges refreshed"
         await message.edit(embed=embed)
 
-    @commands.group(name="helperadmin", aliases=["ha"], invoke_without_command=True)
+    @commands.group(name="helper", aliases=["h"], invoke_without_command=True)
     @commands.has_role(config.roles['admin'])
-    async def helper_admin(self, ctx):
+    async def helper(self, ctx):
         """Base helper-admin command. Shows stats on helpers."""
         helper_role = get(ctx.guild.roles, name=config.roles['helper'])
         if len(helper_role.members):
@@ -149,7 +148,7 @@ class UtilityCommands(commands.Cog):
             title=f"{config.roles['helper']}", description=helpers)
         await ctx.channel.send(embed=embed)
 
-    @helper_admin.command(name="add", aliases=["a"])
+    @helper.command(name="add", aliases=["a"])
     @commands.has_role(config.roles['admin'])
     async def helper_add(self, ctx, member: discord.Member):
         """adds a helper"""
@@ -158,15 +157,16 @@ class UtilityCommands(commands.Cog):
         if member.id in helper_ids:
             embed = UI.Embed(
                 description=f"Member {member.mention} already has role {config.roles['helper']}")
-            await ctx.channel.send(embed=embed)
-            return
+            return await ctx.channel.send(embed=embed)
 
         await member.add_roles(helper_role)
+        db.create_helper(member.id)
+
         embed = UI.Embed(
-            description=f"Added {member.mention} to role {config.roles['helper']}")
+            description=f"Added {member.mention} to {config.roles['helper']}")
         await ctx.channel.send(embed=embed)
 
-    @helper_admin.command(name="remove", aliases=["r", "rm"])
+    @helper.command(name="remove", aliases=["r", "rm"])
     @commands.has_role(config.roles['admin'])
     async def helper_remove(self, ctx, member: discord.Member):
         """removes a helper"""
@@ -177,12 +177,15 @@ class UtilityCommands(commands.Cog):
                 description=f"Member {member.mention} does not have role {config.roles['helper']}")
             await ctx.channel.send(embed=embed)
             return
+
         await member.remove_roles(helper_role)
+        db.delete_helper(member.id)
+
         embed = UI.Embed(
             description=f"Removed {member.mention} from role {config.roles['helper']}")
         await ctx.channel.send(embed=embed)
 
-    @helper_admin.command(name="refresh", aliases=["ref"])
+    @helper.command(name="refresh", aliases=["ref"])
     @commands.has_role(config.roles['admin'])
     async def helper_refresh(self, ctx):
         """refreshes helpers from the api"""
@@ -198,7 +201,7 @@ class UtilityCommands(commands.Cog):
         embed.description = "helpers refreshed"
         await message.edit(embed=embed)
 
-    @helper_admin.command(name="update", aliases=["upd"])
+    @helper.command(name="update", aliases=["upd"])
     @commands.has_role(config.roles['admin'])
     async def helper_update(self, ctx):
         """updates helpers to channels"""
@@ -207,29 +210,29 @@ class UtilityCommands(commands.Cog):
             description="helpers updated")
         await ctx.channel.send(embed=embed)
 
-    # @commands.group(name="helperuser", aliases=["hu"], invoke_without_command=True)
-    # async def helper_user(self, ctx):
-    #     """Base helper-user command. Shows stats on helpers."""
-    #     helper_role = get(ctx.guild.roles, name=config.roles['helper'])
-    #     if len(helper_role.members):
-    #         helpers = '\n'.join(
-    #             [member.mention for member in helper_role.members])
-    #     else:
-    #         helpers = 'No helpers'
+    @helper.group(name="user", aliases=["u"], invoke_without_command=True)
+    @commands.has_role(config.roles['helper'])
+    async def helper_user(self, ctx):
+        """Base helper-user command. Shows helper's stats"""
+        try:
+            status = db.get_helper_status(ctx.author.id)
+        except ValueError as e:
+            return await ctx.channel.send(e.args[0])
 
-    #     embed = UI.Embed(
-    #         title=f"{config.roles['helper']}", description=helpers)
-    #     await ctx.channel.send(embed=embed)
+        embed = UI.Embed(
+            title=f"{ctx.author.name}", description=f'status: {status}')
+        await ctx.channel.send(embed=embed)
 
-    # @helper_user.command(name="status", aliases=["upd"])
-    # # add custom check if has role or in table
-    # async def helper_change_status(self, ctx, choice: Optional[bool]):
-    #     """changes a helper to on or off """
-    #     if not choice
-    #     await UpdateHelpers.add_helpers(self.bot)
-    #     embed = UI.Embed(
-    #         description="helpers updated")
-    #     await ctx.channel.send(embed=embed)
+    @helper_user.command(name="status", aliases=["s"])
+    @commands.has_role(config.roles['helper'])
+    async def helper_change_status(self, ctx, status: str):
+        """changes a helper's availability status. 1 or 0"""
+        if not status in typing.get_args(types.HelperAvailable):
+            return await ctx.channel.send("choice must be 1 or 0")
+
+        db.update_helper_status(status, ctx.author.id)
+
+        await ctx.channel.send('status updated')
 
 def setup(bot: commands.Bot):
     bot.add_cog(UtilityCommands(bot))
