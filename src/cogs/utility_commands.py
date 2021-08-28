@@ -1,6 +1,7 @@
 import asyncio
 from collections import defaultdict
-from typing import Optional
+import json
+from typing import Optional, Dict, Union
 import logging
 
 import discord
@@ -63,16 +64,15 @@ class UtilityCommands(commands.Cog):
         """Checks if all configurations are valid"""
         bot_in_guild = ctx.guild.get_member(self.bot.user.id)
         checks = Utility.check_discord(bot_in_guild, ctx.guild)
-        print(checks)
 
         embed = UI.Embed(title="Checks")
         UI.add_to_description(embed, "**Successful checks:**")
         for check in checks['pass']:
-            UI.add_to_description(embed, check)
+            UI.add_to_description(embed, f"- {check}")
 
         UI.add_to_description(embed, "**Failed checks:**")
         for check in checks['fail']:
-            UI.add_to_description(embed, check)
+            UI.add_to_description(embed, f"- {check}")
 
         await ctx.channel.send(embed=embed)
 

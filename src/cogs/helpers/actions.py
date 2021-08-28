@@ -420,7 +420,7 @@ class CloseTicket(BaseActions):
             await self.channel.send("logs category does not exist")
             return
         channel_log = get(
-            self.guild.text_channels, category=channel_log_category, name=config.logs[""])
+            self.guild.text_channels, category=channel_log_category, name=config.logs["name"])
         if channel_log is None:
             await self.channel.send(f"{config.logs['name']} channel does not exist in category logs")
             return

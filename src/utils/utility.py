@@ -177,14 +177,6 @@ class Utility:
 
         ret['pass'] = [check for check, status in checks.items() if status is True]
         ret['fail'] = [check for check, status in checks.items() if status is False]
-        # if all(checks.values()):
-        #     ret['pass'] = True
-
-        # failures = [check for check, status
-        #             in checks.items() if status is False]
-
-        # if not ret['pass']:
-        #     ret['failures'] = failures
         return ret
 
 class Challenge(NamedTuple):
