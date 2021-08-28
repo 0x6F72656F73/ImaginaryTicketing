@@ -1,7 +1,7 @@
 import asyncio
 from collections import defaultdict
 import json
-from typing import Optional, Dict, Union
+from typing import Optional
 import logging
 
 import discord

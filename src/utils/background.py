@@ -200,10 +200,10 @@ class UpdateHelpers():
 
     @classmethod
     async def add_helper_to_channel(cls, ticket_channel: discord.TextChannel, user_id: int):
-        author = ticket_channel.guild.get_member(user_id)
-        if author is None or author in ticket_channel.members:
+        helper = ticket_channel.guild.get_member(user_id)
+        if helper is None or helper in ticket_channel.members:
             return
-        await ticket_channel.set_permissions(author, read_messages=True,
+        await ticket_channel.set_permissions(helper, read_messages=True,
                                              send_messages=True)
 
     @classmethod

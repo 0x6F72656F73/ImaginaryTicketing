@@ -126,7 +126,7 @@ Type {BOT_PREFIX[0]}help_slash for help on slash commands"  # note: make this
         if isinstance(error, (commands.MemberNotFound, commands.UserNotFound)):
             return await ctx.channel.send("User not found")
         if isinstance(error, commands.MissingRole):
-            return await ctx.channel.send("You do not have enough permissions to run this command")
+            return await ctx.channel.send("You need to buy more perms from dollar store")
         if isinstance(error, commands.MissingRequiredArgument):
             return await ctx.channel.send("Please provide all required arguments")
         if isinstance(error, commands.errors.BadUnionArgument):

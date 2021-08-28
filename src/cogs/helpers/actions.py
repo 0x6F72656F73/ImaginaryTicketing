@@ -258,7 +258,7 @@ class _CreateTicketHelper(CreateTicket):
                                                       send_messages=True)
         except discord.InvalidArgument:
             log.info(
-                f"Author {member_identifier} for challenge {challenge_title} does not exist.")
+                f"User {member_identifier} for challenge {challenge_title} does not exist.")
 
     async def _add_author_and_helpers(self, selected_challenge: Challenge):
         if len(authors := selected_challenge.author.split('/')) > 1:
