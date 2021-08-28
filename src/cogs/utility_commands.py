@@ -76,6 +76,32 @@ class UtilityCommands(commands.Cog):
 
         await ctx.channel.send(embed=embed)
 
+    @commands.command(name="config")
+    @commands.has_role(config.roles['admin'])
+    async def get_config_value(self, ctx, target_field: str = None):
+        """Shows the configuration for all fields or a given field"""
+        def find_value(field):
+            return json.dumps(getattr(config, field), sort_keys=True, indent=4)
+
+        if target_field is None:
+            embed = UI.Embed(title="config")
+            configrations = [f"{c}: {find_value(c)}"
+                             for c in config.__dict__ if not c.startswith("__")]
+            seperator = ',\n'
+            embed.description = f"```json\n{seperator.join(configrations)}```"
+            return await ctx.channel.send(embed=embed)
+        try:
+            configration = f"{target_field}: {find_value(target_field.lower())}"
+            embed = UI.Embed(title=f"config- {target_field}")
+            embed.description = f"```json\n{configration}```"
+            await ctx.channel.send(embed=embed)
+        except AttributeError:
+            fields = '\n'.join({field for field in dir(config)
+                                if not field.startswith("__")})
+            embed = UI.Embed(
+                title="invalid field", description=f'Possible fields are:\n{fields}')
+            await ctx.channel.send(embed=embed)
+
     @commands.group(name="challenge", aliases=["c", "chall"], invoke_without_command=True)
     @commands.has_role(config.roles['admin'])
     async def challenge(self, ctx):
