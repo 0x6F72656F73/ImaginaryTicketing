@@ -16,6 +16,7 @@ import aiohttp
 
 import cogs.helpers.views.action_views as action_views
 import cogs.helpers.actions as actions
+from utils import types, exceptions
 from utils.options import Options
 from utils.utility import Utility, UI, Challenge
 from utils.database.db import DatabaseManager as db
@@ -189,35 +190,55 @@ class UpdateHelpers():
     @staticmethod
     async def main(bot: commands.Bot):
         for guild in bot.guilds:
-            if guild.id == 788162899515801637:
-                helper_role = discord.utils.get(
-                    guild.roles, name=config.roles['helper'])
-                for helper in helper_role.members:
-                    solved_challenge_ids = await ScrapeChallenges.get_user_challenges(
-                        helper.id)
-                    for ch_id in solved_challenge_ids:
-                        db.update_helper_ch(helper.id, ch_id)
+            helper_role = discord.utils.get(
+                guild.roles, name=config.roles['helper'])
+            for helper in helper_role.members:
+                solved_challenge_ids = await ScrapeChallenges.get_user_challenges(
+                    helper.id)
+                for ch_id in solved_challenge_ids:
+                    db.update_helper_ch(helper.id, ch_id)
 
     @classmethod
-    async def add_helper_to_channel(cls, ticket_channel: discord.TextChannel, user_id: int):
+    async def modify_helper_to_channel(cls, ticket_channel: discord.TextChannel, user_id: int, update: bool):
         helper = ticket_channel.guild.get_member(user_id)
-        if helper is None or helper in ticket_channel.members:
-            return
-        await ticket_channel.set_permissions(helper, read_messages=True,
-                                             send_messages=True)
+        if helper is None:
+            raise exceptions.HelperSyncError("you were not found in guild :(")
+        if helper in ticket_channel.members:
+            if update is False:
+                await ticket_channel.set_permissions(helper, read_messages=False,
+                                                     send_messages=False)
+            else:
+                raise exceptions.HelperSyncError(
+                    "you can't be added to a channel you're already in!")
+        elif update is True:
+            await ticket_channel.set_permissions(helper, read_messages=True,
+                                                 send_messages=True)
 
     @classmethod
-    async def add_helpers(cls, bot: commands.Bot):
+    async def modify_helpers_to_channel(cls, bot: commands.Bot, member_id: discord.Member.id = None, choice: types.HelperSync = 'ADD'):
         for guild in bot.guilds:
-            if guild.id == 788162899515801637:
-                for channel in db.get_all_help_channels(guild.id):
-                    if (channel_ := guild.get_channel(channel)):
+            for channel_id in db.get_all_help_channels(guild.id):
+                if (channel_ := guild.get_channel(channel_id)):
+                    try:
                         helpers = db.get_helpers_from_title(
-                            channel_.topic.split(" -")[0])
-                        if helpers is None:
-                            await UI.log_to_logs(
-                                "Challenge not found", channel_)
-                            continue
-                        helpers = json.loads(helpers[0])
-                        for helper in helpers:
-                            await cls.add_helper_to_channel(channel_, helper)
+                            channel_.topic.split(" - ")[0])
+                    except AttributeError:
+                        continue
+                    helpers = json.loads(helpers[0])
+                    if not helpers:
+                        await UI.log_to_logs(
+                            "Challenge not found", channel_)
+                        log.debug(f"Challenge not found - {channel_}")
+                        continue
+
+                    if member_id:
+                        if not member_id in helpers:
+                            pass
+
+                    for helper in helpers:
+                        try:
+                            if helper == db.get_user_id(channel_id):
+                                continue
+                        except ValueError:
+                            pass
+                        await cls.modify_helper_to_channel(channel_, helper, choice)

@@ -9,3 +9,7 @@ class NoChallengeSelected(Exception):
 
 class ChallengeDoesNotExist(Exception):
     """Raised when challenges solved by helpers don't exist"""
+
+
+class HelperSyncError(Exception):
+    """Raised when a helper is missing"""

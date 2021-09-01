@@ -270,8 +270,8 @@ class _CreateTicketHelper(CreateTicket):
         if len(helpers := json.loads(selected_challenge.helper_id_list)):
             for helper in helpers:
                 try:
-                if db.get_helper_status(helper):
-                    await self._add_member(int(helper), selected_challenge.title)
+                    if db.get_helper_status(helper):
+                        await self._add_member(int(helper), selected_challenge.title)
                 except ValueError:
                     pass
 

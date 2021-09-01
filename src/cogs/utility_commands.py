@@ -237,5 +237,24 @@ class UtilityCommands(commands.Cog):
         else:
             await ctx.channel.send("you have been removed to from all tickets for challenges you have solved")
 
+    @helper_user.command(name="sync", aliases=["sy"])
+    @commands.has_role(config.roles['helper'])
+    async def helper_user_sync(self, ctx, choice: str):
+        """updates you to channels: add or remove"""
+        choice_ = choice
+        try:
+            choice = getattr(types.HelperSync, choice.upper())
+        except AttributeError:
+            return await ctx.channel.send("choice must be either add or remove")
+        try:
+            await UpdateHelpers.modify_helpers_to_channel(self.bot, member_id=ctx.author.id, choice=choice.value)
+        except exceptions.HelperSyncError as e:
+            return await ctx.channel.send(e.args[0])
+        choice_ = f"{choice_}ed to" if choice_[-1:
+                                               ] != 'e' else f"{choice_[:-1]}ed from"
+        embed = UI.Embed(
+            description=f"{choice_} all tickets")
+        await ctx.channel.send(embed=embed)
+
 def setup(bot: commands.Bot):
     bot.add_cog(UtilityCommands(bot))
