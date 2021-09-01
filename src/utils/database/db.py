@@ -337,7 +337,8 @@ class DatabaseManager():
         channel_id : `int`
             the channel id\n
         """
-        query = """UPDATE requests
+        query = """
+        UPDATE requests
         SET status = $1 WHERE channel_id = $2"""
         values = (status, channel_id,)
         cls._raw_update(query, values)
