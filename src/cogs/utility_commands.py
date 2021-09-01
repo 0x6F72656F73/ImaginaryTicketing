@@ -205,9 +205,9 @@ class UtilityCommands(commands.Cog):
     @commands.has_role(config.roles['admin'])
     async def helper_update(self, ctx):
         """updates helpers to channels"""
-        await UpdateHelpers.add_helpers(self.bot)
+        await UpdateHelpers.modify_helpers_to_channel(self.bot, choice=True)
         embed = UI.Embed(
-            description="helpers updated")
+            description="all helpers updated to all tickets")
         await ctx.channel.send(embed=embed)
 
     @helper.group(name="user", aliases=["u"], invoke_without_command=True)
@@ -225,14 +225,17 @@ class UtilityCommands(commands.Cog):
 
     @helper_user.command(name="status", aliases=["s"])
     @commands.has_role(config.roles['helper'])
-    async def helper_change_status(self, ctx, status: str):
-        """changes a helper's availability status. 1 or 0"""
+    async def helper_user_change_status(self, ctx, status: int):
+        """changes your availability status: 1 or 0"""
         if not status in typing.get_args(types.HelperAvailable):
             return await ctx.channel.send("choice must be 1 or 0")
 
-        db.update_helper_status(status, ctx.author.id)
+        db.update_helper_status(ctx.author.id, status)
 
-        await ctx.channel.send('status updated')
+        if status == 1:
+            await ctx.channel.send("you will now be added to any future tickets for challenges you have solved")
+        else:
+            await ctx.channel.send("you have been removed to from all tickets for challenges you have solved")
 
 def setup(bot: commands.Bot):
     bot.add_cog(UtilityCommands(bot))

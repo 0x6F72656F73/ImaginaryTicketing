@@ -73,7 +73,8 @@ class UI:
         """
 
         def __new__(cls, **kwargs) -> discord.Embed:
-            return discord.Embed(color=discord.Color.random(), timestamp=discord.utils.utcnow(), **kwargs)
+            kwargs.setdefault('timestamp', discord.utils.utcnow())
+            return discord.Embed(color=discord.Color.random(), **kwargs)
 
     @staticmethod
     def add_to_description(embed: discord.Embed, text):

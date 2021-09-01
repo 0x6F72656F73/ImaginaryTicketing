@@ -18,7 +18,7 @@ import config
 log = logging.getLogger(__name__)
 
 class TicketCommands(commands.Cog):
-    """other useful commands"""
+    """core commands"""
 
     def __init__(self, bot: commands.Bot):
         self.bot = bot
@@ -29,18 +29,17 @@ class TicketCommands(commands.Cog):
         """shows a ticket message"""
         bot_commands: discord.TextChannel = get(
             ctx.guild.text_channels, name="bot-commands")
-        embed = UI.Embed(title="Ticket System")
+        embed = UI.Embed(title="Ticket System", timestamp=None)
         embed.add_field(name="How do I make a ticket?",
                         value=f"Either react to the message below, or type `$create{{help, submit, misc}}` in {bot_commands.mention}. (Note `$create` defaults to help)")
         embed.add_field(name="Rules", value="""
-If you do not respond to a ticket within 48 hours we will close the ticket.
-Abuse of the ticket system will result in getting muted.
+- Abuse of the ticket system will result in getting muted.
 
-For **help** tickets:
-- **You must show** what you've done first before we help you
-- Only create one ticket for one challenge
+For help tickets:
+- You must show what you've tried so far before we help you
+- Only create one for per challenge
 - No points will be deducted
-- This ticket cannot be created for the current challenge before either:
+- Cannot be created for the current challenge before either:
 \b \b - 30 minutes have passed since the challenge was released
 \b \b - the challenge has been blooded
 """, inline=False)

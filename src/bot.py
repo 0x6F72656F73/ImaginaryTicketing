@@ -47,8 +47,7 @@ class TicketBot(commands.Bot):
         self.add_check(self.check_bot_perms)
 
         ending_note = f"Type {BOT_PREFIX[0]}help command for more info on a command. \
-You can also type {BOT_PREFIX[0]}help category for more info on a category. \
-Type {BOT_PREFIX[0]}help_slash for help on slash commands"  # note: make this
+You can also type {BOT_PREFIX[0]}help category for more info on a category"
 
         menu = pretty_help.DefaultMenu(page_left="👈", page_right="👉",
                                        active_time=15)
@@ -71,8 +70,8 @@ Type {BOT_PREFIX[0]}help_slash for help on slash commands"  # note: make this
     @classmethod
     def create(cls) -> "TicketBot":
         return cls(
-            activity=discord.Activity(type=discord.ActivityType.watching, name=(
-                f"great stuff | {BOT_PREFIX[0]}help")),
+            activity=discord.Activity(type=discord.ActivityType.competing, name=(
+                f"in a ctf | {BOT_PREFIX[0]}help")),
             command_prefix=commands.when_mentioned_or(*BOT_PREFIX),
             case_insensitive=True,
             strip_after_prefix=True,
