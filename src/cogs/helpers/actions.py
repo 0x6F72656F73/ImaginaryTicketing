@@ -123,13 +123,11 @@ class CreateTicket(BaseActions):
 
         admin = get(self.guild.roles, name=config.roles['admin'])
         bots = get(self.guild.roles, name=config.roles['bot'])
-        testers = get(self.guild.roles, name=config.roles['tester'])
         member = self.guild.get_member(self.user_id)
         overwrites = {
             self.guild.default_role: discord.PermissionOverwrite(read_messages=False),
             member: discord.PermissionOverwrite(read_messages=True, send_messages=True),
             bots: discord.PermissionOverwrite(read_messages=True, send_messages=True),
-            testers: discord.PermissionOverwrite(read_messages=True, send_messages=True),
             admin: discord.PermissionOverwrite(
                 read_messages=True, send_messages=True)
         }
