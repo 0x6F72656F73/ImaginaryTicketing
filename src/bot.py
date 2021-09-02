@@ -3,17 +3,17 @@ import platform
 import asyncio
 import traceback
 import logging
-from environs import Env
+import environs
 
 import discord
 from discord.ext import commands
-from pretty_help import PrettyHelp, DefaultMenu
+import pretty_help
 import chat_exporter
 
 from cogs.helpers import views
-from utils.runcmds import startlogging
+from utils.logging_setup import start_logging
 
-startlogging('tickets.log')
+start_logging('tickets.log')
 
 
 if not os.path.isfile("config.py"):
@@ -21,7 +21,7 @@ if not os.path.isfile("config.py"):
 else:
     import config
 
-env = Env()
+env = environs.Env()
 env.read_env()
 
 log = logging.getLogger()
@@ -30,7 +30,7 @@ log.info('logging has started')
 try:
     import uvloop
 except ImportError:
-    log.warning("uvloop could not be imported")
+    log.warning("'uvloop' could not be imported")
 else:
     asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 finally:
@@ -45,24 +45,16 @@ class TicketBot(commands.Bot):
         self.loop = loop
         self.persistent_views_added = False
         self.add_check(self.check_bot_perms)
-        # aa = await slash.to_dict()
-        # log.debug(aa)
-        # commands = []
-        # for guild in parsed["guild"]:
-        #     for command in parsed["guild"][guild]:
-        #         if command not in commands:
-        #             commands.add({command.name}) # jes add to embed directly
 
         ending_note = f"Type {BOT_PREFIX[0]}help command for more info on a command. \
-        You can also type {BOT_PREFIX[0]}help category for more info on a category. \
-        Type {BOT_PREFIX[0]}help_slash for help on slash commands"  # note: make this
+You can also type {BOT_PREFIX[0]}help category for more info on a category"
 
-        menu = DefaultMenu(page_left="👈", page_right="👉",
-                           active_time=15)
-        self.help_command = PrettyHelp(
+        menu = pretty_help.DefaultMenu(page_left="👈", page_right="👉",
+                                       active_time=15)
+        self.help_command = pretty_help.PrettyHelp(
             menu=menu, ending_note=ending_note, sort_commands=True)
 
-        for extension in config.STARTUP_COGS:
+        for extension in config.admin['startup_cogs']:
             try:
                 self.load_extension(extension)
                 extension = extension.replace("cogs.", "")
@@ -78,10 +70,11 @@ class TicketBot(commands.Bot):
     @classmethod
     def create(cls) -> "TicketBot":
         return cls(
-            activity=discord.Activity(type=discord.ActivityType.watching, name=(
-                f"great stuff | {BOT_PREFIX[0]}help")),
+            activity=discord.Activity(type=discord.ActivityType.competing, name=(
+                f"in a ctf | {BOT_PREFIX[0]}help")),
             command_prefix=commands.when_mentioned_or(*BOT_PREFIX),
             case_insensitive=True,
+            strip_after_prefix=True,
             allowed_mentions=discord.AllowedMentions(everyone=False),
             intents=discord.Intents().all(),
         )
@@ -121,25 +114,29 @@ class TicketBot(commands.Bot):
         cog = ctx.cog
         if cog and cog._get_overridden_method(cog.cog_command_error) is not None:
             return
-        if isinstance(error, commands.errors.NoPrivateMessage):
-            return await ctx.channel.send("Command cannot be used in DMs.")
-        if isinstance(error, commands.MissingRequiredArgument):
-            return await ctx.channel.send("Please provide all required arguments")
-        if isinstance(error, commands.CommandOnCooldown):
-            return await ctx.channel.send("Command is on cooldown")
-        if isinstance(error, commands.MemberNotFound):
-            return await ctx.channel.send("member not found")
         if isinstance(error, commands.CommandNotFound):
             return
+        if isinstance(error, commands.errors.NoPrivateMessage):
+            return await ctx.channel.send("Command cannot be used in DMs.")
+        if isinstance(error, commands.errors.ChannelNotFound):
+            return await ctx.channel.send(f"Channel {error.argument} not found")
+        if isinstance(error, commands.CommandOnCooldown):
+            return await ctx.channel.send("Command is on cooldown")
+        if isinstance(error, (commands.MemberNotFound, commands.UserNotFound)):
+            return await ctx.channel.send("User not found")
         if isinstance(error, commands.MissingRole):
-            return await ctx.channel.send("You do not have enough permissions to run this command")
+            return await ctx.channel.send("You need to buy more perms from dollar store")
+        if isinstance(error, commands.MissingRequiredArgument):
+            return await ctx.channel.send("Please provide all required arguments")
+        if isinstance(error, commands.errors.BadUnionArgument):
+            return await ctx.channel.send('Destination is neither a valid user nor a valid TextChannel')
         if isinstance(error, commands.CheckFailure):
             return await ctx.send('Bot does not have administrator permissions.')
 
         exc = getattr(error, 'original', error)
-        lines = ''.join(traceback.format_exception(
+        exception_traceback = ''.join(traceback.format_exception(
             exc.__class__, exc, exc.__traceback__))
-        lines = f'Ignoring exception in command {ctx.command}:\n{lines}'
+        lines = f'Ignoring exception in command {ctx.command}:\n{exception_traceback}'
         log.info(lines)
         await ctx.channel.send(f"{ctx.command.name} was invoked incorrectly.")
 

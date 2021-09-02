@@ -1,21 +1,23 @@
+import json
 import os
 import asyncio
-from collections import Counter
+import collections
 import logging
 from typing import List, Tuple, Union, Optional
 
 import discord
 from discord.ext import commands
 from discord.utils import get
-from humanize import precisedelta
+import humanize
 
 import cogs.helpers.views.action_views as action_views
-from utils.others import Others
-from utils.options import Options
-import utils.exceptions as exceptions
-from utils.database.db import DatabaseManager as db
-from utils.background import ScrapeChallenges
 import config
+
+from utils.database.db import DatabaseManager as db
+from utils.utility import Utility, UI, Challenge
+from utils.options import Options
+from utils.background import ScrapeChallenges
+from utils import exceptions, types
 
 log = logging.getLogger(__name__)
 
@@ -35,18 +37,14 @@ class BaseActions:
         self.channel_id = channel.id
 
     async def _log_to_channel(self, msg: str, *args, **kwargs) -> None:
-        """Logs a message to channel ticket-log
+        """Shorthand method to log messages
 
         Parameters
         ----------
         msg : `str`
             message to log
         """
-        channel_log = get(
-            self.guild.text_channels, name="ticket-log")
-        logembed = await Others.log_embed(
-            msg, self.user, self.user.avatar.url, self.channel, *args, **kwargs)
-        await channel_log.send(embed=logembed)
+        await UI.log_to_logs(msg, self.channel, self.user, *args, **kwargs)
 
     async def _move_channel(self, category_name) -> discord.CategoryChannel:
         """Fetches or creates the category
@@ -66,15 +64,18 @@ class BaseActions:
             category = self.guild.get_channel(new_category.id)
         return category
 
-    def _ticket_information(self):
+    async def _ticket_information(self):
         number = db.get_number_previous(self.channel_id)
         current_type = db.get_ticket_type(self.channel_id)
-        user_id = db.get_user_id(self.channel_id)
+        try:
+            user_id = db.get_user_id(self.channel_id)
+        except ValueError as e:
+            return await self.channel.send(e.args[0])
         user = self.guild.get_member(user_id)
 
         return number, current_type, user_id, user
 class CreateTicket(BaseActions):
-    def __init__(self, bot: commands.Bot, ticket_type: str, interaction: Optional[discord.Interaction], *args, **kwargs):
+    def __init__(self, bot: commands.Bot, ticket_type: types.TicketType, interaction: Optional[discord.Interaction], *args, **kwargs):
         self.bot = bot
         self.ticket_type = ticket_type
         if interaction:
@@ -88,7 +89,7 @@ class CreateTicket(BaseActions):
         super().__init__(*args, **kwargs)
 
     async def _setup(self):
-        admin = get(self.guild.roles, name=config.ADMIN_ROLE)
+        admin = get(self.guild.roles, name=config.roles['admin'])
         member = self.guild.get_member(self.user_id)
         if admin not in member.roles:
             await self._maximum_tickets()
@@ -98,12 +99,13 @@ class CreateTicket(BaseActions):
         await self.send_pm(f'You can view your ticket at {self.ticket_channel.mention}')
 
     async def _maximum_tickets(self):
-        n_tickets = db._raw_select(
-            "SELECT count(1) FROM (SELECT * FROM requests WHERE ticket_type=$1 and user_id=$2)", (self.ticket_type, self.user_id,), fetch_one=True)
-        current = n_tickets[0]
+        try:
+            n_tickets = db.get_tickets_per_user(self.ticket_type, self.user_id)
+        except ValueError as e:
+            return await self.channel.send(e.args[0])
         limit = Options.limit(self.ticket_type)
-        if current >= limit:
-            await self.send_pm(f"You have reached the maximum limit ({current}/{limit}) for this ticket type")
+        if n_tickets >= limit:
+            await self.send_pm(f"You have reached the maximum limit ({n_tickets}/{limit}) for this ticket type")
             raise exceptions.MaxUserTicketError
 
     async def _create_ticket_channel(self) -> discord.TextChannel:
@@ -119,13 +121,15 @@ class CreateTicket(BaseActions):
             await self.send_pm("There are over 50 channels in the selected category. Please contact a server admin.")
             raise exceptions.MaxChannelTicketError
 
-        admin = get(self.guild.roles, name=config.ADMIN_ROLE)
-        bots = get(self.guild.roles, name=config.BOTS_ROLE)
+        admin = get(self.guild.roles, name=config.roles['admin'])
+        bots = get(self.guild.roles, name=config.roles['bot'])
+        testers = get(self.guild.roles, name=config.roles['tester'])
         member = self.guild.get_member(self.user_id)
         overwrites = {
             self.guild.default_role: discord.PermissionOverwrite(read_messages=False),
             member: discord.PermissionOverwrite(read_messages=True, send_messages=True),
             bots: discord.PermissionOverwrite(read_messages=True, send_messages=True),
+            testers: discord.PermissionOverwrite(read_messages=True, send_messages=True),
             admin: discord.PermissionOverwrite(
                 read_messages=True, send_messages=True)
         }
@@ -142,16 +146,17 @@ class CreateTicket(BaseActions):
             await self.ticket_channel.send(welcome_message)
 
         status = "open"
-        checked = "0"
-        db._raw_insert("INSERT INTO requests (channel_id, channel_name, guild_id, user_id, ticket_type, status, checked) VALUES ($1,$2,$3,$4,$5,$6,$8 )", (
-            self.ticket_channel.id, str(self.ticket_channel), self.guild.id, self.user_id, self.ticket_type, status, checked))
+        check = "2"
+        db.create_ticket(self.ticket_channel.id, str(
+            self.ticket_channel), self.guild.id, self.user_id, self.ticket_type, status, check)
         if self.ticket_type == "help":
             helper = _CreateTicketHelper(
                 self.ticket_channel, self.bot, self.ticket_type, self._args[0], *self._args[1], **self._args[2])
             await helper.challenge_selection()
+        db.update_check("0", self.ticket_channel.id)
 
         avail_mods = get(
-            self.guild.roles, name=config.TICKET_PING_ROLE)
+            self.guild.roles, name=config.roles['ticket_ping'])
         if self.ticket_type == "help":
             welcome_message = f'A new ticket has been created {avail_mods.mention}'
         elif self.ticket_type == "submit":
@@ -160,7 +165,7 @@ class CreateTicket(BaseActions):
             welcome_message = f'Welcome <@{self.user_id}>\nA new ticket has been created {avail_mods.mention}\n'
         message = Options.message(self.ticket_type, avail_mods)
 
-        embed = Others.Embed(description=message)
+        embed = UI.Embed(description=message)
         ticket_channel_message = await self.ticket_channel.send(welcome_message, embed=embed, view=action_views.CloseView())
 
         await ticket_channel_message.pin()
@@ -175,13 +180,14 @@ class _CreateTicketHelper(CreateTicket):
         super().__init__(*args, **kwargs)
         self.ticket_channel = ticket_channel
 
-    def _fake_challenges(self, num):
+    @staticmethod
+    def fake_challenges(num):
         category_list = ["Crypto", "Web", "Pwn", "Rev", "Misc"]
         categories = {}
-        for idx, category in enumerate(category_list):
+        for idx, category in enumerate(category_list):  # whats this for..
             categories[idx] = category
         list_categories = list(categories.values())
-        return [Others.Challenge(
+        return [Challenge(
             i, f"chall{i}", f"author{i}", list_categories[i % len(categories)], i % 3 == 0) for i in range(num)]
 
     class ChallengeSelect(discord.ui.Select['ChallengeView']):
@@ -207,9 +213,9 @@ class _CreateTicketHelper(CreateTicket):
             await interaction.response.send_message("You're not allowed to choose", ephemeral=True)
             return False
 
-    async def _ask_for_challenge(self, challenges: List[Others.Challenge]):
+    async def _ask_for_challenge(self, challenges: List[Challenge]):
         challenge_options = [discord.SelectOption(
-            label=(challenge.title[:23] + '..') if len(challenge.title) > 25 else challenge.title, value=f"{challenge.id_}") for challenge in challenges]
+            label=(challenge.title[:23] + '..') if len(challenge.title) > 25 else challenge.title, value=f"{challenge.id}") for challenge in challenges]
 
         while True:
             view = self.ChallengeView(author=self.user, custom_id=f"ticketing:challenge_request-{os.urandom(16).hex()}", options=challenge_options,
@@ -221,10 +227,10 @@ class _CreateTicketHelper(CreateTicket):
             await select_messages.delete()
 
         selected_challenge = [
-            ch for ch in challenges if ch.id_ == int(view.children[0]._selected_values[0])][0]
+            ch for ch in challenges if ch.id == int(view.children[0]._selected_values[0])][0]
         return selected_challenge
 
-    async def _ask_for_category(self, challenges: List[Others.Challenge]) -> List[Others.Challenge]:
+    async def _ask_for_category(self, challenges: List[Challenge]) -> List[Challenge]:
         categories = {ch.category for ch in challenges}
         category_options = [discord.SelectOption(
             label=cat, value=cat) for cat in categories]
@@ -240,20 +246,41 @@ class _CreateTicketHelper(CreateTicket):
             ch for ch in challenges if ch.category == view.children[0]._selected_values[0]]
         return category_challenges
 
-    async def add_user(self, user: discord.User):  # change to member after website
+    # change to member after website
+    async def _add_member(self, member_identifier: Union[str, int], challenge_title: str):
         # change to get_member after website
-        author = self.guild.get_member_named(user)
-        if author is None:
-            return
-        await self.ticket_channel.set_permissions(author, read_messages=True,
-                                                  send_messages=True)
+        if isinstance(member_identifier, str):
+            author = self.guild.get_member_named(member_identifier)
+        else:
+            author = self.guild.get_member(member_identifier)
+        try:
+            await self.ticket_channel.set_permissions(author, read_messages=True,
+                                                      send_messages=True)
+        except discord.InvalidArgument:
+            log.info(
+                f"User {member_identifier} for challenge {challenge_title} does not exist.")
+
+    async def _add_author_and_helpers(self, selected_challenge: Challenge):
+        if len(authors := selected_challenge.author.split('/')) > 1:
+            for author in authors:
+                await self._add_member(author, selected_challenge.title)
+        else:
+            await self._add_member(selected_challenge.author, selected_challenge.title)
+
+        if len(helpers := json.loads(selected_challenge.helper_id_list)):
+            for helper in helpers:
+                try:
+                    if db.get_helper_status(helper):
+                        await self._add_member(int(helper), selected_challenge.title)
+                except ValueError:
+                    pass
 
     async def challenge_selection(self):
-        # challenges = self._fake_challenges(21)
-        user_solved_challenges = ScrapeChallenges.get_user_challenges(
+        # challenges = _CreateTicketHelper.fake_challenges(21)
+        user_solved_challenges = await ScrapeChallenges.get_user_challenges(
             self.user_id)
-        challenges = [Others.Challenge(*list(challenge))
-                      for challenge in db.get_all_challenges() if not Others.Challenge(*list(challenge)).id_ in user_solved_challenges]
+        challenges = [Challenge(*list(challenge))
+                      for challenge in db.get_all_challenges() if not Challenge(*list(challenge)).id in user_solved_challenges]
 
         if len(challenges) < 1:
             await self.ticket_channel.send("There are no released challenges or you have solved all the currently released challenges")
@@ -274,12 +301,13 @@ class _CreateTicketHelper(CreateTicket):
                                                   send_messages=True)
         user_message = await self.ticket_channel.send("What have your tried so far?")
 
-        def user_response_check(m):
-            return m.channel == self.ticket_channel and m.author == self.user
+        def user_response_check(message):
+            return message.channel == self.ticket_channel and message.author == self.user
         await self.bot.wait_for('message', check=user_response_check)
         await user_message.delete()
-        await self.add_user(selected_challenge.author)
-class Utility:
+        await self._add_author_and_helpers(selected_challenge)
+
+class UtilityActions:
     @staticmethod
     async def add(channel: discord.TextChannel, member: discord.Member):
         """adds a member to a ticket(try adding roles(typehint optional))
@@ -291,7 +319,7 @@ class Utility:
         """
         await channel.set_permissions(member, read_messages=True, send_messages=True)
 
-        embed = Others.Embed(description=f"{member.mention} was added")
+        embed = UI.Embed(description=f"{member.mention} was added")
         await channel.send(embed=embed)
 
     @staticmethod
@@ -304,7 +332,7 @@ class Utility:
             member to be removed\n
         """
         await channel.set_permissions(member, read_messages=False, send_messages=False)
-        embed = Others.Embed(description=f"{member.mention} was removed")
+        embed = UI.Embed(description=f"{member.mention} was removed")
         await channel.send(embed=embed)
 
 
@@ -327,38 +355,45 @@ class CloseTicket(BaseActions):
         """
         users = [msg.author.name async for msg in channel.history(limit=2000).filter(lambda message: not message.author.bot)]
 
-        message_distribution = Counter(users)
+        message_distribution = collections.Counter(users)
         total_messages = sum(message_distribution.values())
-        channel_users = '\n'.join(
-            [f"{self.guild.get_member_named(member).mention} ({count/total_messages:.0%})" for member, count in message_distribution.most_common()])
-        if not channel_users:
+        if len(message_distribution) > 0:
+            channel_users = []
+            for member, count in message_distribution.most_common():
+                channel_users.append(
+                    f"{self.guild.get_member_named(member).mention} ({count/total_messages:.0%})")
+            channel_users.append(f'total: {len(users)}')
+            channel_users = '\n'.join(channel_users)
+        else:
             channel_users = 'No messages'
         old = channel.created_at
 
         now = discord.utils.utcnow()
         duration = now - old
-        if duration.total_seconds() < 60:
-            time_open = precisedelta(
-                duration, format="%0.0f", minimum_unit="seconds")
-        else:
-            time_open = precisedelta(
-                duration, format="%0.0f", minimum_unit="minutes")
+        time_open = humanize.precisedelta(
+            duration, format="%0.0f", minimum_unit="minutes"
+            if duration.total_seconds() > 60 else "seconds")
+
         return channel_users, time_open
 
     async def main(self):
         """closes a ticket"""
-        current_status = db.get_status(self.channel_id)
+        try:
+            current_status = db.get_status(self.channel_id)
+        except ValueError as e:
+            return await self.channel.send(e.args[0])
+
         if current_status == "closed":
             await self.channel.send("Channel is already closed")
             return
 
-        close_stats_embed = Others.Embed()
+        close_stats_embed = UI.Embed()
         close_stats_embed.set_author(
             name=f"{self.user}", icon_url=f"{self.user.avatar.url}")
         embed_message = await self.channel.send(embed=close_stats_embed)
 
         member = self.guild.get_member(self.user_id)
-        admin = get(self.guild.roles, name=config.ADMIN_ROLE)
+        admin = get(self.guild.roles, name=config.roles['admin'])
         overwrites = {
             self.guild.default_role: discord.PermissionOverwrite(read_messages=False),
             member: discord.PermissionOverwrite(read_messages=None, send_messages=None),
@@ -372,30 +407,32 @@ class CloseTicket(BaseActions):
         except AttributeError:
             pass
 
-        t_number, t_current_type, _, t_user = self._ticket_information()
+        try:
+            t_number, t_current_type, _, t_user = await self._ticket_information()
+        except ValueError as e:
+            return await self.channel.send(e.args[0])
 
         closed_name = Options.name_close(
             t_current_type, count=t_number, user=t_user)
         await self.channel.edit(name=closed_name)
 
-        db._raw_update(
-            "UPDATE requests SET channel_name = $1 WHERE channel_id = $2", (closed_name, self.channel_id,))
+        db.update_ticket_name(closed_name, self.channel_id)
 
         channel_log_category = get(
-            self.guild.categories, name=config.LOG_CHANNEL_CATEGORY)
+            self.guild.categories, name=config.logs["category"])
         if channel_log_category is None:
             await self.channel.send("logs category does not exist")
             return
         channel_log = get(
-            self.guild.text_channels, category=channel_log_category, name="ticket-log")
+            self.guild.text_channels, category=channel_log_category, name=config.logs["name"])
         if channel_log is None:
-            await self.channel.send("ticket-log channel does not exist in category logs")
+            await self.channel.send(f"{config.logs['name']} channel does not exist in category logs")
             return
 
-        transcript_message, transcript_file = await Others.transcript(self.channel, channel_log)
+        transcript_message, transcript_file = await Utility.transcript(self.channel, channel_log)
         if transcript_message:
             close_stats_embed.add_field(name="transcript",
-                                        value=f"[transcript url]({config.TRANSCRIPT_DOMAIN}/direct?link={transcript_message.attachments[0].url} \"oreos taste good dont they\") ")
+                                        value=f"[transcript url]({config.transcript['domain']}/transcript?link={transcript_message.attachments[0].url} \"oreos taste good dont they\") ")
         else:
             close_stats_embed.add_field(
                 name="transcript", value="transcript could not be sent to DMs")
@@ -415,7 +452,7 @@ class CloseTicket(BaseActions):
         db.update_status(status, self.channel_id,)
 
         channel_log = get(
-            self.guild.text_channels, name="ticket-log")
+            self.guild.text_channels, name=config.logs['name'])
         close_stats_embed.title = "Closed ticket"
         close_stats_embed.set_footer(text=f"{self.channel}")
         await channel_log.send(embed=close_stats_embed)
@@ -430,17 +467,17 @@ class ReopenTicket(BaseActions):
         """reopens a ticket"""
         try:
             test_status = db.get_status(self.channel_id)
-            if test_status == "open":
-                await self.channel.send("Channel is already open")
-                return
-        except:
+        except ValueError as e:
+            return await self.channel.send(e.args[0])
+
+        if test_status == "open":
+            await self.channel.send("Channel is already open")
             return
 
-        t_number, t_current_type, t_user_id, t_user = self._ticket_information()
-
-        if None in (t_number, t_current_type, t_user_id, t_user):
-            await self.channel.send("Channel is not a ticket")
-            return
+        try:
+            t_number, t_current_type, t_user_id, t_user = await self._ticket_information()
+        except ValueError as e:
+            return await self.channel.send(e.args[0])
 
         cat = Options.full_category_name(t_current_type)
         category = get(self.guild.categories, name=cat)
@@ -449,7 +486,7 @@ class ReopenTicket(BaseActions):
             category = self.guild.get_channel(new_category.id)
 
         member = self.guild.get_member(t_user_id)
-        admin = get(self.guild.roles, name=config.ADMIN_ROLE)
+        admin = get(self.guild.roles, name=config.roles['admin'])
         overwrites = {
             self.guild.default_role: discord.PermissionOverwrite(read_messages=False),
             member: discord.PermissionOverwrite(read_messages=True, send_messages=True),
@@ -460,7 +497,7 @@ class ReopenTicket(BaseActions):
 
         status = "open"
         db.update_status(status, self.channel_id)
-        reopened_embed = Others.Embed(
+        reopened_embed = UI.Embed(
             description="Ticket was re-opened")
         reopened_embed.set_author(
             name=f"{self.user}", icon_url=f"{self.user.avatar.url}")
@@ -469,8 +506,7 @@ class ReopenTicket(BaseActions):
         reopened = Options.name_open(
             t_current_type, count=t_number, user=t_user)
         await self.channel.edit(name=reopened)
-        db._raw_update(
-            "UPDATE requests set channel_name = $1 WHERE channel_id = $2", (reopened, self.channel_id,))
+        db.update_ticket_name(reopened, self.channel_id)
 
         await self._log_to_channel("Re-Opened ticket")
         log.info(
@@ -482,23 +518,21 @@ class DeleteTicket(BaseActions):
 
     async def main(self):
         """deletes a ticket"""
-        db_channel_name = db.get_channel_name(self.channel_id)
-        if db_channel_name is None:
-            await self.channel.send("Channel is not a ticket")
-            return
+        try:
+            db.get_channel_name(self.channel_id)
+        except ValueError as e:
+            return await self.channel.send(e.args[0])
 
-        embed = Others.Embed(
+        embed = UI.Embed(
             title="Deleting ticket",
             description="5 seconds left")
         await self.channel.send(embed=embed)
         await asyncio.sleep(5)
         await self.channel.delete()
 
-        db._raw_insert(
-            "INSERT INTO archive SELECT * FROM requests WHERE channel_id= $1", (self.channel_id,))
+        db.move_ticket_to_archive(self.channel_id)
 
-        db._raw_delete(
-            "DELETE FROM requests WHERE channel_id = $1", (self.channel_id,))
+        db.delete_ticket(self.channel_id)
 
         await self._log_to_channel("Deleted ticket")
         log.info(

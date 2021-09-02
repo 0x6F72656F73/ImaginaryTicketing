@@ -1,4 +1,5 @@
 import os
+import glob
 from typing import List
 
 from flask import Flask, render_template, request
@@ -14,25 +15,26 @@ limiter = Limiter(
 )
 
 app.secret_key = os.urandom(24)
-
+owd = os.getcwd()
 class Files:
     """Helper class for flask transcript app"""
 
-    @classmethod
-    def get_all_files(cls) -> List:
-        files = os.listdir(
-            os.getcwd() + "/transcripts")
-        all_files = []
-        for html in files:
-            if html.endswith(".html"):
-                all_files.append(html)
+    @staticmethod
+    def get_all_files() -> List:
+        os.chdir('transcripts')
+        transcripts = glob.glob("*.html")
+        os.chdir(owd)
+        return transcripts
 
-        return all_files
+    @staticmethod
+    def find_transcript(link: str) -> bool:
+        link_parts = link.split("/")
+        file_name = link_parts[-1]
+        file_name = file_name.removeprefix('transcript-')
 
-    @classmethod
-    def find_file(cls, file: str) -> bool:
-        all_files = cls.get_all_files()
-        return bool(file in all_files)
+        if not (file_name in Files.get_all_files()):
+            raise ValueError
+        return file_name
 
 @app.route("/")
 def index():
@@ -46,19 +48,16 @@ def privacy_policy():
 def cookie_policy():
     return render_template("cookie-policy.html")
 
-@app.route('/direct')
+@app.route('/transcript')
 @limiter.limit("1/second", override_defaults=False)
-def home():
-    try:
-        link = request.args.get('link')
-        link_parts = link.split("/")
-        file_name = link_parts[-1]
-        print(f"input file: {file_name}")
-        if Files.find_file(file_name):
-            return render_template(file_name)
+def transcript():
+    link = request.args.get('link')
+    if not link:
         return "invalid url"
-    except Exception as e:
-        print(e)
+
+    try:
+        return render_template(Files.find_transcript(link))
+    except ValueError:
         return "invalid url"
 
 

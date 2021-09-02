@@ -4,20 +4,21 @@
 2 = channel will be ignored
 """
 
-from itertools import chain
 from datetime import timedelta
+import json
+from typing import Dict, List
 import logging
-from typing import Dict
 
 import discord
 from discord.ext import commands
 from environs import Env
-import requests
+import aiohttp
 
 import cogs.helpers.views.action_views as action_views
 import cogs.helpers.actions as actions
+from utils import types, exceptions
 from utils.options import Options
-from utils.others import Others
+from utils.utility import Utility, UI, Challenge
 from utils.database.db import DatabaseManager as db
 import config
 
@@ -27,7 +28,7 @@ class AutoClose(commands.Cog):
     """Autoclose ticket manager"""
 
     @classmethod
-    async def get_message_time(cls, channel: discord.channel.TextChannel):
+    async def get_message_time(cls, channel: discord.TextChannel):
         """get the total time of the last message send
 
         Parameters
@@ -55,8 +56,8 @@ class AutoClose(commands.Cog):
         return message, now - old
 
     @classmethod
-    async def old_ticket_actions(cls, bot: discord.ext.commands.bot.Bot, guild: discord.guild.Guild,
-                                 channel: discord.channel.TextChannel, message: discord.message.Message):
+    async def old_ticket_actions(cls, bot: commands.Bot, guild: discord.Guild,
+                                 channel: discord.TextChannel, message: discord.Message):
         """Check if a channel is old
 
         If check is 0, send a polite message and set check to 1.
@@ -65,17 +66,20 @@ class AutoClose(commands.Cog):
 
         Parameters
         ----------
-        bot : `discord.commands.bot.Bot`
+        bot : `discord.commands.Bot`
             the bot\n
         guild : `discord.guild.Guild`
             the guild\n
-        channel : `discord.channel.TextChannel`
+        channel : `discord.TextChannel`
             the channel\n
         message : `discord.message.Message`
             the latest message\n
         """
-
-        check = db.get_check(channel.id)
+        try:
+            check = int(db.get_check(channel.id))
+        except ValueError as e:
+            log.info(e.args[0])
+            return
         log.info(f"check: {check}- {channel}")
 
         if check == 1:
@@ -84,11 +88,14 @@ class AutoClose(commands.Cog):
             db.update_check("0", channel.id)
 
         elif check == 0:
-            user_id = db.get_user_id(channel.id)
+            try:
+                user_id = db.get_user_id(channel.id)
+            except ValueError as e:
+                return log.info(e.args[0])
             member = guild.get_member(int(user_id))
             message = f"If that is all we can help you with {member.mention}, please close this ticket."
-            random_admin = await Others.random_admin_member(guild)
-            await Others.say_in_webhook(bot, random_admin, channel, random_admin.avatar.url, True, message, return_message=True, view=action_views.CloseView())
+            random_admin = await Utility.random_admin_member(guild)
+            await Utility.say_in_webhook(bot, random_admin, channel, random_admin.avatar.url, True, message, return_message=True, view=action_views.CloseView())
             log.info(
                 f"{random_admin.name} said the auto close message in {channel.name}")
             db.update_check("1", channel.id)
@@ -96,26 +103,29 @@ class AutoClose(commands.Cog):
             pass
 
     @classmethod
-    async def main(cls, bot, **kwargs):
+    async def main(cls, bot: commands.Bot, **kwargs):
         """check for inactivity in a channel
 
         Parameters
         ----------
-        bot : `[type]`
+        bot : `discord.commands.Bot`
             [description]\n
         """
         cat = Options.full_category_name("help")
         for guild in bot.guilds:
-            if guild.get_member(bot.user.id).guild_permissions.administrator is None:
-                return
-            safe_tickets_list = list(chain(*db.get_guild_check(guild.id)))
+            safe_tickets_list = db.get_guild_safe_tickets(guild.id)
             category = discord.utils.get(guild.categories, name=cat)
             if category is None:
                 return
-            channels = category.channels
+            channels = category.text_channels
             for channel in channels:
                 log.debug(channel.name)
-                status = db.get_status(channel.id)
+                try:
+                    status = db.get_status(channel.id)
+                except ValueError as e:
+                    log.info(e.args[0])
+                    continue
+
                 if channel.id in safe_tickets_list or status == "closed" or status is None:
                     continue
 
@@ -125,10 +135,14 @@ class AutoClose(commands.Cog):
                     continue
 
                 if duration < timedelta(**kwargs):
-                    check = db.get_check(channel.id)
+                    try:
+                        check = int(db.get_check(channel.id))
+                    except ValueError as e:
+                        log.info(e.args[0])
+                        continue
 
                     role = discord.utils.get(
-                        guild.roles, name=config.ADMIN_ROLE)
+                        guild.roles, name=config.roles['admin'])
                     people = [member.id for member in role.members]
 
                     if message.author.id in people and check == 1:
@@ -138,7 +152,7 @@ class AutoClose(commands.Cog):
                     await cls.old_ticket_actions(bot, guild, channel, message)
 
 class ScrapeChallenges():
-    """Scraps challenges"""
+    """Scrapes challenges"""
     @classmethod
     def _setup(cls) -> Dict[str, str]:
         env = Env()
@@ -146,26 +160,85 @@ class ScrapeChallenges():
         return {'apikey': env.str('apikey')}
 
     @classmethod
-    def main(cls) -> None:
+    async def main(cls, bot: commands.Bot) -> None:
         params = cls._setup()
-        req = requests.get(config.BASE_API_LINK +
-                           '/challenges/released', params=params)
+        async with aiohttp.ClientSession() as session:
+            async with session.get(config.api["base_link"] +
+                                   '/challenges/released', params=params) as req:
+                challenges = await req.json()
+                all_challenges = []
+                for challenge in challenges:
+                    ignore = bool(challenge['author'] == config.roles['admin'])
+                    all_challenges.append(Challenge(
+                        challenge["id"], challenge["title"], challenge["author"], challenge["category"].split(",")[0], ignore))
 
-        challenges = req.json()
-        all_challenges = []
-        for challenge in challenges:
-            ignore = challenge['author'] == 'Board'
-            all_challenges.append(Others.Challenge(
-                challenge["id"], challenge["title"], challenge["author"], challenge["category"].split(",")[0], ignore))
-
-        db.refresh_database(all_challenges)
+                db.refresh_database_ch(all_challenges)
+                await UpdateHelpers.main(bot)
 
     @classmethod
-    def get_user_challenges(cls, discord_id: int):
+    async def get_user_challenges(cls, discord_id: int) -> List[int]:
         params = cls._setup()
-        req = requests.get(config.BASE_API_LINK +
-                           f'/solves/bydiscordid/{discord_id}', params=params)
-        solve_challenges = req.json()
-        if not solve_challenges:
-            return []
-        return [challenge['challenge']['id'] for challenge in solve_challenges]
+        async with aiohttp.ClientSession() as session:
+            async with session.get(config.api["base_link"] +
+                                   f'/solves/bydiscordid/{discord_id}', params=params) as req:
+                solve_challenges = await req.json()
+                if not solve_challenges:
+                    return []
+                return [challenge['challenge']['id'] for challenge in solve_challenges]
+
+class UpdateHelpers():
+    @staticmethod
+    async def main(bot: commands.Bot):
+        for guild in bot.guilds:
+            helper_role = discord.utils.get(
+                guild.roles, name=config.roles['helper'])
+            for helper in helper_role.members:
+                solved_challenge_ids = await ScrapeChallenges.get_user_challenges(
+                    helper.id)
+                for ch_id in solved_challenge_ids:
+                    db.update_helper_ch(helper.id, ch_id)
+
+    @classmethod
+    async def modify_helper_to_channel(cls, ticket_channel: discord.TextChannel, user_id: int, update: bool):
+        helper = ticket_channel.guild.get_member(user_id)
+        if helper is None:
+            raise exceptions.HelperSyncError("you were not found in guild :(")
+        if helper in ticket_channel.members:
+            if update is False:
+                await ticket_channel.set_permissions(helper, read_messages=False,
+                                                     send_messages=False)
+            else:
+                raise exceptions.HelperSyncError(
+                    "you can't be added to a channel you're already in!")
+        elif update is True:
+            await ticket_channel.set_permissions(helper, read_messages=True,
+                                                 send_messages=True)
+
+    @classmethod
+    async def modify_helpers_to_channel(cls, bot: commands.Bot, member_id: discord.Member.id = None, choice: types.HelperSync = 'ADD'):
+        for guild in bot.guilds:
+            for channel_id in db.get_all_help_channels(guild.id):
+                if (channel_ := guild.get_channel(channel_id)):
+                    try:
+                        helpers = db.get_helpers_from_title(
+                            channel_.topic.split(" - ")[0])
+                    except AttributeError:
+                        continue
+                    helpers = json.loads(helpers[0])
+                    if not helpers:
+                        await UI.log_to_logs(
+                            "Challenge not found", channel_)
+                        log.debug(f"Challenge not found - {channel_}")
+                        continue
+
+                    if member_id:
+                        if not member_id in helpers:
+                            pass
+
+                    for helper in helpers:
+                        try:
+                            if helper == db.get_user_id(channel_id):
+                                continue
+                        except ValueError:
+                            pass
+                        await cls.modify_helper_to_channel(channel_, helper, choice)
