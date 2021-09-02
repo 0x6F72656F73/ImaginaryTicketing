@@ -66,6 +66,9 @@ class UtilityCommands(commands.Cog):
         checks = Utility.check_discord(bot_in_guild, ctx.guild)
 
         embed = UI.Embed(title="Checks")
+        embed.set_author(name=f"{ctx.author}",
+                         icon_url=f"{ctx.author.avatar.url}")
+
         UI.add_to_description(embed, "**Successful checks:**")
         for check in checks['pass']:
             UI.add_to_description(embed, f"- {check}")
@@ -76,6 +79,8 @@ class UtilityCommands(commands.Cog):
 
         await ctx.channel.send(embed=embed)
 
+        await ctx.message.delete()
+
     @commands.command(name="config")
     @commands.has_role(config.roles['admin'])
     async def get_config_value(self, ctx, target_field: str = None):
@@ -85,14 +90,22 @@ class UtilityCommands(commands.Cog):
 
         if target_field is None:
             embed = UI.Embed(title="config")
+            embed.set_author(name=f"{ctx.author}",
+                             icon_url=f"{ctx.author.avatar.url}")
+
             configrations = [f"{c}: {find_value(c)}"
                              for c in config.__dict__ if not c.startswith("__")]
             seperator = ',\n'
             embed.description = f"```json\n{seperator.join(configrations)}```"
+
+            await ctx.message.delete()
             return await ctx.channel.send(embed=embed)
         try:
             configration = f"{target_field}: {find_value(target_field.lower())}"
             embed = UI.Embed(title=f"config- {target_field}")
+            embed.set_author(name=f"{ctx.author}",
+                             icon_url=f"{ctx.author.avatar.url}")
+
             embed.description = f"```json\n{configration}```"
             await ctx.channel.send(embed=embed)
         except AttributeError:
@@ -100,13 +113,21 @@ class UtilityCommands(commands.Cog):
                                 if not field.startswith("__")})
             embed = UI.Embed(
                 title="invalid field", description=f'Possible fields are:\n{fields}')
+            embed.set_author(name=f"{ctx.author}",
+                             icon_url=f"{ctx.author.avatar.url}")
+
             await ctx.channel.send(embed=embed)
+
+        await ctx.message.delete()
 
     @commands.group(name="challenge", aliases=["c", "chall"], invoke_without_command=True)
     @commands.has_role(config.roles['admin'])
     async def challenge(self, ctx):
         """Base challenge command. Shows stats on challenges."""
         embed = UI.Embed(title="Challenges")
+        embed.set_author(name=f"{ctx.author}",
+                         icon_url=f"{ctx.author.avatar.url}")
+
         challenges = [Challenge(*list(challenge))
                       for challenge in db.get_all_challenges()]
         challenges_by_category = defaultdict(list)
@@ -120,12 +141,18 @@ class UtilityCommands(commands.Cog):
                     name=challenge.title, value='_ _', inline=True)
         await ctx.channel.send(embed=embed)
 
+        await ctx.message.delete()
+
     @challenge.command(name="refresh", aliases=["ref"])
     @commands.has_role(config.roles['admin'])
     async def refresh(self, ctx):
         """refreshes challenges from the api"""
         embed = UI.Embed(
             description="sending requests...")
+        embed.set_author(name=f"{ctx.author}",
+                         icon_url=f"{ctx.author.avatar.url}")
+
+        await ctx.message.delete()
         message = await ctx.channel.send(embed=embed)
 
         await ScrapeChallenges.main(self.bot)
@@ -146,7 +173,12 @@ class UtilityCommands(commands.Cog):
 
         embed = UI.Embed(
             title=f"{config.roles['helper']}", description=helpers)
+        embed.set_author(name=f"{ctx.author}",
+                         icon_url=f"{ctx.author.avatar.url}")
+
         await ctx.channel.send(embed=embed)
+
+        await ctx.message.delete()
 
     @helper.command(name="add", aliases=["a"])
     @commands.has_role(config.roles['admin'])
@@ -157,6 +189,10 @@ class UtilityCommands(commands.Cog):
         if member.id in helper_ids:
             embed = UI.Embed(
                 description=f"Member {member.mention} already has role {config.roles['helper']}")
+            embed.set_author(name=f"{ctx.author}",
+                             icon_url=f"{ctx.author.avatar.url}")
+
+            await ctx.message.delete()
             return await ctx.channel.send(embed=embed)
 
         await member.add_roles(helper_role)
@@ -164,7 +200,12 @@ class UtilityCommands(commands.Cog):
 
         embed = UI.Embed(
             description=f"Added {member.mention} to {config.roles['helper']}")
+        embed.set_author(name=f"{ctx.author}",
+                         icon_url=f"{ctx.author.avatar.url}")
+
         await ctx.channel.send(embed=embed)
+
+        await ctx.message.delete()
 
     @helper.command(name="remove", aliases=["r", "rm"])
     @commands.has_role(config.roles['admin'])
@@ -175,7 +216,11 @@ class UtilityCommands(commands.Cog):
         if member.id not in helper_ids:
             embed = UI.Embed(
                 description=f"Member {member.mention} does not have role {config.roles['helper']}")
+            embed.set_author(name=f"{ctx.author}",
+                             icon_url=f"{ctx.author.avatar.url}")
             await ctx.channel.send(embed=embed)
+
+            await ctx.message.delete()
             return
 
         await member.remove_roles(helper_role)
@@ -183,7 +228,11 @@ class UtilityCommands(commands.Cog):
 
         embed = UI.Embed(
             description=f"Removed {member.mention} from role {config.roles['helper']}")
+        embed.set_author(name=f"{ctx.author}",
+                         icon_url=f"{ctx.author.avatar.url}")
         await ctx.channel.send(embed=embed)
+
+        await ctx.message.delete()
 
     @helper.command(name="refresh", aliases=["ref"])
     @commands.has_role(config.roles['admin'])
@@ -191,7 +240,12 @@ class UtilityCommands(commands.Cog):
         """refreshes helpers from the api"""
         embed = UI.Embed(
             description="sending requests...")
+        embed.set_author(name=f"{ctx.author}",
+                         icon_url=f"{ctx.author.avatar.url}")
+
         message = await ctx.channel.send(embed=embed)
+        await ctx.message.delete()
+
         try:
             await UpdateHelpers.main(self.bot)
         except exceptions.ChallengeDoesNotExist as e:
@@ -208,7 +262,12 @@ class UtilityCommands(commands.Cog):
         await UpdateHelpers.modify_helpers_to_channel(self.bot, choice=True)
         embed = UI.Embed(
             description="all helpers updated to all tickets")
+        embed.set_author(name=f"{ctx.author}",
+                         icon_url=f"{ctx.author.avatar.url}")
+
         await ctx.channel.send(embed=embed)
+
+        await ctx.message.delete()
 
     @helper.group(name="user", aliases=["u"], invoke_without_command=True)
     @commands.has_role(config.roles['helper'])
@@ -221,7 +280,12 @@ class UtilityCommands(commands.Cog):
 
         embed = UI.Embed(
             title=f"{ctx.author.name}", description=f'status: {status}')
+        embed.set_author(name=f"{ctx.author}",
+                         icon_url=f"{ctx.author.avatar.url}")
+
         await ctx.channel.send(embed=embed)
+
+        await ctx.message.delete()
 
     @helper_user.command(name="status", aliases=["s"])
     @commands.has_role(config.roles['helper'])
@@ -250,11 +314,16 @@ class UtilityCommands(commands.Cog):
             await UpdateHelpers.modify_helpers_to_channel(self.bot, member_id=ctx.author.id, choice=choice.value)
         except exceptions.HelperSyncError as e:
             return await ctx.channel.send(e.args[0])
+
         choice_ = f"{choice_}ed to" if choice_[-1:
                                                ] != 'e' else f"{choice_[:-1]}ed from"
         embed = UI.Embed(
             description=f"{choice_} all tickets")
+        embed.set_author(name=f"{ctx.author}",
+                         icon_url=f"{ctx.author.avatar.url}")
         await ctx.channel.send(embed=embed)
+
+        await ctx.message.delete()
 
 def setup(bot: commands.Bot):
     bot.add_cog(UtilityCommands(bot))
