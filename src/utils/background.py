@@ -202,7 +202,7 @@ class UpdateHelpers():
     async def modify_helper_to_channel(cls, ticket_channel: discord.TextChannel, user_id: int, update: bool):
         helper = ticket_channel.guild.get_member(user_id)
         if helper is None:
-            raise exceptions.HelperSyncError("you were not found in guild :(")
+            return
         if helper in ticket_channel.members:
             if update is False:
                 await ticket_channel.set_permissions(helper, read_messages=False,
@@ -232,8 +232,9 @@ class UpdateHelpers():
                         continue
 
                     if member_id:
-                        if not member_id in helpers:
-                            pass
+                        if member_id in helpers:
+                            await cls.modify_helper_to_channel(channel_, helper, choice)
+                        continue
 
                     for helper in helpers:
                         try:
