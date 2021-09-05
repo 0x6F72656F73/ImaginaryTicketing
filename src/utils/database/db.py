@@ -482,12 +482,20 @@ class DatabaseManager():
         cls._raw_delete(query, values)
 
     @classmethod
-    def update_helper_status(cls, status: types.HelperAvailable, discord_id: int):
+    def update_helper_status(cls, discord_id: int, status: types.HelperAvailable):
         query = """
         UPDATE helpers
         SET is_available = $1 WHERE discord_id = $2"""
         values = (status, discord_id,)
         cls._raw_update(query, values)
+
+    @classmethod
+    def get_all_helpers(cls):
+        query = """
+        SELECT * FROM helpers
+        """
+        all_helpers = cls._raw_select(query)
+        return list(chain(*all_helpers))
 
     @classmethod
     def get_helper_status(cls, discord_id: int):

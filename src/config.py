@@ -5,7 +5,7 @@ admin = {"owners": [650187980606275589, 720055120137552042, 572630612469481492],
 roles = {"admin": "Board",
          "bot": "Trusted Bots",
          "ticket_ping": "Available Mods",
-         "helper": "Helpers",
+         "helper": "Helper",
          "tester": "Challenge Testers"}
 
 logs = {"category": "logs", "name": "ticket-log"}

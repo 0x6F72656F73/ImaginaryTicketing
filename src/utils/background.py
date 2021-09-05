@@ -202,7 +202,7 @@ class UpdateHelpers():
     async def modify_helper_to_channel(cls, ticket_channel: discord.TextChannel, user_id: int, update: bool):
         helper = ticket_channel.guild.get_member(user_id)
         if helper is None:
-            raise exceptions.HelperSyncError("you were not found in guild :(")
+            return
         if helper in ticket_channel.members:
             if update is False:
                 await ticket_channel.set_permissions(helper, read_messages=False,
@@ -224,17 +224,22 @@ class UpdateHelpers():
                             channel_.topic.split(" - ")[0])
                     except AttributeError:
                         continue
-                    helpers = json.loads(helpers[0])
+                    
+                    try:
+                        helpers = json.loads(helpers[0])
+                    except TypeError:
+                        continue
+
                     if not helpers:
                         await UI.log_to_logs(
                             "Challenge not found", channel_)
                         log.debug(f"Challenge not found - {channel_}")
                         continue
-
+                    
                     if member_id:
-                        if not member_id in helpers:
-                            pass
-
+                        if member_id in helpers:
+                            await cls.modify_helper_to_channel(channel_, member_id, choice)
+                        continue
                     for helper in helpers:
                         try:
                             if helper == db.get_user_id(channel_id):

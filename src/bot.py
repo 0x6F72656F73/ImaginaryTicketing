@@ -130,6 +130,8 @@ You can also type {BOT_PREFIX[0]}help category for more info on a category"
             return await ctx.channel.send("Please provide all required arguments")
         if isinstance(error, commands.errors.BadUnionArgument):
             return await ctx.channel.send('Destination is neither a valid user nor a valid TextChannel')
+        if isinstance(error, commands.errors.BadArgument):
+            return await ctx.channel.send('Parameter was not a valid type')
         if isinstance(error, commands.CheckFailure):
             return await ctx.send('Bot does not have administrator permissions.')
 
