@@ -1,8 +1,3 @@
-CREATE TABLE tickets (
-    guild_id bigint,
-    ticket_id bigint UNIQUE
-);
-
 CREATE TABLE requests (
   channel_id bigint,
   channel_name VARCHAR(255),
