@@ -166,8 +166,12 @@ class UtilityCommands(commands.Cog):
         """Base helper-admin command. Shows stats on helpers."""
         helper_role = get(ctx.guild.roles, name=config.roles['helper'])
         if len(helper_role.members):
+            helper_ids = [helper.id for helper in helper_role.members]
+            db_helpers = db.get_all_helpers()
+            helpers = set(helper_ids).intersection(db_helpers)
+
             helpers = '\n'.join(
-                [member.mention for member in helper_role.members])
+                [member.mention for member in helper_role.members if member.id in helpers])
         else:
             helpers = 'No helpers'
 
@@ -251,20 +255,31 @@ class UtilityCommands(commands.Cog):
         except exceptions.ChallengeDoesNotExist as e:
             embed.description = f"challenge id {e.args[0]} does not exist. getting new challenges..."
             await message.edit(embed=embed)
+            asyncio.sleep(2)
             await ScrapeChallenges.main(self.bot)
         embed.description = "helpers refreshed"
         await message.edit(embed=embed)
 
     @helper.command(name="update", aliases=["upd"])
     @commands.has_role(config.roles['admin'])
-    async def helper_update(self, ctx):
-        """updates helpers to channels"""
-        await UpdateHelpers.modify_helpers_to_channel(self.bot, choice=True)
+    async def helper_update(self, ctx, choice: str = "add"):
+        """updates helpers to channels: add(default) or remove"""
+        choice_ = choice
+        try:
+            choice = getattr(types.HelperSync, choice.upper())
+        except AttributeError:
+            return await ctx.channel.send("choice must be either add or remove")
+        try:
+            await UpdateHelpers.modify_helpers_to_channel(self.bot, choice=choice.value)
+        except exceptions.HelperSyncError:
+            pass
+
+        choice_ = f"{choice_}ed all helpers to" if choice_[-1:
+                                                           ] != 'e' else f"{choice_[:-1]}ed all helpers from"
         embed = UI.Embed(
-            description="all helpers updated to all tickets")
+            description=f"{choice_} all tickets")
         embed.set_author(name=f"{ctx.author}",
                          icon_url=f"{ctx.author.avatar.url}")
-
         await ctx.channel.send(embed=embed)
 
         await ctx.message.delete()
@@ -299,7 +314,7 @@ class UtilityCommands(commands.Cog):
         if status == 1:
             await ctx.channel.send("you will now be added to any future tickets for challenges you have solved")
         else:
-            await ctx.channel.send("you have been removed to from all tickets for challenges you have solved")
+            await ctx.channel.send("you will now not be added to any future tickets for challenges you have solved")
 
     @helper_user.command(name="sync", aliases=["sy"])
     @commands.has_role(config.roles['helper'])
