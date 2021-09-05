@@ -255,6 +255,7 @@ class UtilityCommands(commands.Cog):
         except exceptions.ChallengeDoesNotExist as e:
             embed.description = f"challenge id {e.args[0]} does not exist. getting new challenges..."
             await message.edit(embed=embed)
+            asyncio.sleep(2)
             await ScrapeChallenges.main(self.bot)
         embed.description = "helpers refreshed"
         await message.edit(embed=embed)
@@ -273,10 +274,10 @@ class UtilityCommands(commands.Cog):
         except exceptions.HelperSyncError:
             pass
 
-        choice_ = f"{choice_}ed to" if choice_[-1:
-                                               ] != 'e' else f"{choice_[:-1]}ed from"
+        choice_ = f"{choice_}ed all helpers to" if choice_[-1:
+                                                           ] != 'e' else f"{choice_[:-1]}ed all helpers from"
         embed = UI.Embed(
-            description=f"{choice_} all helpers to all tickets")
+            description=f"{choice_} all tickets")
         embed.set_author(name=f"{ctx.author}",
                          icon_url=f"{ctx.author.avatar.url}")
         await ctx.channel.send(embed=embed)
@@ -313,7 +314,7 @@ class UtilityCommands(commands.Cog):
         if status == 1:
             await ctx.channel.send("you will now be added to any future tickets for challenges you have solved")
         else:
-            await ctx.channel.send("you have been removed to from all tickets for challenges you have solved")
+            await ctx.channel.send("you will now not be added to any future tickets for challenges you have solved")
 
     @helper_user.command(name="sync", aliases=["sy"])
     @commands.has_role(config.roles['helper'])
