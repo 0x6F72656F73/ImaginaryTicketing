@@ -224,18 +224,22 @@ class UpdateHelpers():
                             channel_.topic.split(" - ")[0])
                     except AttributeError:
                         continue
-                    helpers = json.loads(helpers[0])
+                    
+                    try:
+                        helpers = json.loads(helpers[0])
+                    except TypeError:
+                        continue
+
                     if not helpers:
                         await UI.log_to_logs(
                             "Challenge not found", channel_)
                         log.debug(f"Challenge not found - {channel_}")
                         continue
-
+                    
                     if member_id:
                         if member_id in helpers:
-                            await cls.modify_helper_to_channel(channel_, helper, choice)
+                            await cls.modify_helper_to_channel(channel_, member_id, choice)
                         continue
-
                     for helper in helpers:
                         try:
                             if helper == db.get_user_id(channel_id):
