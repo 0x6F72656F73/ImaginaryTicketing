@@ -33,7 +33,7 @@ class TicketCommands(commands.Cog):
         embed.add_field(name="How do I make a ticket?",
                         value=f"Either react to the message below, or type `$create{{help, submit, misc}}` in {bot_commands.mention}. (Note `$create` defaults to help)")
         embed.add_field(name="Rules", value="""
-- Abuse of the ticket system will result in getting muted.
+- Abuse of the ticket system will result in being punished.
 
 For help tickets:
 - You must show what you've tried so far before we help you
