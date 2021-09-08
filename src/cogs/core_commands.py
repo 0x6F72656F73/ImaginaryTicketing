@@ -31,7 +31,7 @@ class TicketCommands(commands.Cog):
             ctx.guild.text_channels, name="bot-commands")
         embed = UI.Embed(title="Ticket System", timestamp=None)
         embed.add_field(name="How do I make a ticket?",
-                        value=f"Either react to the message below, or type `$create{{help, submit, misc}}` in {bot_commands.mention}. (Note `$create` defaults to help)")
+                        value=f"Either react to the message below, or type `$create {{help, submit, misc}}` in {bot_commands.mention}. (Note `$create` defaults to help)")
         embed.add_field(name="Rules", value="""
 - Abuse of the ticket system will result in being punished.
 
