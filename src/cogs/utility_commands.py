@@ -161,130 +161,6 @@ class UtilityCommands(commands.Cog):
         await message.edit(embed=embed)
 
     @commands.group(name="helper", aliases=["h"], invoke_without_command=True)
-    @commands.has_role(config.roles['admin'])
-    async def helper(self, ctx):
-        """Base helper-admin command. Shows stats on helpers."""
-        helper_role = get(ctx.guild.roles, name=config.roles['helper'])
-        if len(helper_role.members):
-            helper_ids = [helper.id for helper in helper_role.members]
-            db_helpers = db.get_all_helpers()
-            helpers = set(helper_ids).intersection(db_helpers)
-
-            helpers = '\n'.join(
-                [member.mention for member in helper_role.members if member.id in helpers])
-        else:
-            helpers = 'No helpers'
-
-        embed = UI.Embed(
-            title=f"{config.roles['helper']}", description=helpers)
-        embed.set_author(name=f"{ctx.author}",
-                         icon_url=f"{ctx.author.avatar.url}")
-
-        await ctx.channel.send(embed=embed)
-
-        await ctx.message.delete()
-
-    @helper.command(name="add", aliases=["a"])
-    @commands.has_role(config.roles['admin'])
-    async def helper_add(self, ctx, member: discord.Member):
-        """adds a helper"""
-        helper_role = get(member.guild.roles, name=config.roles['helper'])
-        helper_ids = [helper.id for helper in helper_role.members]
-        if member.id in helper_ids:
-            embed = UI.Embed(
-                description=f"Member {member.mention} already has role {config.roles['helper']}")
-            embed.set_author(name=f"{ctx.author}",
-                             icon_url=f"{ctx.author.avatar.url}")
-
-            await ctx.message.delete()
-            return await ctx.channel.send(embed=embed)
-
-        await member.add_roles(helper_role)
-        db.create_helper(member.id)
-
-        embed = UI.Embed(
-            description=f"Added {member.mention} to {config.roles['helper']}")
-        embed.set_author(name=f"{ctx.author}",
-                         icon_url=f"{ctx.author.avatar.url}")
-
-        await ctx.channel.send(embed=embed)
-
-        await ctx.message.delete()
-
-    @helper.command(name="remove", aliases=["r", "rm"])
-    @commands.has_role(config.roles['admin'])
-    async def helper_remove(self, ctx, member: discord.Member):
-        """removes a helper"""
-        helper_role = get(member.guild.roles, name=config.roles['helper'])
-        helper_ids = [helper.id for helper in helper_role.members]
-        if member.id not in helper_ids:
-            embed = UI.Embed(
-                description=f"Member {member.mention} does not have role {config.roles['helper']}")
-            embed.set_author(name=f"{ctx.author}",
-                             icon_url=f"{ctx.author.avatar.url}")
-            await ctx.channel.send(embed=embed)
-
-            await ctx.message.delete()
-            return
-
-        await member.remove_roles(helper_role)
-        db.delete_helper(member.id)
-
-        embed = UI.Embed(
-            description=f"Removed {member.mention} from role {config.roles['helper']}")
-        embed.set_author(name=f"{ctx.author}",
-                         icon_url=f"{ctx.author.avatar.url}")
-        await ctx.channel.send(embed=embed)
-
-        await ctx.message.delete()
-
-    @helper.command(name="refresh", aliases=["ref"])
-    @commands.has_role(config.roles['admin'])
-    async def helper_refresh(self, ctx):
-        """refreshes helpers from the api"""
-        embed = UI.Embed(
-            description="sending requests...")
-        embed.set_author(name=f"{ctx.author}",
-                         icon_url=f"{ctx.author.avatar.url}")
-
-        message = await ctx.channel.send(embed=embed)
-        await ctx.message.delete()
-
-        try:
-            await UpdateHelpers.main(self.bot)
-        except exceptions.ChallengeDoesNotExist as e:
-            embed.description = f"challenge id {e.args[0]} does not exist. getting new challenges..."
-            await message.edit(embed=embed)
-            asyncio.sleep(2)
-            await ScrapeChallenges.main(self.bot)
-        embed.description = "helpers refreshed"
-        await message.edit(embed=embed)
-
-    @helper.command(name="update", aliases=["upd"])
-    @commands.has_role(config.roles['admin'])
-    async def helper_update(self, ctx, choice: str = "add"):
-        """updates helpers to channels: add(default) or remove"""
-        choice_ = choice
-        try:
-            choice = getattr(types.HelperSync, choice.upper())
-        except AttributeError:
-            return await ctx.channel.send("choice must be either add or remove")
-        try:
-            await UpdateHelpers.modify_helpers_to_channel(self.bot, choice=choice.value)
-        except exceptions.HelperSyncError:
-            pass
-
-        choice_ = f"{choice_}ed all helpers to" if choice_[-1:
-                                                           ] != 'e' else f"{choice_[:-1]}ed all helpers from"
-        embed = UI.Embed(
-            description=f"{choice_} all tickets")
-        embed.set_author(name=f"{ctx.author}",
-                         icon_url=f"{ctx.author.avatar.url}")
-        await ctx.channel.send(embed=embed)
-
-        await ctx.message.delete()
-
-    @helper.group(name="user", aliases=["u"], invoke_without_command=True)
     @commands.has_role(config.roles['helper'])
     async def helper_user(self, ctx):
         """Base helper-user command. Shows helper's stats"""
@@ -340,6 +216,129 @@ class UtilityCommands(commands.Cog):
 
         await ctx.message.delete()
 
+    @helper_user.group(name="admin", aliases=["a"], invoke_without_command=True)
+    @commands.has_role(config.roles['admin'])
+    async def helper_admin(self, ctx):
+        """Base helper-admin command. Shows stats on helpers."""
+        helper_role = get(ctx.guild.roles, name=config.roles['helper'])
+        if len(helper_role.members):
+            helper_ids = [helper.id for helper in helper_role.members]
+            db_helpers = db.get_all_helpers()
+            helpers = set(helper_ids).intersection(db_helpers)
+
+            helpers = '\n'.join(
+                [member.mention for member in helper_role.members if member.id in helpers])
+        else:
+            helpers = 'No helpers'
+
+        embed = UI.Embed(
+            title=f"{config.roles['helper']}", description=helpers)
+        embed.set_author(name=f"{ctx.author}",
+                         icon_url=f"{ctx.author.avatar.url}")
+
+        await ctx.channel.send(embed=embed)
+
+        await ctx.message.delete()
+
+    @helper_admin.command(name="add")
+    @commands.has_role(config.roles['admin'])
+    async def helper_add(self, ctx, member: discord.Member):
+        """adds a helper"""
+        helper_role = get(member.guild.roles, name=config.roles['helper'])
+        helper_ids = [helper.id for helper in helper_role.members]
+        if member.id in helper_ids:
+            embed = UI.Embed(
+                description=f"Member {member.mention} already has role {config.roles['helper']}")
+            embed.set_author(name=f"{ctx.author}",
+                             icon_url=f"{ctx.author.avatar.url}")
+
+            await ctx.message.delete()
+            return await ctx.channel.send(embed=embed)
+
+        await member.add_roles(helper_role)
+        db.create_helper(member.id)
+
+        embed = UI.Embed(
+            description=f"Added {member.mention} to {config.roles['helper']}")
+        embed.set_author(name=f"{ctx.author}",
+                         icon_url=f"{ctx.author.avatar.url}")
+
+        await ctx.channel.send(embed=embed)
+
+        await ctx.message.delete()
+
+    @helper_admin.command(name="remove", aliases=["r", "rm"])
+    @commands.has_role(config.roles['admin'])
+    async def helper_remove(self, ctx, member: discord.Member):
+        """removes a helper"""
+        helper_role = get(member.guild.roles, name=config.roles['helper'])
+        helper_ids = [helper.id for helper in helper_role.members]
+        if member.id not in helper_ids:
+            embed = UI.Embed(
+                description=f"Member {member.mention} does not have role {config.roles['helper']}")
+            embed.set_author(name=f"{ctx.author}",
+                             icon_url=f"{ctx.author.avatar.url}")
+            await ctx.channel.send(embed=embed)
+
+            await ctx.message.delete()
+            return
+
+        await member.remove_roles(helper_role)
+        db.delete_helper(member.id)
+
+        embed = UI.Embed(
+            description=f"Removed {member.mention} from role {config.roles['helper']}")
+        embed.set_author(name=f"{ctx.author}",
+                         icon_url=f"{ctx.author.avatar.url}")
+        await ctx.channel.send(embed=embed)
+
+        await ctx.message.delete()
+
+    @helper_admin.command(name="refresh", aliases=["ref"])
+    @commands.has_role(config.roles['admin'])
+    async def helper_refresh(self, ctx):
+        """refreshes helpers from the api"""
+        embed = UI.Embed(
+            description="sending requests...")
+        embed.set_author(name=f"{ctx.author}",
+                         icon_url=f"{ctx.author.avatar.url}")
+
+        message = await ctx.channel.send(embed=embed)
+        await ctx.message.delete()
+
+        try:
+            await UpdateHelpers.main(self.bot)
+        except exceptions.ChallengeDoesNotExist as e:
+            embed.description = f"challenge id {e.args[0]} does not exist. getting new challenges..."
+            await message.edit(embed=embed)
+            asyncio.sleep(2)
+            await ScrapeChallenges.main(self.bot)
+        embed.description = "helpers refreshed"
+        await message.edit(embed=embed)
+
+    @helper_admin.command(name="update", aliases=["upd"])
+    @commands.has_role(config.roles['admin'])
+    async def helper_update(self, ctx, choice: str = "add"):
+        """updates helpers to channels: add(default) or remove"""
+        choice_ = choice
+        try:
+            choice = getattr(types.HelperSync, choice.upper())
+        except AttributeError:
+            return await ctx.channel.send("choice must be either add or remove")
+        try:
+            await UpdateHelpers.modify_helpers_to_channel(self.bot, choice=choice.value)
+        except exceptions.HelperSyncError:
+            pass
+
+        choice_ = f"{choice_}ed all helpers to" if choice_[-1:
+                                                           ] != 'e' else f"{choice_[:-1]}ed all helpers from"
+        embed = UI.Embed(
+            description=f"{choice_} all tickets")
+        embed.set_author(name=f"{ctx.author}",
+                         icon_url=f"{ctx.author.avatar.url}")
+        await ctx.channel.send(embed=embed)
+
+        await ctx.message.delete()
+
 def setup(bot: commands.Bot):
     bot.add_cog(UtilityCommands(bot))
-
