@@ -190,7 +190,9 @@ class ScrapeChallenges():
                                                 f'/solves/bydiscordid/{discord_id}', params=params)
             try:
                 team_id = solve_challenges[0]["team"]["id"]
-            except IndexError:
+            except IndexError:  # one challenge
+                pass
+            except TypeError:  # solo player
                 pass
             else:
                 solve_challenges = await cls._fetch(session, config.api["base_link"] +
