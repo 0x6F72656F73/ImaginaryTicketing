@@ -40,8 +40,8 @@ For help tickets:
 - Only create one for per challenge
 - No points will be deducted
 - Cannot be created for the current challenge before either:
-\b \b - 30 minutes have passed since the challenge was released
-\b \b - the challenge has been blooded
+\u200b \u200b - 30 minutes have passed since the challenge was released
+\u200b \u200b - the challenge has been blooded
 """, inline=False)
         await ctx.channel.send(embed=embed, view=command_views.TicketView(self.bot))
         await Utility.delete_message(ctx)
