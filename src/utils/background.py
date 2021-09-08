@@ -160,31 +160,44 @@ class ScrapeChallenges():
         return {'apikey': env.str('apikey')}
 
     @classmethod
+    async def _fetch(cls, client: aiohttp.ClientSession, url: str, params=None) -> Dict[str, str]:
+        async with client.get(url, params=params) as resp:
+            if not resp.status == 200:
+                log.warning("Fetching %s failed", url)
+                return []
+            return await resp.json()
+
+    @classmethod
     async def main(cls, bot: commands.Bot) -> None:
         params = cls._setup()
         async with aiohttp.ClientSession() as session:
-            async with session.get(config.api["base_link"] +
-                                   '/challenges/released', params=params) as req:
-                challenges = await req.json()
-                all_challenges = []
-                for challenge in challenges:
-                    ignore = bool(challenge['author'] == config.roles['admin'])
-                    all_challenges.append(Challenge(
-                        challenge["id"], challenge["title"], challenge["author"], challenge["category"].split(",")[0], ignore))
+            challenges = await cls._fetch(session, config.api["base_link"] +
+                                          '/challenges/released', params=params)
+            all_challenges = []
+            for challenge in challenges:
+                ignore = bool(challenge['author'] == config.roles['admin'])
+                all_challenges.append(Challenge(
+                    challenge["id"], challenge["title"], challenge["author"], challenge["category"].split(",")[0], ignore))
 
-                db.refresh_database_ch(all_challenges)
-                await UpdateHelpers.main(bot)
+            db.refresh_database_ch(all_challenges)
+            await UpdateHelpers.main(bot)
 
     @classmethod
     async def get_user_challenges(cls, discord_id: int) -> List[int]:
         params = cls._setup()
         async with aiohttp.ClientSession() as session:
-            async with session.get(config.api["base_link"] +
-                                   f'/solves/bydiscordid/{discord_id}', params=params) as req:
-                solve_challenges = await req.json()
-                if not solve_challenges:
-                    return []
-                return [challenge['challenge']['id'] for challenge in solve_challenges]
+            solve_challenges = await cls._fetch(session, config.api["base_link"] +
+                                                f'/solves/bydiscordid/{discord_id}', params=params)
+            try:
+                team_id = solve_challenges[0]["team"]["id"]
+            except IndexError:
+                pass
+            else:
+                solve_challenges = await cls._fetch(session, config.api["base_link"] +
+                                                    f'/solves/byteamid/{team_id}')
+            if not solve_challenges:
+                return []
+            return [challenge['challenge']['id'] for challenge in solve_challenges]
 
 class UpdateHelpers():
     @staticmethod
@@ -224,7 +237,7 @@ class UpdateHelpers():
                             channel_.topic.split(" - ")[0])
                     except AttributeError:
                         continue
-                    
+
                     try:
                         helpers = json.loads(helpers[0])
                     except TypeError:
@@ -235,7 +248,7 @@ class UpdateHelpers():
                             "Challenge not found", channel_)
                         log.debug(f"Challenge not found - {channel_}")
                         continue
-                    
+
                     if member_id:
                         if member_id in helpers:
                             await cls.modify_helper_to_channel(channel_, member_id, choice)
