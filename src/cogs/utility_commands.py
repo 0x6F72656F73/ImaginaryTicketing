@@ -56,7 +56,15 @@ class UtilityCommands(commands.Cog):
     async def check_discord(self, ctx):
         """Checks if all configurations are valid"""
         bot_in_guild = ctx.guild.get_member(self.bot.user.id)
-        checks = Utility.check_discord(bot_in_guild, ctx.guild)
+        checks = {'pass': [], 'fail': []}
+        all_checks = {**{f"{k} role": bool(get(ctx.guild.roles, name=v)) for (k, v) in config.roles.items()},
+                      "channel log category": bool(get(ctx.guild.categories, name=config.logs["category"])),
+                      "channel log name": bool(get(ctx.guild.text_channels, name=config.logs["name"])),
+                      "is admin": bool(bot_in_guild.guild_permissions.administrator)}
+        checks['pass'] = [check for check,
+                          status in all_checks.items() if status is True]
+        checks['fail'] = [check for check,
+                          status in all_checks.items() if status is False]
 
         embed = UI.Embed(title="Checks")
         embed.set_author(name=f"{ctx.author}",
