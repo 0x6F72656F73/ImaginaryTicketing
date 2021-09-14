@@ -375,23 +375,12 @@ class CloseTicket(BaseActions):
             name=f"{self.user}", icon_url=f"{self.user.avatar.url}")
         embed_message = await self.channel.send(embed=close_stats_embed)
 
-        member = self.guild.get_member(self.user_id)
-        admin = get(self.guild.roles, name=config.roles['admin'])
-        overwrites = {
-            self.guild.default_role: discord.PermissionOverwrite(read_messages=False),
-            member: discord.PermissionOverwrite(read_messages=None, send_messages=None),
-            admin: discord.PermissionOverwrite(
-                read_messages=True, send_messages=True)
-        }
-        category = await self._move_channel("Closed Tickets")
+        t_number, t_current_type, t_user_id, t_user = await self._ticket_information()
 
         member = self.guild.get_member(t_user_id)
         await self.channel.set_permissions(member, read_messages=None)
 
-        try:
-            t_number, t_current_type, _, t_user = await self._ticket_information()
-        except ValueError as e:
-            return await self.channel.send(e.args[0])
+        category = await self._move_channel("Closed Tickets")
 
         closed_name = Options.name_close(
             t_current_type, count=t_number, user=t_user)
@@ -455,10 +444,7 @@ class ReopenTicket(BaseActions):
             await self.channel.send("Channel is already open")
             return
 
-        try:
-            t_number, t_current_type, t_user_id, t_user = await self._ticket_information()
-        except ValueError as e:
-            return await self.channel.send(e.args[0])
+        t_number, t_current_type, t_user_id, t_user = await self._ticket_information()
 
         cat = Options.full_category_name(t_current_type)
         category = get(self.guild.categories, name=cat)
