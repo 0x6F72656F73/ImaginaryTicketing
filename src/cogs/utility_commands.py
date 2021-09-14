@@ -40,8 +40,12 @@ class UtilityCommands(commands.Cog):
     @commands.command(name="about")
     async def about(self, ctx):
         """returns about info"""
-        embed = UI.Embed(title="about",
-                         description="This bot was proudly made by 0x6F72656F73#8221 :cookie:")
+        if not self.bot.owner_id:
+            app = await self.bot.application_info()
+            self.bot.owner_id = app.owner.id
+        owner = self.bot.get_user(self.bot.owner_id)
+        embed = UI.Embed(
+            title="about", description=f"This bot was proudly made by {owner} :cookie:")
         await ctx.send(embed=embed)
 
     @commands.command(name="purge")
