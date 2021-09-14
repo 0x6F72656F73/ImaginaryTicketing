@@ -161,7 +161,7 @@ class CreateTicket(BaseActions):
         db.update_check("0", self.ticket_channel.id)
 
         avail_mods = get(
-            self.guild.roles, name=config.roles['ticket_ping'])
+            self.guild.roles, name=config.roles['ticket ping'])
         if self.ticket_type == "help":
             welcome_message = f'A new ticket has been created {avail_mods.mention}'
         elif self.ticket_type == "submit":

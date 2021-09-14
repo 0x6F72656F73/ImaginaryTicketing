@@ -141,9 +141,9 @@ class AutoClose(commands.Cog):
                         log.info(e.args[0])
                         continue
 
-                    role = discord.utils.get(
+                    admin = discord.utils.get(
                         guild.roles, name=config.roles['admin'])
-                    people = [member.id for member in role.members]
+                    people = [member.id for member in admin.members]
 
                     if message.author.id in people and check == 1:
                         db.update_check("0", channel.id)
