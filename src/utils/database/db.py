@@ -211,7 +211,7 @@ class DatabaseManager():
                 f"No channel exists with id {channel_id}") from e
 
     @classmethod
-    def get_tickets_per_user(cls, t_type: types.TicketType, user_id: int):
+    def get_user_open_tickets(cls, t_type: types.TicketType, user_id: int):
         """gets the total number of open tickets for a user
 
         Parameters
@@ -223,12 +223,12 @@ class DatabaseManager():
 
         Returns
         -------
-        `str`: the number of undeleted tickets
+        `str`: the number of open tickets
         """
         query = """
         SELECT count(1) FROM 
         (SELECT * FROM requests 
-        WHERE t_type=$1 and user_id=$2)"""
+        WHERE t_type=$1 AND user_id=$2 AND status = "open")"""
         values = (t_type, user_id,)
         n_tickets = cls._raw_select(query, values, fetch_one=True)
         return n_tickets[0]
