@@ -123,13 +123,20 @@ class CreateTicket(BaseActions):
 
         admin = get(self.guild.roles, name=config.roles['admin'])
         bots = get(self.guild.roles, name=config.roles['bot'])
+        muted = get(self.guild.roles, name=config.roles['muted'])
+        quarantine = get(self.guild.roles, name=config.roles['quarantine'])
         member = self.guild.get_member(self.user_id)
+
         overwrites = {
             self.guild.default_role: discord.PermissionOverwrite(read_messages=False),
-            member: discord.PermissionOverwrite(read_messages=True, send_messages=True),
-            bots: discord.PermissionOverwrite(read_messages=True, send_messages=True),
             admin: discord.PermissionOverwrite(
-                read_messages=True, send_messages=True)
+                read_messages=True),
+            bots: discord.PermissionOverwrite(read_messages=True),
+            member: discord.PermissionOverwrite(read_messages=True, send_messages=True),
+            muted: discord.PermissionOverwrite(
+                create_instant_invite=False, send_messages=False),
+            quarantine: discord.PermissionOverwrite(
+                view_channel=False, create_instant_invite=False, send_messages=False)
         }
 
         return await category.create_text_channel(channel_name, overwrites=overwrites)
@@ -296,7 +303,7 @@ class _CreateTicketHelper(CreateTicket):
         await self.ticket_channel.edit(topic=f"{selected_challenge.title} - {selected_challenge.author}")
 
         await self.ticket_channel.set_permissions(member, read_messages=True,
-                                                  send_messages=True)
+                                                  send_messages=None)
         user_message = await self.ticket_channel.send("What have your tried so far?")
 
         def user_response_check(message):
@@ -400,10 +407,8 @@ class CloseTicket(BaseActions):
         }
         category = await self._move_channel("Closed Tickets")
 
-        try:
-            await self.channel.edit(category=category, overwrites=overwrites)
-        except AttributeError:
-            pass
+        member = self.guild.get_member(t_user_id)
+        await self.channel.set_permissions(member, read_messages=None)
 
         try:
             t_number, t_current_type, _, t_user = await self._ticket_information()
@@ -412,7 +417,7 @@ class CloseTicket(BaseActions):
 
         closed_name = Options.name_close(
             t_current_type, count=t_number, user=t_user)
-        await self.channel.edit(name=closed_name)
+        await self.channel.edit(name=closed_name, category=category)
 
         db.update_ticket_name(closed_name, self.channel_id)
 
@@ -484,14 +489,8 @@ class ReopenTicket(BaseActions):
             category = self.guild.get_channel(new_category.id)
 
         member = self.guild.get_member(t_user_id)
-        admin = get(self.guild.roles, name=config.roles['admin'])
-        overwrites = {
-            self.guild.default_role: discord.PermissionOverwrite(read_messages=False),
-            member: discord.PermissionOverwrite(read_messages=True, send_messages=True),
-            admin: discord.PermissionOverwrite(
-                read_messages=True, send_messages=True)
-        }
-        await self.channel.edit(overwrites=overwrites, category=category)
+        await self.channel.set_permissions(member, read_messages=True)
+
 
         status = "open"
         db.update_status(status, self.channel_id)
