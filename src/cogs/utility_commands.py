@@ -42,21 +42,14 @@ class UtilityCommands(commands.Cog):
         """returns about info"""
         embed = UI.Embed(title="about",
                          description="This bot was proudly made by 0x6F72656F73#8221 :cookie:")
-
         await ctx.send(embed=embed)
 
     @commands.command(name="purge")
     @commands.has_role(config.roles['admin'])
     async def purge(self, ctx, limit: int):
         """purges x amount of messages"""
-
         await ctx.channel.purge(limit=limit + 1)
-        message = await ctx.send(f'Purged {limit} messages')
-        await asyncio.sleep(3)
-        try:
-            await message.delete()
-        except discord.errors.NotFound:
-            pass
+        await ctx.send(f'Purged {limit} messages', delete_after=3)
 
     @commands.command(name="check")
     @commands.has_role(config.roles['admin'])
