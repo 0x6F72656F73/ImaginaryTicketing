@@ -155,7 +155,7 @@ class CreateTicket(BaseActions):
         db.create_ticket(self.ticket_channel.id, str(
             self.ticket_channel), self.guild.id, self.user_id, self.ticket_type, status, check)
         if self.ticket_type == "help":
-            helper = _CreateTicketHelper(
+            helper = CreateTicketHelper(
                 self.ticket_channel, self.bot, self.ticket_type, self._args[0], *self._args[1], **self._args[2])
             await helper.challenge_selection()
         db.update_check("0", self.ticket_channel.id)
@@ -180,7 +180,7 @@ class CreateTicket(BaseActions):
         log.info(
             f"[CREATED] {self.ticket_channel} by {self.user} (ID: {self.channel_id})")
         return self.ticket_channel
-class _CreateTicketHelper(CreateTicket):
+class CreateTicketHelper(CreateTicket):
     def __init__(self, ticket_channel: discord.TextChannel, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.ticket_channel = ticket_channel
@@ -195,36 +195,13 @@ class _CreateTicketHelper(CreateTicket):
         return [Challenge(
             i, f"chall{i}", f"author{i}", list_categories[i % len(categories)], i % 3 == 0) for i in range(num)]
 
-    class ChallengeSelect(discord.ui.Select['ChallengeView']):
-        def __init__(self, custom_id: str, options: List[discord.SelectOption], placeholder: str):
-            super().__init__(custom_id=custom_id,
-                             placeholder=placeholder, min_values=1, max_values=1, options=options)
-
-        async def callback(self, interaction: discord.Interaction):
-            await interaction.message.delete()
-            view = self.view  # pylint: disable=maybe-no-member
-            view.stop()
-
-    class ChallengeView(discord.ui.View):
-        def __init__(self, author: discord.Member, custom_id: str, options: List[discord.SelectOption], placeholder: str, timeout: float = 300, **kwargs):
-            super().__init__(timeout=timeout, **kwargs)
-            self.add_item(_CreateTicketHelper.ChallengeSelect(
-                custom_id, options, placeholder))
-            self.author = author
-
-        async def interaction_check(self, interaction: discord.Interaction):
-            if interaction.user == self.author:
-                return True
-            await interaction.response.send_message("You're not allowed to choose", ephemeral=True)
-            return False
-
     async def _ask_for_challenge(self, challenges: List[Challenge]):
         challenge_options = [discord.SelectOption(
             label=(challenge.title[:23] + '..') if len(challenge.title) > 25 else challenge.title, value=f"{challenge.id}") for challenge in challenges]
 
         while True:
-            view = self.ChallengeView(author=self.user, custom_id=f"ticketing:challenge_request-{os.urandom(16).hex()}", options=challenge_options,
-                                      placeholder="Please choose a challenge")
+            view = action_views.ChallengeView(author=self.user, custom_id=f"ticketing:challenge_request-{os.urandom(16).hex()}", options=challenge_options,
+                                              placeholder="Please choose a challenge")
             select_messages = await self.ticket_channel.send("Please select which challenge you need help with", view=view)
             await view.wait()
             if view.children[0]._selected_values:
@@ -240,8 +217,8 @@ class _CreateTicketHelper(CreateTicket):
         category_options = [discord.SelectOption(
             label=cat, value=cat) for cat in categories]
         while True:
-            view = self.ChallengeView(author=self.user, custom_id=f"ticketing:category_request-{os.urandom(16).hex()}", options=category_options,
-                                      placeholder="Please choose a category")
+            view = action_views.ChallengeView(author=self.user, custom_id=f"ticketing:category_request-{os.urandom(16).hex()}", options=category_options,
+                                              placeholder="Please choose a category")
             select_messages = await self.ticket_channel.send("Please select which category you need help with", view=view)
             await view.wait()
             if view.children[0]._selected_values:
@@ -281,7 +258,7 @@ class _CreateTicketHelper(CreateTicket):
                     pass
 
     async def challenge_selection(self):
-        # challenges = _CreateTicketHelper.fake_challenges(21)
+        # challenges = CreateTicketHelper.fake_challenges(21)
         user_solved_challenges = await ScrapeChallenges.get_user_challenges(
             self.user_id)
         challenges = [Challenge(*list(challenge))
