@@ -204,8 +204,8 @@ class UtilityCommands(commands.Cog):
             return await ctx.channel.send("choice must be either add or remove")
         try:
             await UpdateHelpers.modify_helpers_to_channel(self.bot, member_id=ctx.author.id, choice=choice.value)
-        except exceptions.HelperSyncError as e:
-            return await ctx.channel.send(e.args[0])
+        except exceptions.HelperSyncError:
+            pass
 
         choice_ = f"{choice_}ed to" if choice_[-1:
                                                ] != 'e' else f"{choice_[:-1]}ed from"
