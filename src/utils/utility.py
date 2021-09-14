@@ -120,16 +120,12 @@ class Utility:
 
         Parameters
         ----------
-        ctx : `discord.ext.commands.context.Context`
+        ctx : `discord.ext.commands.Context`
             discord context\n
         time : `int`, `optional`
             time to wait until deleting the message, by default 1
         """
-        await asyncio.sleep(time)
-        try:
-            await ctx.message.delete()
-        except discord.errors.NotFound:
-            pass
+        await ctx.message.delete(delay=time)
 
     @staticmethod
     async def say_in_webhook(bot: commands.Bot, member: discord.Member, channel: discord.TextChannel, avatar_url: discord.Asset.url, allow_mention: bool, message: str, return_message: bool = False, **kwargs):
