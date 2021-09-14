@@ -96,10 +96,6 @@ You can also type {BOT_PREFIX[0]}help category for more info on a category"
         if message.author == self.user or message.author.bot or not message.guild:
             return
         await self.process_commands(message)
-        # if message.guild:
-        #     await bot.process_commands(message)
-        # else:
-        #     await message.author.send("This command does not work in direct messages")
 
     async def on_command_completion(self, ctx):
         full_command_name = ctx.command.qualified_name

@@ -1,11 +1,9 @@
 import io
-import asyncio
 import random
-from typing import NamedTuple, Tuple, Union, Dict, List
+from typing import NamedTuple, Tuple, Union
 import logging
 
 import discord
-from discord.utils import get
 from discord.ext import commands
 import chat_exporter
 
