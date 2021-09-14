@@ -234,7 +234,7 @@ class DatabaseManager():
         return n_tickets[0]
 
     @classmethod
-    def get_number_new(cls, t_type: types.TicketType) -> int:
+    def get_number_new(cls, t_type: types.TicketType, guild_id: int) -> int:
         """gets the number of tickets of that ticket type
 
         Parameters
@@ -248,9 +248,9 @@ class DatabaseManager():
         """
         query = """
         SELECT count(1) FROM
-        (SELECT * FROM requests WHERE t_type=$1
-        union SELECT * FROM archive WHERE t_type=$1)"""
-        values = (t_type,)
+        (SELECT * FROM requests WHERE t_type=$1 AND guild_id = $2
+        union SELECT * FROM archive WHERE t_type=$1 AND guild_id = $2)"""
+        values = (t_type, guild_id,)
         ret = cls._raw_select(query, values, fetch_one=True)
         return int(ret[0])
 
