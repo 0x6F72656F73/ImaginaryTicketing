@@ -228,32 +228,18 @@ class CreateTicketHelper(CreateTicket):
             ch for ch in challenges if ch.category == view.children[0]._selected_values[0]]
         return category_challenges
 
-    # change to member after website
-    async def _add_member(self, member_identifier: Union[str, int], challenge_title: str):
-        # change to get_member after website
-        if isinstance(member_identifier, str):
-            author = self.guild.get_member_named(member_identifier)
-        else:
-            author = self.guild.get_member(member_identifier)
-        try:
-            await self.ticket_channel.set_permissions(author, read_messages=True,
-                                                      send_messages=True)
-        except discord.InvalidArgument:
-            log.info(
-                f"User {member_identifier} for challenge {challenge_title} does not exist.")
-
     async def _add_author_and_helpers(self, selected_challenge: Challenge):
         if len(authors := selected_challenge.author.split('/')) > 1:
             for author in authors:
-                await self._add_member(author, selected_challenge.title)
+                await UtilityActions._add_member(author, selected_challenge.title, self.guild, self.ticket_channel)
         else:
-            await self._add_member(selected_challenge.author, selected_challenge.title)
+            await UtilityActions._add_member(selected_challenge.author, selected_challenge.title, self.guild, self.ticket_channel)
 
         if len(helpers := json.loads(selected_challenge.helper_id_list)):
             for helper in helpers:
                 try:
                     if db.get_helper_status(helper):
-                        await self._add_member(int(helper), selected_challenge.title)
+                        await UtilityActions._add_member(int(helper), selected_challenge.title, self.guild, self.ticket_channel)
                 except ValueError:
                     pass
 
@@ -316,6 +302,21 @@ class UtilityActions:
         await channel.set_permissions(member, read_messages=False, send_messages=False)
         embed = UI.Embed(description=f"{member.mention} was removed")
         await channel.send(embed=embed)
+
+    # change to member after website
+    @staticmethod
+    async def _add_member(member_identifier: Union[str, int], challenge_title: str, guild: discord.Guild, ticket_channel: discord.TextChannel):
+        # change to get_member after website
+        if isinstance(member_identifier, str):
+            author = guild.get_member_named(member_identifier)
+        else:
+            author = guild.get_member(member_identifier)
+        try:
+            await ticket_channel.set_permissions(author, read_messages=True,
+                                                 send_messages=True)
+        except discord.InvalidArgument:
+            log.info(
+                f"Member {member_identifier} for challenge {challenge_title} does not exist.")
 
 
 class CloseTicket(BaseActions):
