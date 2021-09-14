@@ -100,7 +100,8 @@ class CreateTicket(BaseActions):
 
     async def _maximum_tickets(self):
         try:
-            n_tickets = db.get_tickets_per_user(self.ticket_type, self.user_id)
+            n_tickets = db.get_user_open_tickets(
+                self.ticket_type, self.user_id)
         except ValueError as e:
             return await self.channel.send(e.args[0])
         limit = Options.limit(self.ticket_type)
@@ -109,7 +110,7 @@ class CreateTicket(BaseActions):
             raise exceptions.MaxUserTicketError
 
     async def _create_ticket_channel(self) -> discord.TextChannel:
-        number = db.get_number_new(self.ticket_type)
+        number = db.get_number_new(self.ticket_type, self.guild.id)
         channel_name = Options.name_open(
             self.ticket_type, number, self.user)
         cat = Options.full_category_name(self.ticket_type)
@@ -455,6 +456,10 @@ class ReopenTicket(BaseActions):
         member = self.guild.get_member(t_user_id)
         await self.channel.set_permissions(member, read_messages=True)
 
+        reopened = Options.name_open(
+            t_current_type, count=t_number, user=t_user)
+        await self.channel.edit(name=reopened, category=category)
+        db.update_ticket_name(reopened, self.channel_id)
 
         status = "open"
         db.update_status(status, self.channel_id)
@@ -463,11 +468,6 @@ class ReopenTicket(BaseActions):
         reopened_embed.set_author(
             name=f"{self.user}", icon_url=f"{self.user.avatar.url}")
         await self.channel.send(embed=reopened_embed, view=action_views.CloseView())
-
-        reopened = Options.name_open(
-            t_current_type, count=t_number, user=t_user)
-        await self.channel.edit(name=reopened)
-        db.update_ticket_name(reopened, self.channel_id)
 
         await self._log_to_channel("Re-Opened ticket")
         log.info(
