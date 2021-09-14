@@ -42,28 +42,29 @@ class UtilityCommands(commands.Cog):
         """returns about info"""
         embed = UI.Embed(title="about",
                          description="This bot was proudly made by 0x6F72656F73#8221 :cookie:")
-
         await ctx.send(embed=embed)
 
     @commands.command(name="purge")
     @commands.has_role(config.roles['admin'])
     async def purge(self, ctx, limit: int):
         """purges x amount of messages"""
-
         await ctx.channel.purge(limit=limit + 1)
-        message = await ctx.send(f'Purged {limit} messages')
-        await asyncio.sleep(3)
-        try:
-            await message.delete()
-        except discord.errors.NotFound:
-            pass
+        await ctx.send(f'Purged {limit} messages', delete_after=3)
 
     @commands.command(name="check")
     @commands.has_role(config.roles['admin'])
     async def check_discord(self, ctx):
         """Checks if all configurations are valid"""
         bot_in_guild = ctx.guild.get_member(self.bot.user.id)
-        checks = Utility.check_discord(bot_in_guild, ctx.guild)
+        checks = {'pass': [], 'fail': []}
+        all_checks = {**{f"{k} role": bool(get(ctx.guild.roles, name=v)) for (k, v) in config.roles.items()},
+                      "channel log category": bool(get(ctx.guild.categories, name=config.logs["category"])),
+                      "channel log name": bool(get(ctx.guild.text_channels, name=config.logs["name"])),
+                      "is admin": bool(bot_in_guild.guild_permissions.administrator)}
+        checks['pass'] = [check for check,
+                          status in all_checks.items() if status is True]
+        checks['fail'] = [check for check,
+                          status in all_checks.items() if status is False]
 
         embed = UI.Embed(title="Checks")
         embed.set_author(name=f"{ctx.author}",
@@ -203,8 +204,8 @@ class UtilityCommands(commands.Cog):
             return await ctx.channel.send("choice must be either add or remove")
         try:
             await UpdateHelpers.modify_helpers_to_channel(self.bot, member_id=ctx.author.id, choice=choice.value)
-        except exceptions.HelperSyncError as e:
-            return await ctx.channel.send(e.args[0])
+        except exceptions.HelperSyncError:
+            pass
 
         choice_ = f"{choice_}ed to" if choice_[-1:
                                                ] != 'e' else f"{choice_[:-1]}ed from"

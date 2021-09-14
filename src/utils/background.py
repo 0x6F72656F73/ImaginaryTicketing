@@ -141,9 +141,9 @@ class AutoClose(commands.Cog):
                         log.info(e.args[0])
                         continue
 
-                    role = discord.utils.get(
+                    admin = discord.utils.get(
                         guild.roles, name=config.roles['admin'])
-                    people = [member.id for member in role.members]
+                    people = [member.id for member in admin.members]
 
                     if message.author.id in people and check == 1:
                         db.update_check("0", channel.id)
@@ -168,19 +168,23 @@ class ScrapeChallenges():
             return await resp.json()
 
     @classmethod
-    async def main(cls, bot: commands.Bot) -> None:
+    async def fetch_challenges(cls):
         params = cls._setup()
         async with aiohttp.ClientSession() as session:
-            challenges = await cls._fetch(session, config.api["base_link"] +
-                                          '/challenges/released', params=params)
-            all_challenges = []
-            for challenge in challenges:
-                ignore = bool(challenge['author'] == config.roles['admin'])
-                all_challenges.append(Challenge(
-                    challenge["id"], challenge["title"], challenge["author"], challenge["category"].split(",")[0], ignore))
+            return await cls._fetch(session, config.api["base_link"] +
+                                    '/challenges/released', params=params)
 
-            db.refresh_database_ch(all_challenges)
-            await UpdateHelpers.main(bot)
+    @classmethod
+    async def main(cls, bot: commands.Bot) -> None:
+        challenges = await cls.fetch_challenges()
+        all_challenges = []
+        for challenge in challenges:
+            ignore = bool(challenge['author'] == config.roles['admin'])
+            all_challenges.append(Challenge(
+                challenge["id"], challenge["title"], challenge["author"], challenge["category"].split(",")[0], ignore))
+
+        db.refresh_database_ch(all_challenges)
+        await UpdateHelpers.main(bot)
 
     @classmethod
     async def get_user_challenges(cls, discord_id: int) -> List[int]:

@@ -1,11 +1,9 @@
 import io
-import asyncio
 import random
-from typing import NamedTuple, Tuple, Union, Dict, List
+from typing import NamedTuple, Tuple, Union
 import logging
 
 import discord
-from discord.utils import get
 from discord.ext import commands
 import chat_exporter
 
@@ -122,16 +120,12 @@ class Utility:
 
         Parameters
         ----------
-        ctx : `discord.ext.commands.context.Context`
+        ctx : `discord.ext.commands.Context`
             discord context\n
         time : `int`, `optional`
             time to wait until deleting the message, by default 1
         """
-        await asyncio.sleep(time)
-        try:
-            await ctx.message.delete()
-        except discord.errors.NotFound:
-            pass
+        await ctx.message.delete(delay=time)
 
     @staticmethod
     async def say_in_webhook(bot: commands.Bot, member: discord.Member, channel: discord.TextChannel, avatar_url: discord.Asset.url, allow_mention: bool, message: str, return_message: bool = False, **kwargs):
@@ -164,21 +158,6 @@ class Utility:
         role = discord.utils.get(guild.roles, name=config.roles['admin'])
         person = random.choice(role.members)
         return person
-
-    @staticmethod
-    def check_discord(bot_in_guild: discord.User, guild: discord.Guild) -> Dict[str, List[str]]:
-        ret = {'pass': [], 'fail': []}
-        checks = {"ticket ping role": bool(get(guild.roles, name=config.roles['ticket_ping'])),
-                  "bot role": bool(get(guild.roles, name=config.roles['bot'])),
-                  "helper role": bool(get(guild.roles, name=config.roles['helper'])),
-                  "tester role": bool(get(guild.roles, name=config.roles['tester'])),
-                  "channel log category": bool(get(guild.categories, name=config.logs["category"])),
-                  "channel log name": bool(get(guild.text_channels, name=config.logs["name"])),
-                  "is admin": bool(bot_in_guild.guild_permissions.administrator)}
-
-        ret['pass'] = [check for check, status in checks.items() if status is True]
-        ret['fail'] = [check for check, status in checks.items() if status is False]
-        return ret
 
 class Challenge(NamedTuple):
     id: int
