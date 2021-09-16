@@ -7,3 +7,4 @@ Flask==2.0.1
 Flask-Limiter==1.4
 environs==9.3.2
 aiocron==1.6
+py-trello==0.18.0
