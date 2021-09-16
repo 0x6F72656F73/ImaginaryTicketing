@@ -298,6 +298,11 @@ class UpdateTrello:
         self.response_embed.description += f" {len(challenges)}\n"
         await self.response_message.edit(embed=self.response_embed)
 
+    async def main(self):
+        if not self.built_challenges:
+            raise ValueError("Run setup first")
+        for cat in self.all_categories:
+            await self.add_challenges_to_category(cat)
 
     def _delete_wrong_challenges(self):
         cards = self.current_month.all_cards()
