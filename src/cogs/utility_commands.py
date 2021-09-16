@@ -350,18 +350,18 @@ class UtilityCommands(commands.Cog):
     async def update_trello(self, ctx):
         """updates all challenges on the trello"""
         progress_embed = UI.Embed(
-            title="Progress", description="Challenges that have been added: \n")
+            title="Progress", description="Total number of challenges: ")
         progress_message = await ctx.channel.send(embed=progress_embed)
 
         trello = UpdateTrello(progress_message)
         await trello.setup()
         try:
-            await trello.main()
+            progress_embed = await trello.main()
         except ValueError as e:
             return await ctx.channel.send(f"{e.args[0]}")
 
         progress_embed.description += "Successfully refreshed all challenges on trello"
-        await ctx.channel.edit(embed=progress_embed)
+        await progress_message.edit(embed=progress_embed)
 
 
 def setup(bot: commands.Bot):
