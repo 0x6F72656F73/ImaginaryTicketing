@@ -268,3 +268,33 @@ class UpdateHelpers():
                         except ValueError:
                             pass
                         await cls.modify_helper_to_channel(channel_, helper, choice)
+
+class UpdateTrello:
+    def __init__(self, response_message: discord.Message):
+        self.response_message = response_message
+        try:
+            self.response_embed = self.response_message.embeds[0]
+        except AttributeError as e:
+            raise AttributeError(
+                "A progress embed needs to be sent as well") from e
+        env = Env()
+        env.read_env()
+        self.client = TrelloClient(
+            api_key=env.str('TRELLO_API_KEY'),
+            api_secret=env.str('TRELLO_API_SECRET'),
+        )
+        all_boards = self.client.list_boards()
+        self.current_month = next(
+            filter(lambda board: board.name == "September", all_boards))
+        self.all_categories = self.current_month.all_lists()
+        self.built_challenges = []
+
+    async def setup(self):
+        challenges = await ScrapeChallenges.fetch_challenges()
+        for chall in challenges:
+            chall['release_date'] = datetime.strptime(
+                chall['release_date'], '%Y-%m-%dT%H:%M:%S.%f')
+            self.built_challenges.append(TrelloChallenge.build(**chall))
+        self.response_embed.description += f" {len(challenges)}\n"
+        await self.response_message.edit(embed=self.response_embed)
+
