@@ -1,5 +1,6 @@
 import io
 import random
+from datetime import datetime
 from typing import NamedTuple, Tuple, Union
 import logging
 
@@ -169,3 +170,19 @@ class Challenge(NamedTuple):
 
     def __repr__(self):
         return f"{self.title}({self.id}, {self.author}, {self.category}, {self.ignore})"
+
+class TrelloChallenge(NamedTuple):  # put in utility
+    id: int
+    title: str
+    author: str
+    category: str
+    points: int
+    release_date: datetime
+
+    def __repr__(self):
+        return f"{self.title}({self.id}, {self.author}, {self.category}, {self.points}, {self.release_date})"
+
+    @classmethod
+    def build(cls, **kwargs):
+        kwargs = {k: v for (k, v) in kwargs.items() if k in cls._fields}
+        return cls(**kwargs)
