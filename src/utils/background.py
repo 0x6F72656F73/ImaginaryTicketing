@@ -331,3 +331,26 @@ class UpdateTrello:
         if points > 250:
             return (l for l in labels if l.name == "extremely hard")
 
+    @staticmethod
+    def _completed(time: datetime):
+        return datetime.now() > time
+
+    async def add_challenges_to_category(self, category: TrelloList):
+        category_challenges: Set[TrelloChallenge] = {
+            chall for chall in self.built_challenges if chall.category == category.name}
+        category_challenges = sorted(
+            category_challenges, key=lambda c: c.release_date)
+
+        for card in category.list_cards_iter():
+            for ch in category_challenges.copy():
+                if card.name == ch.title:
+                    category_challenges.remove(ch)
+
+        for ch in category_challenges:
+            pts = self._difficulty(ch.points)
+            card = category.add_card(ch.title, labels=pts,
+                                     due=str(ch.release_date))
+            if self._completed(ch.release_date):
+                card.set_due_complete()
+            self.response_embed.description += f" **added** {ch.title}\n"
+            await self.response_message.edit(embed=self.response_embed)
