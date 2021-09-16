@@ -4,21 +4,23 @@
 2 = channel will be ignored
 """
 
-from datetime import timedelta
+import asyncio
+from datetime import timedelta, datetime
 import json
-from typing import Dict, List
+from typing import Dict, List, NamedTuple, Union, Set
 import logging
 
 import discord
 from discord.ext import commands
 from environs import Env
 import aiohttp
+from trello import TrelloClient, List as TrelloList, Label
 
 import cogs.helpers.views.action_views as action_views
 import cogs.helpers.actions as actions
 from utils import types, exceptions
 from utils.options import Options
-from utils.utility import Utility, UI, Challenge
+from utils.utility import Utility, UI, Challenge, TrelloChallenge
 from utils.database.db import DatabaseManager as db
 import config
 
@@ -157,7 +159,7 @@ class ScrapeChallenges():
     def _setup(cls) -> Dict[str, str]:
         env = Env()
         env.read_env()
-        return {'apikey': env.str('apikey')}
+        return {'apikey': env.str('IMAGINARYCTF_API_KEY')}
 
     @classmethod
     async def _fetch(cls, client: aiohttp.ClientSession, url: str, params=None) -> Dict[str, str]:
