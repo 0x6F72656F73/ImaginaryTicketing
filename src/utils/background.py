@@ -298,3 +298,36 @@ class UpdateTrello:
         self.response_embed.description += f" {len(challenges)}\n"
         await self.response_message.edit(embed=self.response_embed)
 
+
+    def _delete_wrong_challenges(self):
+        cards = self.current_month.all_cards()
+        for card in cards:
+            try:
+                next(t for t in self.built_challenges if t.title == card.name)
+            except StopIteration:
+                card.delete()
+
+    def _create_categories(self):
+        should_categories = {chall.category for chall in self.built_challenges}
+        current_categories = {
+            category.name for category in self.all_categories}
+        difference = should_categories.difference(current_categories)
+        if difference:
+            for category in difference:
+                self.current_month.add_list(category)
+
+    def _difficulty(self, points: int) -> Label:
+        labels = self.current_month.get_labels()
+        if points < 75:
+            return (l for l in labels if l.name == "easy")
+        if points < 125:
+            return (l for l in labels if l.name == "easy/medium")
+        if points < 150:
+            return (l for l in labels if l.name == "medium")
+        if points < 175:
+            return (l for l in labels if l.name == "medium/hard")
+        if points < 250:
+            return (l for l in labels if l.name == "hard")
+        if points > 250:
+            return (l for l in labels if l.name == "extremely hard")
+
