@@ -171,7 +171,7 @@ class Challenge(NamedTuple):
     def __repr__(self):
         return f"{self.title}({self.id}, {self.author}, {self.category}, {self.ignore})"
 
-class TrelloChallenge(NamedTuple):  # put in utility
+class TrelloChallenge(NamedTuple):
     id: int
     title: str
     author: str

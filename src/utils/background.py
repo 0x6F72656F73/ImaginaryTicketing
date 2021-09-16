@@ -303,6 +303,7 @@ class UpdateTrello:
             raise ValueError("Run setup first")
         for cat in self.all_categories:
             await self.add_challenges_to_category(cat)
+        return self.response_embed
 
     def _delete_wrong_challenges(self):
         cards = self.current_month.all_cards()

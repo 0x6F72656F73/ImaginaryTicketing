@@ -19,8 +19,8 @@ class Admin(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(name="shutdown")
     @is_owner()
+    @commands.command(name="shutdown")
     async def shutdown(self, ctx):
         """shuts the bot down"""
 
