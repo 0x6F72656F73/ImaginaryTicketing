@@ -11,7 +11,7 @@ from discord.utils import get
 import config
 
 from utils.database.db import DatabaseManager as db
-from utils.background import ScrapeChallenges, UpdateHelpers
+from utils.background import ScrapeChallenges, UpdateHelpers, UpdateTrello
 from utils.utility import Utility, UI, Challenge
 from utils import exceptions, types
 
@@ -199,7 +199,7 @@ class UtilityCommands(commands.Cog):
 
     @helper_user.command(name="sync", aliases=["sy"])
     @commands.has_role(config.roles['helper'])
-    async def helper_user_sync(self, ctx, choice: str):
+    async def helper_user_sync(self, ctx, choice: str = "add"):
         """updates you to channels: add or remove"""
         choice_ = choice
         try:
@@ -344,6 +344,25 @@ class UtilityCommands(commands.Cog):
         await ctx.channel.send(embed=embed)
 
         await ctx.message.delete()
+
+    @commands.command(name="trello")
+    @commands.has_role(config.roles['admin'])
+    async def update_trello(self, ctx):
+        """updates all challenges on the trello"""
+        progress_embed = UI.Embed(
+            title="Progress", description="Challenges that have been added: \n")
+        progress_message = await ctx.channel.send(embed=progress_embed)
+
+        trello = UpdateTrello(progress_message)
+        await trello.setup()
+        try:
+            await trello.main()
+        except ValueError as e:
+            return await ctx.channel.send(f"{e.args[0]}")
+
+        progress_embed.description += "Successfully refreshed all challenges on trello"
+        await ctx.channel.edit(embed=progress_embed)
+
 
 def setup(bot: commands.Bot):
     bot.add_cog(UtilityCommands(bot))
