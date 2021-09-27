@@ -286,8 +286,9 @@ class UpdateTrello:
         all_boards = self.client.list_boards()
         self.current_month = next(
             filter(lambda board: board.name == "September", all_boards))
-        self.all_categories = self.current_month.all_lists()
-        self.built_challenges = []
+        self.all_categories = self.current_month.open_lists()
+        self.built_challenges: List[TrelloChallenge] = []
+        self.category_lengths: Dict[str, int] = {}
 
     async def setup(self):
         challenges = await ScrapeChallenges.fetch_challenges()
@@ -352,8 +353,7 @@ class UpdateTrello:
             return (l for l in labels if l.name == "medium/hard")
         if points < 250:
             return (l for l in labels if l.name == "hard")
-        if points > 250:
-            return (l for l in labels if l.name == "extremely hard")
+        return (l for l in labels if l.name == "extremely hard")
 
     @staticmethod
     def _completed(time: datetime):
