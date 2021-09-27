@@ -299,10 +299,9 @@ class UpdateTrello:
 
         self.category_lengths = {cat: len(cat.list_cards())
                                  for cat in self.all_categories}
-        try:
-            self.response_embed.description += f"\nTotal number of challenges: {len(challenges)}\n"
-        except TypeError:
-            self.response_embed.description = f"Total number of challenges: {len(challenges)}\n"
+
+        self.response_embed.description = f"Total number of challenges: {len(challenges)}\n"
+
         trello_all_challenges = self.current_month.open_cards()
         if len(challenges) != len(trello_all_challenges):
             built_chall_names = [
@@ -320,6 +319,7 @@ class UpdateTrello:
     async def main(self):
         if not self.built_challenges:
             raise ValueError("Run setup first")
+        await self._create_categories()
         for cat in self.all_categories:
             await self.add_challenges_to_category(cat)
         return self.response_embed
@@ -332,14 +332,15 @@ class UpdateTrello:
             except StopIteration:
                 card.delete()
 
-    def _create_categories(self):
+    async def _create_categories(self):
         should_categories = {chall.category for chall in self.built_challenges}
         current_categories = {
             category.name for category in self.all_categories}
-        difference = should_categories.difference(current_categories)
-        if difference:
-            for category in difference:
-                self.current_month.add_list(category)
+        unadded_categories = should_categories.difference(current_categories)
+        for category in unadded_categories:
+            self.response_embed.description += f" **added** category {category}\n"
+            self.all_categories.append(self.current_month.add_list(category))
+        await self.response_message.edit(embed=self.response_embed)
 
     def _difficulty(self, points: int) -> Label:
         labels = self.current_month.get_labels()
@@ -364,19 +365,17 @@ class UpdateTrello:
             chall for chall in self.built_challenges if chall.category == category.name}
         category_challenges = sorted(
             category_challenges, key=lambda c: c.release_date)
-
         for card in category.list_cards_iter():
             for ch in category_challenges.copy():
                 if card.name == ch.title:
                     category_challenges.remove(ch)
-
         for ch in category_challenges:
             pts = self._difficulty(ch.points)
             card = category.add_card(ch.title, labels=pts,
                                      due=str(ch.release_date))
             if self._completed(ch.release_date):
                 card.set_due_complete()
-            self.response_embed.description += f" **added** {ch.title}\n"
+            self.response_embed.description += f" **added** challenge {ch.title}\n"
             await self.response_message.edit(embed=self.response_embed)
 
     async def _categories_sorted(self) -> bool:
