@@ -345,20 +345,31 @@ class UtilityCommands(commands.Cog):
 
         await ctx.message.delete()
 
-    @commands.command(name="trello")
+    @commands.group(name="trello", aliases=["t"], invoke_without_command=True)
     @commands.has_role(config.roles['admin'])
-    async def update_trello(self, ctx):
+    async def trello(self, ctx):
+        """Base trello command. Shows trello information"""
+        progress_embed = UI.Embed(
+            title="Stats", description="fetching and sorting data")
+        progress_message = await ctx.channel.send(embed=progress_embed)
+        trello = UpdateTrello(progress_message)
+        await trello.setup()
+
+    @trello.command(name="update", aliases=['u'])
+    @commands.has_role(config.roles['admin'])
+    async def trello_update(self, ctx):
         """updates all challenges on the trello"""
         progress_embed = UI.Embed(
-            title="Progress", description="Total number of challenges: ")
+            title="Progress", description="fetching and sorting data")
         progress_message = await ctx.channel.send(embed=progress_embed)
 
         trello = UpdateTrello(progress_message)
         await trello.setup()
-        try:
-            progress_embed = await trello.main()
-        except ValueError as e:
-            return await ctx.channel.send(f"{e.args[0]}")
+        await trello.sort_categories()
+        # try:
+        #     progress_embed = await trello.main()
+        # except ValueError as e:
+        #     return await ctx.channel.send(f"{e.args[0]}") !??!!? what
 
         progress_embed.description += "Successfully refreshed all challenges on trello"
         await progress_message.edit(embed=progress_embed)
