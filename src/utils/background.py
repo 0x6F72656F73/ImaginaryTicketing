@@ -313,12 +313,12 @@ class UpdateTrello:
             self.response_embed.description += f"Total number of challenges not added: {len(not_added)}\n"
             for chall in not_added:
                 self.response_embed.description += f"- {chall}\n"
-        self.response_embed.description += "**Data:**\n"
         await self.response_message.edit(embed=self.response_embed)
 
     async def main(self):
         if not self.built_challenges:
             raise ValueError("Run setup first")
+        self.response_embed.description += "**Data:**\n"
         await self._create_categories()
         for cat in self.all_categories:
             await self.add_challenges_to_category(cat)
