@@ -16,7 +16,7 @@ def is_owner():
 class Admin(commands.Cog):
     """admin commands"""
 
-    def __init__(self, bot):
+    def __init__(self, bot: commands.Bot):
         self.bot = bot
 
     @is_owner()
