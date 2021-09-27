@@ -45,7 +45,7 @@ class UtilityCommands(commands.Cog):
             self.bot.owner_id = app.owner.id
         owner = self.bot.get_user(self.bot.owner_id)
         embed = UI.Embed(
-            title="About ImaginaryTicketing", description=f"This bot was proudly made by {owner} :cookie:\nI'm open source, [check me out](https://github.com/0x6F72656F73/ImaginaryTicketing)\nNeed help? [Join our Discord server](https://discord.gg/wytss8yrSc)")
+            title="About ImaginaryTicketing", description=f"This bot was proudly made by {owner} :heart:\nI'm open source, [check me out](https://github.com/0x6F72656F73/ImaginaryTicketing)\nNeed help? [Join our Discord server](https://discord.gg/wytss8yrSc)")
         await ctx.send(embed=embed)
 
     @commands.command(name="purge")
