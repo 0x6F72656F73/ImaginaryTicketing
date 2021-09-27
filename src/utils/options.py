@@ -37,7 +37,7 @@ Please create a thread for each challenge, and in the following format:
 """,
                "misc": f"""
 Soon a {mention} member will assist you.
-For now, you can start telling us what the issue is so that we can help you faster.
+For now, you can start describing the issue so we can help you faster.
 If you want to close this ticket, click on the :lock:""",
                }
 

@@ -71,7 +71,7 @@ You can also type {BOT_PREFIX[0]}help category for more info on a category"
     def create(cls) -> "TicketBot":
         return cls(
             activity=discord.Activity(type=discord.ActivityType.competing, name=(
-                f"in a ctf | {BOT_PREFIX[0]}help")),
+                f"a ctf | {BOT_PREFIX[0]}help")),
             command_prefix=commands.when_mentioned_or(*BOT_PREFIX),
             case_insensitive=True,
             strip_after_prefix=True,
@@ -98,7 +98,7 @@ You can also type {BOT_PREFIX[0]}help category for more info on a category"
         await self.process_commands(message)
 
     async def on_command_completion(self, ctx):
-        full_command_name = ctx.command.qualified_name
+        full_command_name = ctx.command.qualified_name  # get sub commands reee
         split = full_command_name.split(" ")
         executed_command = str(split[0])
         log.info(

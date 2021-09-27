@@ -23,7 +23,7 @@ class TicketCommands(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    @commands.command(name="ticket", aliases=["t"])
+    @commands.command(name="ticket")
     @commands.has_role(config.roles['admin'])
     async def ticket(self, ctx: commands.Context):
         """shows a ticket message"""
