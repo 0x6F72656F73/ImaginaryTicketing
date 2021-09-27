@@ -295,7 +295,25 @@ class UpdateTrello:
             chall['release_date'] = datetime.strptime(
                 chall['release_date'], '%Y-%m-%dT%H:%M:%S.%f')
             self.built_challenges.append(TrelloChallenge.build(**chall))
-        self.response_embed.description += f" {len(challenges)}\n"
+
+        self.category_lengths = {cat: len(cat.list_cards())
+                                 for cat in self.all_categories}
+        try:
+            self.response_embed.description += f"\nTotal number of challenges: {len(challenges)}\n"
+        except TypeError:
+            self.response_embed.description = f"Total number of challenges: {len(challenges)}\n"
+        trello_all_challenges = self.current_month.open_cards()
+        if len(challenges) != len(trello_all_challenges):
+            built_chall_names = [
+                chall.title for chall in self.built_challenges]
+            cards_names = [
+                card.name for card in trello_all_challenges]
+            not_added = set(built_chall_names).difference(
+                set(cards_names))
+            self.response_embed.description += f"Total number of challenges not added: {len(not_added)}\n"
+            for chall in not_added:
+                self.response_embed.description += f"- {chall}\n"
+        self.response_embed.description += "**Data:**\n"
         await self.response_message.edit(embed=self.response_embed)
 
     async def main(self):
