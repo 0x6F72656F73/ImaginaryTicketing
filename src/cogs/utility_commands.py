@@ -360,20 +360,21 @@ class UtilityCommands(commands.Cog):
     async def trello_update(self, ctx):
         """updates all challenges on the trello"""
         progress_embed = UI.Embed(
-            title="Progress", description="fetching and sorting data")
-        progress_message = await ctx.channel.send(embed=progress_embed)
+            title="Progress", description="fetching and sorting data\n")
+        progress_message: discord.Message = await ctx.channel.send(embed=progress_embed)
 
         trello = UpdateTrello(progress_message)
         await trello.setup()
-        await trello.sort_categories()
-        # try:
-        #     progress_embed = await trello.main()
-        # except ValueError as e:
-        #     return await ctx.channel.send(f"{e.args[0]}") !??!!? what
-
+        try:
+            progress_embed = await trello.main()
+        except ValueError as e:
+            return await ctx.channel.send(f"{e.args[0]}")
+        progress_embed = progress_message.embeds[0]
         progress_embed.description += "Successfully refreshed all challenges on trello"
         await progress_message.edit(embed=progress_embed)
 
+    # @trello.commands(name="distrubution")
+    # pass
 
 def setup(bot: commands.Bot):
     bot.add_cog(UtilityCommands(bot))
