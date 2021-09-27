@@ -3,11 +3,9 @@
 1 = bot has said 1 message
 2 = channel will be ignored
 """
-
-import asyncio
 from datetime import timedelta, datetime
 import json
-from typing import Dict, List, NamedTuple, Union, Set
+from typing import Dict, List, Set
 import logging
 
 import discord
@@ -288,7 +286,7 @@ class UpdateTrello:
             filter(lambda board: board.name == "September", all_boards))
         self.all_categories = self.current_month.open_lists()
         self.built_challenges: List[TrelloChallenge] = []
-        self.category_lengths: Dict[str, int] = {}
+        self.category_lengths: Dict[TrelloList, int] = {}
 
     async def setup(self):
         challenges = await ScrapeChallenges.fetch_challenges()
@@ -322,6 +320,7 @@ class UpdateTrello:
         await self._create_categories()
         for cat in self.all_categories:
             await self.add_challenges_to_category(cat)
+        await self.sort_categories()
         return self.response_embed
 
     def _delete_wrong_challenges(self):
@@ -378,94 +377,26 @@ class UpdateTrello:
             self.response_embed.description += f" **added** challenge {ch.title}\n"
             await self.response_message.edit(embed=self.response_embed)
 
-    async def _categories_sorted(self) -> bool:
-        lengths = [len(cat.list_cards()) for cat in self.all_categories]
-        # lengths.index
-        correct = sorted(lengths)
-        print(lengths, correct)
-        return correct == lengths
-
-    def search(self, category):
-        for cat, len_ in self.category_lengths.items():
-            if cat == category:
-                return self.category_lengths[cat]
+    @classmethod
+    def get_position(cls, idx: int, pivot: int = 0):
+        return idx + pivot
 
     async def sort_categories(self):
-        print(f"all categories: {self.all_categories}")
+        print("sort categories:")
         print('------------')
-        for cat in self.all_categories:
-            print(cat, cat.pos)
-        correct = dict(sorted(self.category_lengths.items(),
-                              key=lambda x: x[1]))
-        print(f"all category lengths: {self.category_lengths}")
-        print('------------')
-        print(f"correct category lengths: {correct}")
-        print('------------')
-        cor = list(correct.keys())
-        for idx, (category, len_) in enumerate(self.category_lengths.items()):
-            # cor = correct[category]
-            a = cor.index(category)
-            if idx == a:
-                print(f'category {category} is in the correct position!')
-                continue
-            print(f'category {category} is in the wrong position!')
-            b = cor[a]
-            print(idx, a, b)
-            cur_pos = category.pos
-            for cat_len in correct.items():
-                cat = cat_len[0]  # make diagram or sum, cuz its rlly confusing
-                print(cat)
-                if category == cat:
-                    print(category.pos, cat.pos)
-            break
-            new_pos = next(cat.pos for cat in correct.items() if category ==)
-            for x in cor:
-                if x == category:
-                    print(x)
-            print(category, category.pos, len_, cor)
-        for key in self.category_lengths.keys() & correct.keys():
-            print(key, key.pos, self.category_lengths[key], correct[key])
+        important_categories = {
+            cat: cat_len for cat, cat_len in self.category_lengths.items() if cat.name in config.trello["categories"]}
 
-        self.category_lengths = {cat: len(cat.list_cards())
-                                 for cat in self.all_categories}
-        await self._categories_sorted()
-        for _ in range(len(self.category_lengths)):
-            for idx, (cat, len_) in enumerate(self.category_lengths.items()):
-                print(idx, cat, len_)
-                a = self.search()
-        try:
-            next_cat = self.all_categories[idx + 1]
-        except IndexError:
-            continue
-        if len_ > len(next_cat.list_cards()):
-            cur_pos = cat.pos
-            new_pos = self.all_categories[idx + 1].pos
-            self.all_categories[idx + 1].set_pos(cur_pos)
-            cat.set_pos(new_pos)
-        for idx, (cat, pos) in enumerate(category_lengths.items()):
-            print(idx, (cat, pos))
-            if pos > any(category_lengths.values()):
-                print(cat)
-            # new_cat = next(
-            # #     cat for cat in category_lengths.values() if cat[1] == [idx + 1])
-            # # print(new_cat)
-            # for idj, cat in enumerate(category_lengths.values()):
-            #     print(cat, cat[1] == [idx + 1])
-            # # new_cat = category_lengths.values()[1] == [idx + 1]
-            # if (pos > category_lengths[idx + 1].pos):  # change to while
-            #     print(category_lengths[idx + 1])
-            #     # cur_pos = pos
-            #     # new_pos = category_lengths[idx + 1].pos
-            #     # category_lengths[idx + 1] = pos
-        while (self._categories_sorted):
-        for _ in range(len(self.all_categories)):
-            for idx, cat in enumerate(self.all_categories):
-                try:
-                    next_cat = self.all_categories[idx + 1]
-                except IndexError:
-                    continue
-                if len(cat.list_cards()) > len(next_cat.list_cards()):
-                    cur_pos = cat.pos
-                    new_pos = self.all_categories[idx + 1].pos
-                    self.all_categories[idx + 1].set_pos(cur_pos)
-                    cat.set_pos(new_pos)
+        unimportant_categories = {k: self.category_lengths[k] for k in set(
+            self.category_lengths).symmetric_difference(set(important_categories))}
+
+        sorted_important_categories = dict(sorted(important_categories.items(),
+                                                  key=lambda x: x[1]))
+        for idx, (cat, _) in enumerate(sorted_important_categories.items()):
+            cat.set_pos(self.get_position(idx))
+
+        pivot = len(unimportant_categories) + 2
+        sorted_unimportant_categories = dict(sorted(unimportant_categories.items(),
+                                                    key=lambda x: x[1]))
+        for idx, (cat, _) in enumerate(sorted_unimportant_categories.items()):
+            cat.set_pos(self.get_position(idx, pivot))
