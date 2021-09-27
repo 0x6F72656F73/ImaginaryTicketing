@@ -24,16 +24,16 @@ class Options:
 Soon a {mention} member will assist you.
 If you don't need help anymore, or you want to close this ticket, click on the :lock:""",
                "submit": """
-Please create a thread for each challenge, and in the following format:
+Please send the challenge below in the following format and then create a thread off of your challenge message for discussion:
 
 \*\*Title\*\* 
 \*\*Category:\*\* 
 \*\*Difficulty:\*\* 
 \*\*Description:\*\* 
-\*\*Flag:\*\* ``
+\*\*Flag:\*\* ||`hidden and inside` ``||
 \*\*Player Attachments:\*\*
 \*\*Admin Attachments:\*\* 
-\*\*Solve idea/Writeup:\*\* ||||
+\*\*Solve idea/Writeup:\*\* ||hidden like this please||
 """,
                "misc": f"""
 Soon a {mention} member will assist you.
