@@ -74,7 +74,7 @@ For help tickets:
     @commands.command(name="add", aliases=["a"], help="add a user to a ticket")
     @commands.has_role(config.roles['admin'])
     async def add(self, ctx, member: discord.Member):
-        """adds a user from a ticket"""
+        """adds a user to a ticket"""
 
         memids = [member.id for member in ctx.channel.members]
         if member.id in memids:
@@ -161,7 +161,7 @@ For help tickets:
     @commands.command(name="autoclose", aliases=["ac"])
     @commands.has_role(config.roles['admin'])
     async def autoclose(self, ctx, option: str = "off", channel: discord.TextChannel = None):
-        """turns the autoclose feature on or off for a give channel"""
+        """turns the autoclose feature on or off for a given channel"""
 
         if channel is None:
             channel = ctx.channel
