@@ -25,7 +25,7 @@ class UtilityCommands(commands.Cog):
 
     @commands.command(name="say")
     async def say(self, ctx, *, message):
-        """says a message through a webhook"""
+        """say a message through a webhook"""
 
         await Utility.say_in_webhook(self.bot, ctx.author, ctx.channel, ctx.author.avatar.url, False, message)
         await ctx.message.delete()
@@ -39,7 +39,7 @@ class UtilityCommands(commands.Cog):
 
     @commands.command(name="about")
     async def about(self, ctx):
-        """returns about info"""
+        """return about info"""
         if not self.bot.owner_id:
             app = await self.bot.application_info()
             self.bot.owner_id = app.owner.id
@@ -51,14 +51,14 @@ class UtilityCommands(commands.Cog):
     @commands.command(name="purge")
     @commands.has_role(config.roles['admin'])
     async def purge(self, ctx, limit: int):
-        """purges x amount of messages"""
+        """purge x amount of messages"""
         await ctx.channel.purge(limit=limit + 1)
         await ctx.send(f'Purged {limit} messages', delete_after=3)
 
     @commands.command(name="check")
     @commands.has_role(config.roles['admin'])
     async def check_discord(self, ctx):
-        """Checks if all configurations are valid"""
+        """Check if configurations are valid"""
         bot_in_guild = ctx.guild.get_member(self.bot.user.id)
         checks = {'pass': [], 'fail': []}
         all_checks = {**{f"{k} role": bool(get(ctx.guild.roles, name=v)) for (k, v) in config.roles.items()},
@@ -89,7 +89,7 @@ class UtilityCommands(commands.Cog):
     @commands.command(name="config")
     @commands.has_role(config.roles['admin'])
     async def get_config_value(self, ctx, target_field: str = None):
-        """Shows the configuration for all fields or a given field"""
+        """Show the configuration for all fields or a given field"""
         def find_value(field):
             return json.dumps(getattr(config, field), sort_keys=True, indent=4)
 
@@ -128,7 +128,7 @@ class UtilityCommands(commands.Cog):
     @commands.group(name="challenge", aliases=["c", "chall"], invoke_without_command=True)
     @commands.has_role(config.roles['admin'])
     async def challenge(self, ctx):
-        """Base challenge command. Shows stats on challenges."""
+        """Base challenge command. Show stats on challenges."""
         embed = UI.Embed(title="Challenges")
         embed.set_author(name=f"{ctx.author}",
                          icon_url=f"{ctx.author.avatar.url}")
@@ -151,7 +151,7 @@ class UtilityCommands(commands.Cog):
     @challenge.command(name="refresh", aliases=["ref"])
     @commands.has_role(config.roles['admin'])
     async def refresh(self, ctx):
-        """refreshes challenges from the api"""
+        """refreshe challenges from api"""
         embed = UI.Embed(
             description="sending requests...")
         embed.set_author(name=f"{ctx.author}",
@@ -200,7 +200,7 @@ class UtilityCommands(commands.Cog):
     @helper_user.command(name="sync", aliases=["sy"])
     @commands.has_role(config.roles['helper'])
     async def helper_user_sync(self, ctx, choice: str = "add"):
-        """updates you to channels: add or remove"""
+        """add or remove you from channels"""
         choice_ = choice
         try:
             choice = getattr(types.HelperSync, choice.upper())
@@ -248,7 +248,7 @@ class UtilityCommands(commands.Cog):
     @helper_admin.command(name="add")
     @commands.has_role(config.roles['admin'])
     async def helper_add(self, ctx, member: discord.Member):
-        """adds a helper"""
+        """add a helper"""
         helper_role = get(member.guild.roles, name=config.roles['helper'])
         helper_ids = [helper.id for helper in helper_role.members]
         if member.id in helper_ids:
@@ -275,7 +275,7 @@ class UtilityCommands(commands.Cog):
     @helper_admin.command(name="remove", aliases=["r", "rm"])
     @commands.has_role(config.roles['admin'])
     async def helper_remove(self, ctx, member: discord.Member):
-        """removes a helper"""
+        """remove a helper"""
         helper_role = get(member.guild.roles, name=config.roles['helper'])
         helper_ids = [helper.id for helper in helper_role.members]
         if member.id not in helper_ids:
@@ -302,7 +302,7 @@ class UtilityCommands(commands.Cog):
     @helper_admin.command(name="refresh", aliases=["ref"])
     @commands.has_role(config.roles['admin'])
     async def helper_refresh(self, ctx):
-        """refreshes helpers from the api"""
+        """refreshe helpers from api"""
         embed = UI.Embed(
             description="sending requests...")
         embed.set_author(name=f"{ctx.author}",
@@ -324,7 +324,7 @@ class UtilityCommands(commands.Cog):
     @helper_admin.command(name="update", aliases=["upd"])
     @commands.has_role(config.roles['admin'])
     async def helper_update(self, ctx, choice: str = "add"):
-        """updates helpers to channels: add(default) or remove"""
+        """add or remove helpers from channels"""
         choice_ = choice
         try:
             choice = getattr(types.HelperSync, choice.upper())
@@ -358,7 +358,7 @@ class UtilityCommands(commands.Cog):
     @trello.command(name="update", aliases=['u'])
     @commands.has_role(config.roles['admin'])
     async def trello_update(self, ctx):
-        """updates all challenges on the trello"""
+        """update all challenges on trello"""
         progress_embed = UI.Embed(
             title="Progress", description="fetching and sorting data\n")
         progress_message: discord.Message = await ctx.channel.send(embed=progress_embed)

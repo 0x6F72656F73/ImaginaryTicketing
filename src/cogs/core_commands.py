@@ -26,7 +26,7 @@ class TicketCommands(commands.Cog):
     @commands.command(name="ticket")
     @commands.has_role(config.roles['admin'])
     async def ticket(self, ctx: commands.Context):
-        """shows a ticket message"""
+        """show the ticket message"""
         bot_commands: discord.TextChannel = get(
             ctx.guild.text_channels, name="bot-commands")
         embed = UI.Embed(title="Ticket System", timestamp=None)
@@ -37,7 +37,7 @@ class TicketCommands(commands.Cog):
 
 For help tickets:
 - You must show what you've tried so far before we help you
-- Only create one for per challenge
+- Only create one ticket per challenge
 - No points will be deducted
 - Cannot be created for the current challenge before either:
 \u200b \u200b - 30 minutes have passed since the challenge was released
@@ -74,7 +74,7 @@ For help tickets:
     @commands.command(name="add", aliases=["a"], help="add a user to a ticket")
     @commands.has_role(config.roles['admin'])
     async def add(self, ctx, member: discord.Member):
-        """adds a user to a ticket"""
+        """add a user to a ticket"""
 
         memids = [member.id for member in ctx.channel.members]
         if member.id in memids:
@@ -94,7 +94,7 @@ For help tickets:
     @commands.command(name="remove", aliases=["r", "rm"])
     @commands.has_role(config.roles['admin'])
     async def remove(self, ctx, member: discord.Member):
-        """removes a user from a ticket"""
+        """remove a user from a ticket"""
 
         memids = [member.id for member in ctx.channel.members]
         if member.id not in memids:
@@ -112,7 +112,7 @@ For help tickets:
 
     @commands.command(name="close", aliases=["cl"])
     async def close(self, ctx):
-        """closes a ticket"""
+        """close a ticket"""
         try:
             user_id = db.get_user_id(ctx.channel.id)
         except ValueError as e:
@@ -126,12 +126,12 @@ For help tickets:
             await Utility.delete_message(ctx)
             await close_ticket.main()
         else:
-            await ctx.channel.send("You do not have enough permissions to run this command")
+            await ctx.channel.send("You do not have permission to run this command")
 
     @commands.command(name="delete", aliases=["del"])
     @commands.has_role(config.roles['admin'])
     async def delete(self, ctx):
-        """deletes a ticket"""
+        """delete a ticket"""
         delete_ticket = actions.DeleteTicket(ctx.guild, ctx.author,
                                              ctx.channel)
         try:
@@ -142,7 +142,7 @@ For help tickets:
     @commands.command(name="reopen", aliases=["re", "reo", "re-open"])
     @commands.has_role(config.roles['admin'])
     async def reopen(self, ctx):
-        """reopens a ticket"""
+        """reopen a ticket"""
         reopen_ticket = actions.ReopenTicket(ctx.guild, ctx.author,
                                              ctx.channel)
         await reopen_ticket.main()
@@ -161,7 +161,7 @@ For help tickets:
     @commands.command(name="autoclose", aliases=["ac"])
     @commands.has_role(config.roles['admin'])
     async def autoclose(self, ctx, option: str = "off", channel: discord.TextChannel = None):
-        """turns the autoclose feature on or off for a given channel"""
+        """turn autoclose on or off for a given channel"""
 
         if channel is None:
             channel = ctx.channel
@@ -175,14 +175,14 @@ For help tickets:
     @commands.command(name="auto_message", aliases=["am"])
     @commands.has_role(config.roles['admin'])
     async def auto_message(self, ctx, channel: discord.TextChannel):
-        """Sends a message asking if the ticket can be closed. Does not contribute to AC checks"""
+        """Asks if ticket can be closed. Does not contribute to AC checks"""
         try:
             user_id = db.get_user_id(channel.id)
         except ValueError as e:
             return await ctx.channel.send(e.args[0])
 
         member = ctx.guild.get_member(int(user_id))
-        message = f"If that is all we can help you with {member.mention}, please close this ticket."
+        message = f"If that is all we can help you with {member.mention}, please close this ticket. (this action was performed automatically)"
         random_admin = await Utility.random_admin_member(ctx.guild)
         await Utility.say_in_webhook(self.bot, random_admin, channel, random_admin.avatar.url, True, message, return_message=True, view=action_views.CloseView())
 
