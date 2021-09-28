@@ -182,7 +182,7 @@ For help tickets:
             return await ctx.channel.send(e.args[0])
 
         member = ctx.guild.get_member(int(user_id))
-        message = f"If that is all we can help you with {member.mention}, please close this ticket.\n||I am a bot and this action was performed automatically||"
+        message = f"If that is all we can help you with {member.mention}, please close this ticket. (this action was performed automatically)"
         random_admin = await Utility.random_admin_member(ctx.guild)
         await Utility.say_in_webhook(self.bot, random_admin, channel, random_admin.avatar.url, True, message, return_message=True, view=action_views.CloseView())
 
