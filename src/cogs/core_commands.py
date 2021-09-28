@@ -26,7 +26,7 @@ class TicketCommands(commands.Cog):
     @commands.command(name="ticket")
     @commands.has_role(config.roles['admin'])
     async def ticket(self, ctx: commands.Context):
-        """shows a ticket message"""
+        """show the ticket message"""
         bot_commands: discord.TextChannel = get(
             ctx.guild.text_channels, name="bot-commands")
         embed = UI.Embed(title="Ticket System", timestamp=None)
@@ -74,7 +74,7 @@ For help tickets:
     @commands.command(name="add", aliases=["a"], help="add a user to a ticket")
     @commands.has_role(config.roles['admin'])
     async def add(self, ctx, member: discord.Member):
-        """adds a user to a ticket"""
+        """add a user to a ticket"""
 
         memids = [member.id for member in ctx.channel.members]
         if member.id in memids:
@@ -94,7 +94,7 @@ For help tickets:
     @commands.command(name="remove", aliases=["r", "rm"])
     @commands.has_role(config.roles['admin'])
     async def remove(self, ctx, member: discord.Member):
-        """removes a user from a ticket"""
+        """remove a user from a ticket"""
 
         memids = [member.id for member in ctx.channel.members]
         if member.id not in memids:
@@ -112,7 +112,7 @@ For help tickets:
 
     @commands.command(name="close", aliases=["cl"])
     async def close(self, ctx):
-        """closes a ticket"""
+        """close a ticket"""
         try:
             user_id = db.get_user_id(ctx.channel.id)
         except ValueError as e:
@@ -131,7 +131,7 @@ For help tickets:
     @commands.command(name="delete", aliases=["del"])
     @commands.has_role(config.roles['admin'])
     async def delete(self, ctx):
-        """deletes a ticket"""
+        """delete a ticket"""
         delete_ticket = actions.DeleteTicket(ctx.guild, ctx.author,
                                              ctx.channel)
         try:
@@ -142,7 +142,7 @@ For help tickets:
     @commands.command(name="reopen", aliases=["re", "reo", "re-open"])
     @commands.has_role(config.roles['admin'])
     async def reopen(self, ctx):
-        """reopens a ticket"""
+        """reopen a ticket"""
         reopen_ticket = actions.ReopenTicket(ctx.guild, ctx.author,
                                              ctx.channel)
         await reopen_ticket.main()
@@ -161,7 +161,7 @@ For help tickets:
     @commands.command(name="autoclose", aliases=["ac"])
     @commands.has_role(config.roles['admin'])
     async def autoclose(self, ctx, option: str = "off", channel: discord.TextChannel = None):
-        """turns the autoclose feature on or off for a given channel"""
+        """turn autoclose on or off for a given channel"""
 
         if channel is None:
             channel = ctx.channel
