@@ -33,11 +33,11 @@ class Admin(commands.Cog):
 
     @shutdown.error
     async def shutdown_error(self, ctx, error):
-        await ctx.channel.send(f"I'm sorry, {ctx.author}, I'm afraid I can't do that for you. You're not an owner :cry:")
+        await ctx.channel.send(f"I'm sorry, ctx.author.mention, I'm afraid I can't do that for you. You're not my owner :cry:")
 
     async def cog_command_error(self, ctx, error):
         if isinstance(error, commands.MissingPermissions):
-            await ctx.send(f"I'm sorry, {ctx.author}, I'm afraid I can't do that for you.")
+            await ctx.send(f"I'm sorry, ctx.author.mention, I'm afraid I can't do that for you.")
 
 def setup(bot):
     bot.add_cog(Admin(bot))
