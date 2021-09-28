@@ -37,7 +37,7 @@ class TicketCommands(commands.Cog):
 
 For help tickets:
 - You must show what you've tried so far before we help you
-- Only create one for per challenge
+- Only create one ticket per challenge
 - No points will be deducted
 - Cannot be created for the current challenge before either:
 \u200b \u200b - 30 minutes have passed since the challenge was released
@@ -126,7 +126,7 @@ For help tickets:
             await Utility.delete_message(ctx)
             await close_ticket.main()
         else:
-            await ctx.channel.send("You do not have enough permissions to run this command")
+            await ctx.channel.send("You do not have permission to run this command")
 
     @commands.command(name="delete", aliases=["del"])
     @commands.has_role(config.roles['admin'])
@@ -175,14 +175,14 @@ For help tickets:
     @commands.command(name="auto_message", aliases=["am"])
     @commands.has_role(config.roles['admin'])
     async def auto_message(self, ctx, channel: discord.TextChannel):
-        """Sends a message asking if the ticket can be closed. Does not contribute to AC checks"""
+        """Asks if ticket can be closed. Does not contribute to AC checks"""
         try:
             user_id = db.get_user_id(channel.id)
         except ValueError as e:
             return await ctx.channel.send(e.args[0])
 
         member = ctx.guild.get_member(int(user_id))
-        message = f"If that is all we can help you with {member.mention}, please close this ticket."
+        message = f"If that is all we can help you with {member.mention}, please close this ticket.\n||I am a bot and this action was performed automatically||"
         random_admin = await Utility.random_admin_member(ctx.guild)
         await Utility.say_in_webhook(self.bot, random_admin, channel, random_admin.avatar.url, True, message, return_message=True, view=action_views.CloseView())
 
