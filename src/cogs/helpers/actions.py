@@ -133,7 +133,7 @@ class CreateTicket(BaseActions):
             admin: discord.PermissionOverwrite(
                 read_messages=True),
             bots: discord.PermissionOverwrite(read_messages=True),
-            member: discord.PermissionOverwrite(read_messages=True, send_messages=True),
+            member: discord.PermissionOverwrite(read_messages=True),
             muted: discord.PermissionOverwrite(
                 create_instant_invite=False, send_messages=False),
             quarantine: discord.PermissionOverwrite(
