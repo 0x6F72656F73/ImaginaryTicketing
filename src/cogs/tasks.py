@@ -18,12 +18,12 @@ class Tasks(commands.Cog):
             # await AutoClose.main(self.bot, seconds=2)
             log.info("Finished Task AutoClose")
 
-        @aiocron.crontab("0 9 * * *")
+        @aiocron.crontab("0 10 * * *")
         async def start_scraping_challenges_9():
             await ScrapeChallenges.main(self.bot)
             log.info("Finished Task ScrapeChallenges at 9 AM")
 
-        @aiocron.crontab("30 9 * * *")
+        @aiocron.crontab("30 10 * * *")
         async def start_scraping_challenges_9_30():
             await ScrapeChallenges.main(self.bot)
             log.info("Finished Task ScrapeChallenges at 9 30 AM")
