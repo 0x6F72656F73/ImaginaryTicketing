@@ -156,8 +156,6 @@ class CreateTicket(BaseActions):
         db.create_ticket(self.ticket_channel.id, str(
             self.ticket_channel), self.guild.id, self.user_id, self.ticket_type, status, check)
 
-        db.update_check("0", self.ticket_channel.id)
-
         avail_mods = get(
             self.guild.roles, name=config.roles['ticket ping'])
         if self.ticket_type == "help":
@@ -182,6 +180,8 @@ class CreateTicket(BaseActions):
 
         await ticket_channel_message.pin()
         await self.ticket_channel.purge(limit=1)
+
+        db.update_check("0", self.ticket_channel.id)
 
         await self._log_to_channel("Created ticket")
         log.info(
