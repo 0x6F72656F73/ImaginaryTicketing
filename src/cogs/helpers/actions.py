@@ -3,7 +3,7 @@ import os
 import asyncio
 import collections
 import logging
-from typing import List, Tuple, Union, Optional
+from typing import List, Set, Tuple, Union, Optional
 
 import discord
 from discord.ext import commands
@@ -155,16 +155,18 @@ class CreateTicket(BaseActions):
         check = "2"
         db.create_ticket(self.ticket_channel.id, str(
             self.ticket_channel), self.guild.id, self.user_id, self.ticket_type, status, check)
-        if self.ticket_type == "help":
-            helper = CreateTicketHelper(
-                self.ticket_channel, self.bot, self.ticket_type, self._args[0], *self._args[1], **self._args[2])
-            await helper.challenge_selection()
+
         db.update_check("0", self.ticket_channel.id)
 
         avail_mods = get(
             self.guild.roles, name=config.roles['ticket ping'])
         if self.ticket_type == "help":
-            welcome_message = f'A new ticket has been created {avail_mods.mention}'
+            helper = CreateTicketHelper(
+                self.ticket_channel, self.bot, self.ticket_type, self._args[0], *self._args[1], **self._args[2])
+            ch_authors = await helper.challenge_selection()
+            author_mentions = ''.join(
+                [self.guild.get_member_named(author).mention for author in ch_authors])
+            welcome_message = f'A new ticket has been created {avail_mods.mention}, {author_mentions}'
         elif self.ticket_type == "submit":
             welcome_message = f'Welcome <@{self.user_id}>'
         else:
@@ -229,12 +231,15 @@ class CreateTicketHelper(CreateTicket):
             ch for ch in challenges if ch.category == view.children[0]._selected_values[0]]
         return category_challenges
 
-    async def _add_author_and_helpers(self, selected_challenge: Challenge):
+    async def _add_author_and_helpers(self, selected_challenge: Challenge) -> Set[str]:
+        ch_authors = set()
         if len(authors := selected_challenge.author.split('/')) > 1:
             for author in authors:
                 await UtilityActions._add_member(author, selected_challenge.title, self.guild, self.ticket_channel)
+                ch_authors.add(author)
         else:
             await UtilityActions._add_member(selected_challenge.author, selected_challenge.title, self.guild, self.ticket_channel)
+            ch_authors.add(selected_challenge.author)
 
         if len(helpers := json.loads(selected_challenge.helper_id_list)):
             for helper in helpers:
@@ -243,8 +248,9 @@ class CreateTicketHelper(CreateTicket):
                         await UtilityActions._add_member(int(helper), selected_challenge.title, self.guild, self.ticket_channel)
                 except ValueError:
                     pass
+        return ch_authors  # Returns the author to be pinged on ticket creation
 
-    async def challenge_selection(self):
+    async def challenge_selection(self) -> Set[str]:
         # challenges = CreateTicketHelper.fake_challenges(21)
         user_solved_challenges = await ScrapeChallenges.get_user_challenges(
             self.user_id)
@@ -274,7 +280,8 @@ class CreateTicketHelper(CreateTicket):
             return message.channel == self.ticket_channel and message.author == self.user
         await self.bot.wait_for('message', check=user_response_check)
         await user_message.delete()
-        await self._add_author_and_helpers(selected_challenge)
+
+        return await self._add_author_and_helpers(selected_challenge)
 
 class UtilityActions:
     @staticmethod
