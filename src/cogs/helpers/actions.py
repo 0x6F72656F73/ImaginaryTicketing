@@ -164,9 +164,13 @@ class CreateTicket(BaseActions):
             helper = CreateTicketHelper(
                 self.ticket_channel, self.bot, self.ticket_type, self._args[0], *self._args[1], **self._args[2])
             ch_authors = await helper.challenge_selection()
-            author_mentions = ''.join(
-                [self.guild.get_member_named(author).mention for author in ch_authors])
-            welcome_message = f'A new ticket has been created {avail_mods.mention}, {author_mentions}'
+            ch_authors = set(filter(lambda v: v is not None, ch_authors))
+            if len(ch_authors) == 0:
+                author_mentions = ''
+            else:
+                author_mentions = ', ' + ', '.join(
+                    [author.mention for author in ch_authors])
+            welcome_message = f'A new ticket has been created {avail_mods.mention} {author_mentions}'
         elif self.ticket_type == "submit":
             welcome_message = f'Welcome <@{self.user_id}>'
         else:
@@ -231,15 +235,15 @@ class CreateTicketHelper(CreateTicket):
             ch for ch in challenges if ch.category == view.children[0]._selected_values[0]]
         return category_challenges
 
-    async def _add_author_and_helpers(self, selected_challenge: Challenge) -> Set[str]:
+    async def _add_author_and_helpers(self, selected_challenge: Challenge) -> Set[Union[discord.Member, None]]:
         ch_authors = set()
         if len(authors := selected_challenge.author.split('/')) > 1:
             for author in authors:
-                await UtilityActions._add_member(author, selected_challenge.title, self.guild, self.ticket_channel)
+                author = await UtilityActions._add_member(author, selected_challenge.title, self.guild, self.ticket_channel)
                 ch_authors.add(author)
         else:
-            await UtilityActions._add_member(selected_challenge.author, selected_challenge.title, self.guild, self.ticket_channel)
-            ch_authors.add(selected_challenge.author)
+            author = await UtilityActions._add_member(selected_challenge.author, selected_challenge.title, self.guild, self.ticket_channel)
+            ch_authors.add(author)
 
         if len(helpers := json.loads(selected_challenge.helper_id_list)):
             for helper in helpers:
@@ -250,7 +254,7 @@ class CreateTicketHelper(CreateTicket):
                     pass
         return ch_authors  # Returns the author to be pinged on ticket creation
 
-    async def challenge_selection(self) -> Set[str]:
+    async def challenge_selection(self) -> Set[Union[discord.Member, None]]:
         # challenges = CreateTicketHelper.fake_challenges(21)
         user_solved_challenges = await ScrapeChallenges.get_user_challenges(
             self.user_id)
@@ -313,7 +317,7 @@ class UtilityActions:
 
     # change to member after website
     @staticmethod
-    async def _add_member(member_identifier: Union[str, int], challenge_title: str, guild: discord.Guild, ticket_channel: discord.TextChannel):
+    async def _add_member(member_identifier: Union[str, int], challenge_title: str, guild: discord.Guild, ticket_channel: discord.TextChannel) -> Union[discord.Member, None]:
         # change to get_member after website
         if isinstance(member_identifier, str):
             author = guild.get_member_named(member_identifier)
@@ -325,7 +329,7 @@ class UtilityActions:
         except discord.InvalidArgument:
             log.info(
                 f"Member {member_identifier} for challenge {challenge_title} does not exist.")
-
+        return author
 
 class CloseTicket(BaseActions):
     def __init__(self, *args, **kwargs):
