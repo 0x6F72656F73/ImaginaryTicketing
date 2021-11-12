@@ -371,7 +371,7 @@ class CloseTicket(BaseActions):
 
         return channel_users, time_open
 
-    async def main(self):
+    async def main(self, inactivity=False):
         """closes a ticket"""
         try:
             current_status = db.get_status(self.channel_id)
@@ -426,8 +426,11 @@ class CloseTicket(BaseActions):
             name="message distribution", value=f"{channel_users}")
         close_stats_embed.add_field(
             name="time open", value=f"{time_open}")
-
-        await t_user.send(embed=close_stats_embed, file=transcript_file)
+        if inactivity:
+            message = "This ticket was automatically closed due to inactivity."
+            await t_user.send(message, embed=close_stats_embed, file=transcript_file)
+        else:
+            await t_user.send(embed=close_stats_embed, file=transcript_file)
         await embed_message.edit(embed=close_stats_embed, view=action_views.ReopenDeleteView())
 
         status = "closed"

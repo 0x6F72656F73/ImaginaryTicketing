@@ -84,7 +84,7 @@ class AutoClose(commands.Cog):
 
         if check == 1:
             close = actions.CloseTicket(guild, bot, channel, background=True)
-            await close.main()
+            await close.main(inactivity=True)
             db.update_check("0", channel.id)
 
         elif check == 0:
