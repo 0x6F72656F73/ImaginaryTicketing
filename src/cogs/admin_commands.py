@@ -16,11 +16,11 @@ def is_owner():
 class Admin(commands.Cog):
     """admin commands"""
 
-    def __init__(self, bot):
+    def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    @commands.command(name="shutdown")
     @is_owner()
+    @commands.command(name="shutdown")
     async def shutdown(self, ctx):
         """shuts the bot down"""
 

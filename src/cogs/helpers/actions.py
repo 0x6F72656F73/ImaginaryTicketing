@@ -278,7 +278,7 @@ class CreateTicketHelper(CreateTicket):
 
         await self.ticket_channel.set_permissions(member, read_messages=True,
                                                   send_messages=None)
-        user_message = await self.ticket_channel.send("What have your tried so far?")
+        user_message = await self.ticket_channel.send("Please explain what you've tried so far and what you need help with")
 
         def user_response_check(message):
             return message.channel == self.ticket_channel and message.author == self.user

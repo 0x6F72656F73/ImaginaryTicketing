@@ -3,22 +3,22 @@
 1 = bot has said 1 message
 2 = channel will be ignored
 """
-
-from datetime import timedelta
+from datetime import timedelta, datetime
 import json
-from typing import Dict, List
+from typing import Dict, List, Set
 import logging
 
 import discord
 from discord.ext import commands
 from environs import Env
 import aiohttp
+from trello import TrelloClient, List as TrelloList, Label
 
 import cogs.helpers.views.action_views as action_views
 import cogs.helpers.actions as actions
 from utils import types, exceptions
 from utils.options import Options
-from utils.utility import Utility, UI, Challenge
+from utils.utility import Utility, UI, Challenge, TrelloChallenge
 from utils.database.db import DatabaseManager as db
 import config
 
@@ -157,7 +157,7 @@ class ScrapeChallenges():
     def _setup(cls) -> Dict[str, str]:
         env = Env()
         env.read_env()
-        return {'apikey': env.str('apikey')}
+        return {'apikey': env.str('IMAGINARYCTF_API_KEY')}
 
     @classmethod
     async def _fetch(cls, client: aiohttp.ClientSession, url: str, params=None) -> Dict[str, str]:
@@ -266,3 +266,137 @@ class UpdateHelpers():
                         except ValueError:
                             pass
                         await cls.modify_helper_to_channel(channel_, helper, choice)
+
+class UpdateTrello:
+    def __init__(self, response_message: discord.Message):
+        self.response_message = response_message
+        try:
+            self.response_embed = self.response_message.embeds[0]
+        except AttributeError as e:
+            raise AttributeError(
+                "A progress embed needs to be sent as well") from e
+        env = Env()
+        env.read_env()
+        self.client = TrelloClient(
+            api_key=env.str('TRELLO_API_KEY'),
+            api_secret=env.str('TRELLO_API_SECRET'),
+        )
+        all_boards = self.client.list_boards()
+        self.current_month = next(
+            filter(lambda board: board.name == "September", all_boards))
+        self.all_categories = self.current_month.open_lists()
+        self.built_challenges: List[TrelloChallenge] = []
+        self.category_lengths: Dict[TrelloList, int] = {}
+
+    async def setup(self):
+        challenges = await ScrapeChallenges.fetch_challenges()
+        for chall in challenges:
+            chall['release_date'] = datetime.strptime(
+                chall['release_date'], '%Y-%m-%dT%H:%M:%S.%f')
+            self.built_challenges.append(TrelloChallenge.build(**chall))
+
+        self.category_lengths = {cat: len(cat.list_cards())
+                                 for cat in self.all_categories}
+
+        self.response_embed.description = f"Total number of challenges: {len(challenges)}\n"
+
+        trello_all_challenges = self.current_month.open_cards()
+        if len(challenges) != len(trello_all_challenges):
+            built_chall_names = [
+                chall.title for chall in self.built_challenges]
+            cards_names = [
+                card.name for card in trello_all_challenges]
+            not_added = set(built_chall_names).difference(
+                set(cards_names))
+            self.response_embed.description += f"Total number of challenges not added: {len(not_added)}\n"
+            for chall in not_added:
+                self.response_embed.description += f"- {chall}\n"
+        await self.response_message.edit(embed=self.response_embed)
+
+    async def main(self):
+        if not self.built_challenges:
+            raise ValueError("Run setup first")
+        self.response_embed.description += "**Data:**\n"
+        await self._create_categories()
+        for cat in self.all_categories:
+            await self.add_challenges_to_category(cat)
+        await self.sort_categories()
+        return self.response_embed
+
+    def _delete_wrong_challenges(self):
+        cards = self.current_month.all_cards()
+        for card in cards:
+            try:
+                next(t for t in self.built_challenges if t.title == card.name)
+            except StopIteration:
+                card.delete()
+
+    async def _create_categories(self):
+        should_categories = {chall.category for chall in self.built_challenges}
+        current_categories = {
+            category.name for category in self.all_categories}
+        unadded_categories = should_categories.difference(current_categories)
+        for category in unadded_categories:
+            self.response_embed.description += f" **added** category {category}\n"
+            self.all_categories.append(self.current_month.add_list(category))
+        await self.response_message.edit(embed=self.response_embed)
+
+    def _difficulty(self, points: int) -> Label:
+        labels = self.current_month.get_labels()
+        if points < 75:
+            return (l for l in labels if l.name == "easy")
+        if points < 125:
+            return (l for l in labels if l.name == "easy/medium")
+        if points < 150:
+            return (l for l in labels if l.name == "medium")
+        if points < 175:
+            return (l for l in labels if l.name == "medium/hard")
+        if points < 250:
+            return (l for l in labels if l.name == "hard")
+        return (l for l in labels if l.name == "extremely hard")
+
+    @staticmethod
+    def _completed(time: datetime):
+        return datetime.now() > time
+
+    async def add_challenges_to_category(self, category: TrelloList):
+        category_challenges: Set[TrelloChallenge] = {
+            chall for chall in self.built_challenges if chall.category == category.name}
+        category_challenges = sorted(
+            category_challenges, key=lambda c: c.release_date)
+        for card in category.list_cards_iter():
+            for ch in category_challenges.copy():
+                if card.name == ch.title:
+                    category_challenges.remove(ch)
+        for ch in category_challenges:
+            pts = self._difficulty(ch.points)
+            card = category.add_card(ch.title, labels=pts,
+                                     due=str(ch.release_date))
+            if self._completed(ch.release_date):
+                card.set_due_complete()
+            self.response_embed.description += f" **added** challenge {ch.title}\n"
+            await self.response_message.edit(embed=self.response_embed)
+
+    @classmethod
+    def get_position(cls, idx: int, pivot: int = 0):
+        return idx + pivot
+
+    async def sort_categories(self):
+        print("sort categories:")
+        print('------------')
+        important_categories = {
+            cat: cat_len for cat, cat_len in self.category_lengths.items() if cat.name in config.trello["categories"]}
+
+        unimportant_categories = {k: self.category_lengths[k] for k in set(
+            self.category_lengths).symmetric_difference(set(important_categories))}
+
+        sorted_important_categories = dict(sorted(important_categories.items(),
+                                                  key=lambda x: x[1]))
+        for idx, (cat, _) in enumerate(sorted_important_categories.items()):
+            cat.set_pos(self.get_position(idx))
+
+        pivot = len(unimportant_categories) + 2
+        sorted_unimportant_categories = dict(sorted(unimportant_categories.items(),
+                                                    key=lambda x: x[1]))
+        for idx, (cat, _) in enumerate(sorted_unimportant_categories.items()):
+            cat.set_pos(self.get_position(idx, pivot))

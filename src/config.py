@@ -19,3 +19,6 @@ tickets = {"emojis": ['<:rooSupport:811702778622771232>',
 api = {"base_link": "https://imaginaryctf.org/api"}
 
 transcript = {"domain": "https://oreos.imaginaryctf.org"}
+
+trello = {"categories": {
+    "Crypto", "Misc", "Forensics", "Reversing", "Web", "Pwn"}}

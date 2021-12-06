@@ -11,7 +11,7 @@ from discord.utils import get
 import config
 
 from utils.database.db import DatabaseManager as db
-from utils.background import ScrapeChallenges, UpdateHelpers
+from utils.background import ScrapeChallenges, UpdateHelpers, UpdateTrello
 from utils.utility import Utility, UI, Challenge
 from utils import exceptions, types
 
@@ -45,7 +45,7 @@ class UtilityCommands(commands.Cog):
             self.bot.owner_id = app.owner.id
         owner = self.bot.get_user(self.bot.owner_id)
         embed = UI.Embed(
-            title="about", description=f"This bot was proudly made by {owner} :cookie:")
+            title="About ImaginaryTicketing", description=f"This bot was proudly made by {owner} :heart:\nI'm open source, [check me out](https://github.com/0x6F72656F73/ImaginaryTicketing)\nNeed help? [Join our Discord server](https://discord.gg/wytss8yrSc)")
         await ctx.send(embed=embed)
 
     @commands.command(name="purge")
@@ -199,7 +199,7 @@ class UtilityCommands(commands.Cog):
 
     @helper_user.command(name="sync", aliases=["sy"])
     @commands.has_role(config.roles['helper'])
-    async def helper_user_sync(self, ctx, choice: str):
+    async def helper_user_sync(self, ctx, choice: str = "add"):
         """updates you to channels: add or remove"""
         choice_ = choice
         try:
@@ -344,6 +344,37 @@ class UtilityCommands(commands.Cog):
         await ctx.channel.send(embed=embed)
 
         await ctx.message.delete()
+
+    @commands.group(name="trello", aliases=["t"], invoke_without_command=True)
+    @commands.has_role(config.roles['admin'])
+    async def trello(self, ctx):
+        """Base trello command. Shows trello information"""
+        progress_embed = UI.Embed(
+            title="Stats", description="fetching and sorting data")
+        progress_message = await ctx.channel.send(embed=progress_embed)
+        trello = UpdateTrello(progress_message)
+        await trello.setup()
+
+    @trello.command(name="update", aliases=['u'])
+    @commands.has_role(config.roles['admin'])
+    async def trello_update(self, ctx):
+        """updates all challenges on the trello"""
+        progress_embed = UI.Embed(
+            title="Progress", description="fetching and sorting data\n")
+        progress_message: discord.Message = await ctx.channel.send(embed=progress_embed)
+
+        trello = UpdateTrello(progress_message)
+        await trello.setup()
+        try:
+            progress_embed = await trello.main()
+        except ValueError as e:
+            return await ctx.channel.send(f"{e.args[0]}")
+        progress_embed = progress_message.embeds[0]
+        progress_embed.description += "Successfully refreshed all challenges on trello"
+        await progress_message.edit(embed=progress_embed)
+
+    # @trello.commands(name="distrubution")
+    # pass
 
 def setup(bot: commands.Bot):
     bot.add_cog(UtilityCommands(bot))
