@@ -25,9 +25,9 @@ class BaseActions:
     """Base class for all actions"""
 
     def __init__(self, guild: discord.Guild, user: Union[discord.User, discord.ClientUser],
-                 channel: discord.TextChannel, background: bool = False):
+                 channel: discord.TextChannel, bot: bool = False):
         self.guild = guild
-        if background:
+        if bot:
             self.user = user.user
             self.user_id = self.user.id
         else:
@@ -187,6 +187,7 @@ class CreateTicket(BaseActions):
         log.info(
             f"[CREATED] {self.ticket_channel} by {self.user} (ID: {self.channel_id})")
         return self.ticket_channel
+
 class CreateTicketHelper(CreateTicket):
     def __init__(self, ticket_channel: discord.TextChannel, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -371,7 +372,7 @@ class CloseTicket(BaseActions):
 
         return channel_users, time_open
 
-    async def main(self, inactivity=False):
+    async def main(self, before_message: str = ""):
         """closes a ticket"""
         try:
             current_status = db.get_status(self.channel_id)
@@ -426,9 +427,13 @@ class CloseTicket(BaseActions):
             name="message distribution", value=f"{channel_users}")
         close_stats_embed.add_field(
             name="time open", value=f"{time_open}")
-        if inactivity:
-            message = "This ticket was automatically closed due to inactivity."
-            await t_user.send(message, embed=close_stats_embed, file=transcript_file)
+        if before_message:
+            if isinstance(before_message, str):
+                await t_user.send(before_message, embed=close_stats_embed, file=transcript_file)
+            else:
+                log.warning(
+                    f"object {before_message} is not of type string, but type {type(before_message)}")
+                await t_user.send(embed=close_stats_embed, file=transcript_file)
         else:
             await t_user.send(embed=close_stats_embed, file=transcript_file)
         await embed_message.edit(embed=close_stats_embed, view=action_views.ReopenDeleteView())
