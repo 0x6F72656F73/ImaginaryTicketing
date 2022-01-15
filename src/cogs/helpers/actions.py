@@ -161,7 +161,11 @@ class CreateTicket(BaseActions):
         if self.ticket_type == "help":
             helper = CreateTicketHelper(
                 self.ticket_channel, self.bot, self.ticket_type, self._args[0], *self._args[1], **self._args[2])
-            ch_authors = await helper.challenge_selection()
+            try:
+                ch_authors = await helper.challenge_selection()
+            except exceptions.ChallengeTimeoutError:
+                raise exceptions.ChallengeTimeoutError
+
             ch_authors = set(filter(lambda v: v is not None, ch_authors))
             if len(ch_authors) == 0:
                 author_mentions = ''

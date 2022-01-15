@@ -17,7 +17,7 @@ class CreateHelpButton(discord.ui.Button['TicketView']):  # add emoji
                                              interaction.guild, interaction.user, interaction.channel)
         try:
             await create_ticket.main()
-        except (exceptions.MaxUserTicketError, exceptions.MaxChannelTicketError, discord.errors.NotFound):
+        except (exceptions.MaxUserTicketError, exceptions.MaxChannelTicketError, exceptions.ChallengeTimeoutError, discord.errors.NotFound):
             pass
 
 class TicketView(discord.ui.View):
