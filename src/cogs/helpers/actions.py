@@ -211,14 +211,23 @@ class CreateTicketHelper(CreateTicket):
         challenge_options = [discord.SelectOption(
             label=(challenge.title[:23] + '..') if len(challenge.title) > 25 else challenge.title, value=f"{challenge.id}") for challenge in challenges]
 
-        while True:
-            view = action_views.ChallengeView(author=self.user, custom_id=f"ticketing:challenge_request-{os.urandom(16).hex()}", options=challenge_options,
+        for i in range(0, 3):
+            view = action_views.ChallengeView(timeout=300, author=self.user, custom_id=f"ticketing:challenge_request-{os.urandom(16).hex()}", options=challenge_options,
                                               placeholder="Please choose a challenge")
             select_messages = await self.ticket_channel.send("Please select which challenge you need help with", view=view)
             await view.wait()
             if view.children[0]._selected_values:
                 break
             await select_messages.delete()
+            if i == 0:
+                await self.ticket_channel.send(self.user.mention)
+            if i == 1:
+                await self.ticket_channel.send(self.user.mention)
+            if i == 2:
+                close_ticket = CloseTicket(self.guild, self.bot,
+                                           self.ticket_channel, bot=True)
+                await close_ticket.main(before_message=f"You took too long to respond to {self.ticket_channel.name}. Please create another ticket when you are ready.")
+                raise exceptions.ChallengeTimeoutError
 
         selected_challenge = [
             ch for ch in challenges if ch.id == int(view.children[0]._selected_values[0])][0]
