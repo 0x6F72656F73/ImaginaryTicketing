@@ -4,12 +4,11 @@ class MaxChannelTicketError(Exception):
 class MaxUserTicketError(Exception):
     """Raised when the max number of tickets has been reached per user"""
 
-class NoChallengeSelected(Exception):
+class ChallengeTimeoutError(Exception):
     """Raised when no challenge is selected"""
 
 class ChallengeDoesNotExist(Exception):
     """Raised when challenges solved by helpers don't exist"""
-
 
 class HelperSyncError(Exception):
     """Raised when a helper is missing"""

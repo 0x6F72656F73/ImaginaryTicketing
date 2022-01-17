@@ -25,9 +25,9 @@ class BaseActions:
     """Base class for all actions"""
 
     def __init__(self, guild: discord.Guild, user: Union[discord.User, discord.ClientUser],
-                 channel: discord.TextChannel, background: bool = False):
+                 channel: discord.TextChannel, bot: bool = False):
         self.guild = guild
-        if background:
+        if bot:
             self.user = user.user
             self.user_id = self.user.id
         else:
@@ -161,7 +161,11 @@ class CreateTicket(BaseActions):
         if self.ticket_type == "help":
             helper = CreateTicketHelper(
                 self.ticket_channel, self.bot, self.ticket_type, self._args[0], *self._args[1], **self._args[2])
-            ch_authors = await helper.challenge_selection()
+            try:
+                ch_authors = await helper.challenge_selection()
+            except exceptions.ChallengeTimeoutError:
+                raise exceptions.ChallengeTimeoutError
+
             ch_authors = set(filter(lambda v: v is not None, ch_authors))
             if len(ch_authors) == 0:
                 author_mentions = ''
@@ -187,6 +191,7 @@ class CreateTicket(BaseActions):
         log.info(
             f"[CREATED] {self.ticket_channel} by {self.user} (ID: {self.channel_id})")
         return self.ticket_channel
+
 class CreateTicketHelper(CreateTicket):
     def __init__(self, ticket_channel: discord.TextChannel, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -206,14 +211,23 @@ class CreateTicketHelper(CreateTicket):
         challenge_options = [discord.SelectOption(
             label=(challenge.title[:23] + '..') if len(challenge.title) > 25 else challenge.title, value=f"{challenge.id}") for challenge in challenges]
 
-        while True:
-            view = action_views.ChallengeView(author=self.user, custom_id=f"ticketing:challenge_request-{os.urandom(16).hex()}", options=challenge_options,
+        for i in range(0, 3):
+            view = action_views.ChallengeView(timeout=300, author=self.user, custom_id=f"ticketing:challenge_request-{os.urandom(16).hex()}", options=challenge_options,
                                               placeholder="Please choose a challenge")
             select_messages = await self.ticket_channel.send("Please select which challenge you need help with", view=view)
             await view.wait()
             if view.children[0]._selected_values:
                 break
             await select_messages.delete()
+            if i == 0:
+                await self.ticket_channel.send(self.user.mention)
+            if i == 1:
+                await self.ticket_channel.send(self.user.mention)
+            if i == 2:
+                close_ticket = CloseTicket(self.guild, self.bot,
+                                           self.ticket_channel, bot=True)
+                await close_ticket.main(before_message=f"You took too long to respond to {self.ticket_channel.name}. Please create another ticket when you are ready.")
+                raise exceptions.ChallengeTimeoutError
 
         selected_challenge = [
             ch for ch in challenges if ch.id == int(view.children[0]._selected_values[0])][0]
@@ -371,7 +385,7 @@ class CloseTicket(BaseActions):
 
         return channel_users, time_open
 
-    async def main(self, inactivity=False):
+    async def main(self, before_message: str = ""):
         """closes a ticket"""
         try:
             current_status = db.get_status(self.channel_id)
@@ -426,9 +440,13 @@ class CloseTicket(BaseActions):
             name="message distribution", value=f"{channel_users}")
         close_stats_embed.add_field(
             name="time open", value=f"{time_open}")
-        if inactivity:
-            message = "This ticket was automatically closed due to inactivity."
-            await t_user.send(message, embed=close_stats_embed, file=transcript_file)
+        if before_message:
+            if isinstance(before_message, str):
+                await t_user.send(before_message, embed=close_stats_embed, file=transcript_file)
+            else:
+                log.warning(
+                    f"object {before_message} is not of type string, but type {type(before_message)}")
+                await t_user.send(embed=close_stats_embed, file=transcript_file)
         else:
             await t_user.send(embed=close_stats_embed, file=transcript_file)
         await embed_message.edit(embed=close_stats_embed, view=action_views.ReopenDeleteView())
