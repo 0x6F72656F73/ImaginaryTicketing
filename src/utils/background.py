@@ -84,7 +84,7 @@ class AutoClose(commands.Cog):
 
         if check == 1:
             close = actions.CloseTicket(guild, bot, channel, bot=True)
-            await close.main(before_message="This ticket was automatically closed due to inactivity.")
+            await close.main(before_message="This ticket was automatically closed due to no response.")
             db.update_check("0", channel.id)
 
         elif check == 0:
