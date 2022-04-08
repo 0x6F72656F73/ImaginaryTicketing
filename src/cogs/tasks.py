@@ -3,7 +3,7 @@ import logging
 from discord.ext import commands
 import aiocron
 
-from utils.background import AutoClose, ScrapeChallenges, UpdateHelpers
+from utils.background import AutoClose, ScrapeChallenges, UpdateHelpers, UpdateOnlineHelpers
 from utils import exceptions
 
 log = logging.getLogger(__name__)
@@ -41,6 +41,10 @@ class Tasks(commands.Cog):
                 await ScrapeChallenges.main(self.bot)
             log.info("Finished Task UpdateHelpers for every 10 minutes")
 
+        @aiocron.crontab("*/10 * * * *")
+        async def start_updating_online_members():
+            await UpdateOnlineHelpers.main(self.bot)
+            log.info("Finished Task UpdateOnlineMembers for every 10 minutes")
 
 def setup(bot):
     bot.add_cog(Tasks(bot))

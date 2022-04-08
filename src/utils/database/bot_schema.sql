@@ -31,3 +31,9 @@ CREATE TABLE helpers (
   discord_id INTEGER UNIQUE,
   is_available BOOLEAN
 );
+
+
+CREATE TABLE online_helpers (
+  channel_id bigint,
+  message_id bigint
+)
