@@ -10,6 +10,7 @@ from cogs.helpers.views import command_views
 import cogs.helpers.actions as actions
 
 from utils.database.db import DatabaseManager as db
+from utils.background import UpdateOnlineHelpers
 from utils.utility import Utility, UI
 from utils import exceptions, types
 
@@ -44,6 +45,17 @@ For help tickets:
 \u200b \u200b - the challenge has been blooded
 """, inline=False)
         await ctx.channel.send(embed=embed, view=command_views.TicketView(self.bot))
+        await Utility.delete_message(ctx)
+
+    @commands.command(name="online", aliases=["o"])
+    @commands.has_role(config.roles['admin'])
+    async def online(self, ctx: commands.Context):
+        """shows a list of all online support helpers"""
+        embed = UpdateOnlineHelpers.create_online_helpers_embed(ctx.guild)
+        message = await ctx.channel.send(embed=embed)
+
+        db.create_online_helper_message(message.channel.id, message.id)
+
         await Utility.delete_message(ctx)
 
     @commands.command(name="create", aliases=["new", "cr"])

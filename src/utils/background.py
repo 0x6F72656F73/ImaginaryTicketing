@@ -11,6 +11,7 @@ import logging
 
 import discord
 from discord.ext import commands
+from discord.utils import get
 from environs import Env
 import aiohttp
 
@@ -266,3 +267,44 @@ class UpdateHelpers():
                         except ValueError:
                             pass
                         await cls.modify_helper_to_channel(channel_, helper, choice)
+
+
+class UpdateOnlineHelpers():
+    @staticmethod
+    async def main(bot: commands.Bot):
+        messages = db.get_all_online_helper_messages()
+        for m in messages:
+            m = list(m)
+            channel = bot.get_channel(int(m[0]))
+
+            try:
+                message = await channel.fetch_message(int(m[1]))
+            except discord.errors.NotFound:
+                db.delete_online_helper_message(m[1])
+                continue
+
+            embed = UpdateOnlineHelpers.create_online_helpers_embed(
+                message.guild)
+            await message.edit(embed=embed)
+
+    @staticmethod
+    def create_online_helpers_embed(guild: discord.Guild):
+        """creates a list of all online support helpers"""
+        helper_role = get(guild.roles, name=config.roles['helper'])
+        if helper_role.members:
+            helper_ids = [helper.id for helper in helper_role.members]
+            db_helpers = db.get_all_helpers()
+            helpers = set(helper_ids).intersection(db_helpers)
+
+            helpers = '\n'.join(
+                [member.mention for member in helper_role.members if (member.id in helpers and member.status == discord.Status.online)])
+        else:
+            helpers = 'No helpers online'
+
+        if not helpers:  # if no helpers are online
+            helpers = 'No helpers online'
+
+        embed = UI.Embed(
+            title="Online helpers", description=helpers)
+
+        return embed

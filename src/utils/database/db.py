@@ -511,3 +511,27 @@ class DatabaseManager():
         SET helper_id_list = $1 WHERE id = $2"""
         values = (helpers, challenge_id,)
         cls._raw_update(query, values)
+
+    @classmethod
+    def create_online_helper_message(cls, channel_id: int, message_id: int):
+        query = """
+        INSERT INTO online_helpers(channel_id, message_id)
+        VALUES($1,$2)"""
+        values = (channel_id, message_id,)
+        cls._raw_insert(query, values)
+
+    @classmethod
+    def get_all_online_helper_messages(cls) -> List[sqlite3.Row]:
+        query = """
+        SELECT * FROM online_helpers
+        """
+        all_online_members = cls._raw_select(query)
+        return all_online_members
+
+    @classmethod
+    def delete_online_helper_message(cls, message_id: int):
+        query = """
+        DELETE FROM online_helpers
+        WHERE message_id = $1"""
+        values = (message_id,)
+        cls._raw_delete(query, values)
