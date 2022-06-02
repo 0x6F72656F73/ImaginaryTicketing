@@ -24,7 +24,7 @@ class Options:
 Soon a {mention} member will assist you.
 If you don't need help anymore, or you want to close this ticket, click on the :lock:""",
                "submit": """
-Please create a thread for each challenge, and in the following format:
+Please [create a thread](https://youtu.be/XN_Y3vueZWY) for each challenge, and in the following format:
 
 \*\*Title\*\* 
 \*\*Category:\*\* 
