@@ -194,6 +194,25 @@ For help tickets:
         await ctx.channel.send(embed=embed)
         await Utility.delete_message(ctx)
 
+    @ commands.command(name="status", aliases=["s"])
+    @ commands.has_role(config.roles['admin'])
+    async def status(self, ctx: commands.Context, channel: discord.TextChannel = None):
+        """shows the status of a channel"""
+        if channel is None:
+            channel = ctx.channel
+
+        check = db.get_check(channel.id)
+        if check == 0:
+            check = "nothing has happened"
+        elif check == 1:
+            check = "first message has been sent"
+        elif check == 2:
+            check = "channel is ignored"
+
+        embed = UI.Embed(title=f"Status for {channel.name}")
+        embed.add_field(name="Auto Close", value=check)
+        await ctx.channel.send(embed=embed)
+
     def cog_check(self, ctx):
         if not ctx.message.guild:
             raise commands.errors.NoPrivateMessage(
