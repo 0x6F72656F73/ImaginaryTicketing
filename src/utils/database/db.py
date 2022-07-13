@@ -517,7 +517,7 @@ class DatabaseManager():
         query = """
         INSERT INTO online_helpers(channel_id, message_id)
         VALUES($1,$2)"""
-        values = (message_id, message_id,)
+        values = (channel_id, message_id,)
         cls._raw_insert(query, values)
 
     @classmethod
