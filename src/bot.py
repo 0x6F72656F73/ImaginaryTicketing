@@ -8,7 +8,6 @@ import environs
 import discord
 from discord.ext import commands
 import pretty_help
-import chat_exporter
 
 from cogs.helpers import views
 from utils.logging_setup import start_logging
@@ -90,7 +89,6 @@ You can also type {BOT_PREFIX[0]}help category for more info on a category"
         log.info(
             f"Running on: {platform.system()} {platform.release()} ({os.name})")
         log.info("-------------------")
-        chat_exporter.init_exporter(self.user)
 
     async def on_message(self, message):
         if message.author == self.user or message.author.bot or not message.guild:

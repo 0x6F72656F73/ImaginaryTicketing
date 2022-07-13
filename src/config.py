@@ -18,4 +18,4 @@ tickets = {"emojis": ['<:rooSupport:811702778622771232>',
 
 api = {"base_link": "https://imaginaryctf.org/api"}
 
-transcript = {"domain": "https://oreos.imaginaryctf.org"}
+transcript = {"domain": "http://oreos.imaginaryctf.org:1337"}
