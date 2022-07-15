@@ -28,5 +28,3 @@ class TicketView(discord.ui.View):
                                        label='help', style=ButtonStyle.primary, emoji=emoji_list[0], custom_id='ticketing:request_help'))
         self.add_item(CreateHelpButton(bot,
                                        label='misc', style=ButtonStyle.danger, emoji=emoji_list[2], custom_id='ticketing:request_misc'))
-        self.add_item(CreateHelpButton(bot,
-                                       label='submit', style=ButtonStyle.success, emoji=emoji_list[1], custom_id='ticketing:request_submit'))
