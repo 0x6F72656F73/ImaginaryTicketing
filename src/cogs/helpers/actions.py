@@ -311,7 +311,7 @@ class UtilityActions:
         member : `discord.Member`
             member to be added\n
         """
-        await channel.set_permissions(member, read_messages=True, send_messages=True)
+        await channel.set_permissions(member, read_messages=True)
 
         embed = UI.Embed(description=f"{member.mention} was added")
         await channel.send(embed=embed)
@@ -338,8 +338,7 @@ class UtilityActions:
         else:
             author = guild.get_member(member_identifier)
         try:
-            await ticket_channel.set_permissions(author, read_messages=True,
-                                                 send_messages=True)
+            await ticket_channel.set_permissions(author, read_messages=True)
         except discord.InvalidArgument:
             log.info(
                 f"Member {member_identifier} for challenge {challenge_title} does not exist.")
