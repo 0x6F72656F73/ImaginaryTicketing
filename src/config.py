@@ -16,6 +16,6 @@ tickets = {"emojis": ['<:rooSupport:811702778622771232>',
                       '📩', '<:imagine:871115444856160296>']}
 # ['🚩', '📩', '🧐']
 
-api = {"base_link": "https://2022.imaginaryctf.org/api"}
+api = {"base_link": "https://imaginaryctf.org/api"}
 
 transcript = {"domain": "http://oreos.imaginaryctf.org:1337"}

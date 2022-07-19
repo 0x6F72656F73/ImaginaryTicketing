@@ -32,7 +32,18 @@ class TicketCommands(commands.Cog):
             ctx.guild.text_channels, name="bot-commands")
         embed = UI.Embed(title="Ticket System", timestamp=None)
         embed.add_field(name="How do I make a ticket?",
-                        value="For issues/questions on a ctf challenge, react to the help button. For all other questions, react to the misc button.")
+                        value=f"Either react to the message below, or type `$create {{help, submit, misc}}` in {bot_commands.mention}. (Note `$create` defaults to help)")
+        embed.add_field(name="Rules", value="""
+- Abuse of the ticket system will result in being punished.
+
+For help tickets:
+- You must show what you've tried so far before we help you
+- Only create one for per challenge
+- No points will be deducted
+- Cannot be created for the current challenge before either:
+\u200b \u200b - 30 minutes have passed since the challenge was released
+\u200b \u200b - the challenge has been blooded
+""", inline=False)
         await ctx.channel.send(embed=embed, view=command_views.TicketView(self.bot))
         await Utility.delete_message(ctx)
 

@@ -74,9 +74,9 @@ If you want to close this ticket, click on the :lock:""",
         -------
         `str`: full ticket type
         """
-        msg = {"help": "ICTF '22",
+        msg = {"help": "support tickets",
                "submit": "challenge submissions",
-               "misc": "ICTF '22"}
+               "misc": "support tickets"}
         return msg[ticket_type]
 
     @staticmethod
