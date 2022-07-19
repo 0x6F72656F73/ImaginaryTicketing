@@ -32,7 +32,7 @@ class TicketCommands(commands.Cog):
             ctx.guild.text_channels, name="bot-commands")
         embed = UI.Embed(title="Ticket System", timestamp=None)
         embed.add_field(name="How do I make a ticket?",
-                        value="For help on a ctf challenge, react to the help button. For all other questions, react to the misc button.")
+                        value="For issues/questions on a ctf challenge, react to the help button. For all other questions, react to the misc button.")
         await ctx.channel.send(embed=embed, view=command_views.TicketView(self.bot))
         await Utility.delete_message(ctx)
 
