@@ -103,7 +103,7 @@ class Utility:
         if transcript is None:
             return
 
-        filename = f"transcript-{channel}-{channel.id}.html"
+        filename = f"transcript-{channel}-{channel.id}-{''.join(random.choice('123456789') for _ in range(8))}.html"
         transcript_file = discord.File(io.BytesIO(transcript.encode()),
                                        filename=filename)
         message = await destination.send(file=transcript_file)
