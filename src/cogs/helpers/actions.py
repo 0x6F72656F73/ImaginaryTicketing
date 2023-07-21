@@ -165,14 +165,16 @@ class CreateTicket(BaseActions):
                 ch_authors = await helper.challenge_selection()
             except exceptions.ChallengeTimeoutError:
                 raise exceptions.ChallengeTimeoutError
-
-            ch_authors = set(filter(lambda v: v is not None, ch_authors))
-            if len(ch_authors) == 0:
-                author_mentions = ''
-            else:
-                author_mentions = ', ' + ', '.join(
-                    [author.mention for author in ch_authors])
-            welcome_message = f'A new ticket has been created {avail_mods.mention} {author_mentions}'
+            try:
+                ch_authors = set(filter(lambda v: v is not None, ch_authors))
+                if len(ch_authors) == 0:
+                    author_mentions = ''
+                else:
+                    author_mentions = ', ' + ', '.join(
+                        [author.mention for author in ch_authors])
+                welcome_message = f'A new ticket has been created {avail_mods.mention} {author_mentions}'
+            except TypeError:
+                welcome_message = f'A new ticket has been created {avail_mods.mention}'
         elif self.ticket_type == "submit":
             welcome_message = f'Welcome <@{self.user_id}>'
         else:
