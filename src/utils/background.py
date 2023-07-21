@@ -276,10 +276,9 @@ class UpdateOnlineHelpers():
         for m in messages:
             m = list(m)
             channel = bot.get_channel(int(m[0]))
-
             try:
                 message = await channel.fetch_message(int(m[1]))
-            except discord.errors.NotFound:
+            except (discord.errors.NotFound,AttributeError):
                 db.delete_online_helper_message(m[1])
                 continue
 
